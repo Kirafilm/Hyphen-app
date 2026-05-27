@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: hyphen_app
+      MYSQL_USER: hyphen
+      MYSQL_PASSWORD: hyphen_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - hyphen_mysql_data:/var/lib/mysql
+
+volumes:
+  hyphen_mysql_data:
