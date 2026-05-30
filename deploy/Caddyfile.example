@@ -1,7 +1,10 @@
-# Rename domain, then: docker run -d --name caddy --network hyphen-app_hyphen \
-#   -p 80:80 -p 443:443 -v $PWD/deploy/Caddyfile:/etc/caddy/Caddyfile \
-#   -v caddy_data:/data caddy:2-alpine
+# Copy to deploy/Caddyfile and replace the domain:
+#   cp deploy/Caddyfile.example deploy/Caddyfile
+#
+# Start with HTTPS profile:
+#   sudo docker compose -f docker-compose.prod.yml --profile https up -d
 
 api.your-domain.com {
-  reverse_proxy api:3000
+	encode gzip
+	reverse_proxy api:3000
 }

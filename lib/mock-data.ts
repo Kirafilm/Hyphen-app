@@ -243,11 +243,13 @@ export const mockFreelancers: Freelancer[] = [
 // Sample Categories
 export const categories = [
   "攝影及影片製作",
+  "音樂製作",
   "網頁及程式開發",
   "數碼營銷",
   "翻譯服務",
   "平面設計",
   "繪畫及插圖",
+  "室內設計",
   "活動及表演",
   "寵物服務",
   "會計管理",

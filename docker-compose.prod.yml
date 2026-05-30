@@ -28,8 +28,29 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    # After HTTPS works, consider binding to localhost only: "127.0.0.1:3000:3000"
     ports:
       - "3000:3000"
+    networks:
+      - hyphen
+
+  # HTTPS reverse proxy — see deploy/HTTPS.md
+  #   cp deploy/Caddyfile.example deploy/Caddyfile
+  #   sudo docker compose -f docker-compose.prod.yml --profile https up -d
+  caddy:
+    profiles: ["https"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
     networks:
       - hyphen
 
@@ -57,6 +78,8 @@ services:
 
 volumes:
   hyphen_mysql_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   hyphen:
