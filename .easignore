@@ -9,7 +9,8 @@ dist/
 web-build/
 expo-env.d.ts
 .metro-health-check*
-.cache/
+# Metro / NativeWind cache inside node_modules (created on EAS post-install)
+# Do NOT use a bare `.cache/` rule — it is too broad for other tooling.
 
 # Native (EAS generates these)
 ios/
