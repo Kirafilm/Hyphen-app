@@ -1,7 +1,7 @@
 import { desc, eq, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2";
-import { InsertUser, jobSkills, jobs, subscriptions, users } from "../drizzle/schema";
+import { InsertUser, jobSkills, jobs, pushDevices, subscriptions, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { randomUUID } from "crypto";
 
@@ -34,6 +34,10 @@ let _memoryJobs: Array<{
   createdAt: Date;
   removedAt: Date | null;
 }> = [];
+const _memoryPushDevices = new Map<
+  string,
+  { expoPushToken: string; userId: number | null; platform: string | null; jobAlertsEnabled: boolean; updatedAt: Date }
+>();
 
 const isDbConnectionError = (error: unknown) => {
   const anyErr = error as any;
@@ -282,22 +286,19 @@ export type JobRecord = {
   removedAt: Date | null;
 };
 
-export async function listJobs(viewer: typeof users.$inferSelect | null): Promise<JobRecord[]> {
+export async function listJobs(_viewer: typeof users.$inferSelect | null): Promise<JobRecord[]> {
   const db = await getDb();
-  const listInMemory = () => {
-    const includeRemoved = Boolean(viewer?.role === "admin");
-    return _memoryJobs
-      .filter((job) => (includeRemoved ? true : !job.removedAt))
+  const listInMemory = () =>
+    _memoryJobs
+      .filter((job) => !job.removedAt)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  };
   if (!db) return listInMemory();
 
   try {
-    const includeRemoved = Boolean(viewer?.role === "admin");
     const jobRows = await db
       .select()
       .from(jobs)
-      .where(includeRemoved ? undefined : isNull(jobs.removedAt))
+      .where(isNull(jobs.removedAt))
       .orderBy(desc(jobs.createdAt));
 
     if (jobRows.length === 0) return [];
@@ -442,6 +443,59 @@ export async function createJob(input: Omit<JobRecord, "id" | "createdAt" | "rem
   }
 }
 
+export async function listAllJobsForModeration(): Promise<JobRecord[]> {
+  const db = await getDb();
+  const listInMemory = () =>
+    [..._memoryJobs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  if (!db) return listInMemory();
+
+  try {
+    const jobRows = await db.select().from(jobs).orderBy(desc(jobs.createdAt));
+    if (jobRows.length === 0) return [];
+
+    const jobIds = jobRows.map((row) => row.id);
+    const skillRows = await db.select().from(jobSkills).where(inArray(jobSkills.jobId, jobIds));
+
+    const map = new Map<string, string[]>();
+    for (const r of skillRows as any[]) {
+      const list = map.get(r.jobId) ?? [];
+      list.push(r.skill);
+      map.set(r.jobId, list);
+    }
+
+    return jobRows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      workDateTbd: Boolean((row as any).workDateTbd ?? (row as any).workDateTimeTbd),
+      workTimeTbd: Boolean((row as any).workTimeTbd ?? (row as any).workDateTimeTbd),
+      workDate: (row as any).workDate ?? null,
+      workStartTime: (row as any).workStartTime ?? null,
+      workEndTime: (row as any).workEndTime ?? null,
+      budgetMin: row.budgetMin,
+      budgetMax: row.budgetMax,
+      currency: row.currency,
+      location: row.location,
+      timeline: row.timeline,
+      skills: map.get(row.id) ?? [],
+      clientName: row.clientName,
+      contactPerson: (row as any).contactPerson ?? null,
+      contactEmail: row.contactEmail ?? null,
+      contactPhone: row.contactPhone ?? null,
+      createdByUserId: row.createdByUserId,
+      createdAt: row.createdAt,
+      removedAt: row.removedAt ?? null,
+    }));
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      return listInMemory();
+    }
+    throw error;
+  }
+}
+
 export async function removeJob(id: string): Promise<boolean> {
   const db = await getDb();
   const removeInMemory = () => {
@@ -459,6 +513,191 @@ export async function removeJob(id: string): Promise<boolean> {
     if (isDbConnectionError(error)) {
       resetDb();
       return removeInMemory();
+    }
+    throw error;
+  }
+}
+
+export async function deleteJob(id: string): Promise<boolean> {
+  const db = await getDb();
+  const deleteInMemory = () => {
+    const index = _memoryJobs.findIndex((j) => j.id === id);
+    if (index === -1) return false;
+    _memoryJobs.splice(index, 1);
+    return true;
+  };
+  if (!db) return deleteInMemory();
+
+  try {
+    const existing = await getJobById(id);
+    if (!existing) return false;
+    await db.delete(jobSkills).where(eq(jobSkills.jobId, id));
+    await db.delete(jobs).where(eq(jobs.id, id));
+    return true;
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      return deleteInMemory();
+    }
+    throw error;
+  }
+}
+
+export type PushDeviceRecord = {
+  expoPushToken: string;
+  userId: number | null;
+  platform: string | null;
+  jobAlertsEnabled: boolean;
+  updatedAt: Date;
+};
+
+export async function getPushDevice(expoPushToken: string): Promise<PushDeviceRecord | null> {
+  const db = await getDb();
+  if (!db) {
+    return _memoryPushDevices.get(expoPushToken) ?? null;
+  }
+
+  try {
+    const rows = await db.select().from(pushDevices).where(eq(pushDevices.expoPushToken, expoPushToken)).limit(1);
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      expoPushToken: row.expoPushToken,
+      userId: row.userId ?? null,
+      platform: row.platform ?? null,
+      jobAlertsEnabled: row.jobAlertsEnabled === 1,
+      updatedAt: row.updatedAt,
+    };
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      return _memoryPushDevices.get(expoPushToken) ?? null;
+    }
+    throw error;
+  }
+}
+
+export async function upsertPushDevice(input: {
+  expoPushToken: string;
+  userId?: number | null;
+  platform?: string | null;
+  jobAlertsEnabled?: boolean;
+}): Promise<void> {
+  const db = await getDb();
+  const now = new Date();
+  const enabled = input.jobAlertsEnabled ?? true;
+
+  const upsertInMemory = () => {
+    const existing = _memoryPushDevices.get(input.expoPushToken);
+    _memoryPushDevices.set(input.expoPushToken, {
+      expoPushToken: input.expoPushToken,
+      userId: input.userId !== undefined ? input.userId : (existing?.userId ?? null),
+      platform: input.platform ?? existing?.platform ?? null,
+      jobAlertsEnabled: input.jobAlertsEnabled ?? existing?.jobAlertsEnabled ?? true,
+      updatedAt: now,
+    });
+  };
+
+  if (!db) {
+    upsertInMemory();
+    return;
+  }
+
+  try {
+    const existing = await getPushDevice(input.expoPushToken);
+    if (existing) {
+      await db
+        .update(pushDevices)
+        .set({
+          userId: input.userId !== undefined ? input.userId : existing.userId,
+          platform: input.platform ?? existing.platform,
+          jobAlertsEnabled: (input.jobAlertsEnabled ?? existing.jobAlertsEnabled) ? 1 : 0,
+          updatedAt: now,
+        })
+        .where(eq(pushDevices.expoPushToken, input.expoPushToken));
+      return;
+    }
+
+    await db.insert(pushDevices).values({
+      expoPushToken: input.expoPushToken,
+      userId: input.userId ?? null,
+      platform: input.platform ?? null,
+      jobAlertsEnabled: enabled ? 1 : 0,
+      updatedAt: now,
+    });
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      upsertInMemory();
+      return;
+    }
+    throw error;
+  }
+}
+
+export async function setPushDeviceJobAlerts(expoPushToken: string, enabled: boolean): Promise<void> {
+  const db = await getDb();
+  const upsertInMemory = () => {
+    const existing = _memoryPushDevices.get(expoPushToken);
+    if (!existing) {
+      _memoryPushDevices.set(expoPushToken, {
+        expoPushToken,
+        userId: null,
+        platform: null,
+        jobAlertsEnabled: enabled,
+        updatedAt: new Date(),
+      });
+      return;
+    }
+    existing.jobAlertsEnabled = enabled;
+    existing.updatedAt = new Date();
+  };
+
+  if (!db) {
+    upsertInMemory();
+    return;
+  }
+
+  try {
+    const existing = await getPushDevice(expoPushToken);
+    if (!existing) {
+      await db.insert(pushDevices).values({
+        expoPushToken,
+        jobAlertsEnabled: enabled ? 1 : 0,
+      });
+      return;
+    }
+    await db
+      .update(pushDevices)
+      .set({ jobAlertsEnabled: enabled ? 1 : 0 })
+      .where(eq(pushDevices.expoPushToken, expoPushToken));
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      upsertInMemory();
+      return;
+    }
+    throw error;
+  }
+}
+
+export async function listPushTokensForJobAlerts(excludeUserId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) {
+    return [..._memoryPushDevices.values()]
+      .filter((d) => d.jobAlertsEnabled && d.userId !== excludeUserId)
+      .map((d) => d.expoPushToken);
+  }
+
+  try {
+    const rows = await db.select().from(pushDevices).where(eq(pushDevices.jobAlertsEnabled, 1));
+    return rows
+      .filter((row) => row.userId === null || row.userId !== excludeUserId)
+      .map((row) => row.expoPushToken);
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      return listPushTokensForJobAlerts(excludeUserId);
     }
     throw error;
   }

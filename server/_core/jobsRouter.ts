@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router, adminProcedure } from "./trpc";
 import * as db from "../db";
+import { notifyNewJobPosted } from "./pushNotifications";
 
 function isSubscriptionActive(status: db.SubscriptionStatus) {
   if (status.plan === "none") return false;
@@ -59,10 +60,19 @@ export const jobsRouter = router({
     const job = await db.getJobById(input.id);
     if (!job) return null;
     const viewer = ctx.user;
+    if (job.removedAt && viewer?.role !== "admin") return null;
     const emptySub: db.SubscriptionStatus = { plan: "none", expiresAt: null };
     const sub = viewer ? await db.getSubscriptionStatus(viewer.id) : emptySub;
     const activeSub = viewer ? isSubscriptionActive(sub) : false;
     return toJobPublic(job, canViewJobContact(job, viewer, activeSub));
+  }),
+
+  listForModeration: adminProcedure.query(async ({ ctx }) => {
+    const jobs = await db.listAllJobsForModeration();
+    const emptySub: db.SubscriptionStatus = { plan: "none", expiresAt: null };
+    const sub = await db.getSubscriptionStatus(ctx.user.id);
+    const activeSub = isSubscriptionActive(sub);
+    return jobs.map((job) => toJobPublic(job, canViewJobContact(job, ctx.user, activeSub)));
   }),
 
   create: protectedProcedure
@@ -162,11 +172,26 @@ export const jobsRouter = router({
         contactPhone: input.contactPhone,
         createdByUserId: ctx.user.id,
       });
+
+      void notifyNewJobPosted({
+        id: job.id,
+        title: job.title,
+        category: job.category,
+        createdByUserId: job.createdByUserId,
+      }).catch((error) => {
+        console.error("[Push] Failed to notify new job:", error);
+      });
+
       return toJobPublic(job, true);
     }),
 
   remove: adminProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ input }) => {
     const success = await db.removeJob(input.id);
+    return { success } as const;
+  }),
+
+  delete: adminProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ input }) => {
+    const success = await db.deleteJob(input.id);
     return { success } as const;
   }),
 });

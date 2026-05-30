@@ -7,6 +7,17 @@ type ApiResponse<T> = {
   error?: string;
 };
 
+export function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message;
+  return (
+    msg === "Network request failed" ||
+    msg.includes("Failed to fetch") ||
+    msg.includes("Network Error") ||
+    msg.includes("Network error")
+  );
+}
+
 export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -133,6 +144,9 @@ export async function getMe(): Promise<{
     const result = await apiCall<{ user: any }>("/api/auth/me");
     return result.user || null;
   } catch (error) {
+    if (isNetworkError(error)) {
+      throw error;
+    }
     const message = error instanceof Error ? error.message : "";
     const looksLikeAuthError =
       message.includes("Not authenticated") ||

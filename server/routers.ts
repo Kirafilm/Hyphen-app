@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { jobsRouter } from "./_core/jobsRouter";
+import { notificationsRouter } from "./_core/notificationsRouter";
 import { subscriptionRouter } from "./_core/subscriptionRouter";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -10,6 +11,7 @@ export const appRouter = router({
   system: systemRouter,
   jobs: jobsRouter,
   subscription: subscriptionRouter,
+  notifications: notificationsRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

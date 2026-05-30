@@ -5,7 +5,9 @@ const tailwindColors = Object.fromEntries(
   Object.entries(themeColors).map(([name, swatch]) => [
     name,
     {
-      DEFAULT: `var(--color-${name})`,
+      // NativeWind on iOS/Android can fail to resolve CSS variables reliably.
+      // Use concrete colors as the default token so native text/cards remain visible.
+      DEFAULT: swatch.light,
       light: swatch.light,
       dark: swatch.dark,
     },

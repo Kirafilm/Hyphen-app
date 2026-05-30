@@ -1,8 +1,7 @@
-import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { AppScreen } from "@/components/app-screen";
+import { PageHeader } from "@/components/page-header";
+import { ScrollView, Text, View } from "react-native";
 
 const PRIVACY_POLICY_TEXT = `本應用 Hyphen自由職（下稱「本應用」）由 Hyphen（下稱「本公司」或「我們」）擁有及營運。我們尊重個人資料，並致力於全面落實及遵守保障資料原則，以及香港法例第 486 章《個人資料（私隱）條例》（下稱「條例」）的所有相關規定。本政策適用於本應用的使用者，以及不論透過何種方式，其個人資料被我們收集、使用及持有的任何其他人士。\n\n本私隱政策適用於本應用的所有使用者，包括但不限於請求服務的服務使用者（下稱「消費者」）、希望提供服務的服務使用者（下稱「自由職業者」），以及不論透過何種方式，其個人資料被我們收集、使用及持有的任何其他人士。`;
 
@@ -59,35 +58,24 @@ const SECTIONS: Array<{ title: string; body: string }> = [
 ];
 
 export default function PrivacyScreen() {
-  const router = useRouter();
   const colors = useColors();
 
   return (
-    <ScreenContainer className="p-0">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1">
-          <View className="bg-primary px-6 py-6 gap-2">
-            <TouchableOpacity onPress={() => router.back()} className="w-8 h-8">
-              <Ionicons name="chevron-back" size={28} color="white" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-background mt-2">私隱條款</Text>
-            <Text className="text-sm text-background opacity-90">私隱政策聲明 / 個人資料收集聲明</Text>
-          </View>
+    <AppScreen>
+      <PageHeader title="私隱條款" subtitle="私隱政策聲明 / 個人資料收集聲明" showBack />
 
-          <View className="px-6 py-8 gap-6">
-            {SECTIONS.map((section) => (
-              <View key={section.title} className="gap-2">
-                <Text className="text-foreground font-bold text-base">{section.title}</Text>
-                <Text className="text-muted text-sm leading-relaxed">{section.body}</Text>
-              </View>
-            ))}
-
-            <View className="pt-4">
-              <Text className="text-muted text-xs text-center">© Hyphen - All Rights Reserved</Text>
-            </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
+        {SECTIONS.map((section) => (
+          <View key={section.title} style={{ marginBottom: 24, gap: 8 }}>
+            <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>{section.title}</Text>
+            <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>{section.body}</Text>
           </View>
-        </View>
+        ))}
+
+        <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center", marginTop: 8 }}>
+          © Hyphen - All Rights Reserved
+        </Text>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }

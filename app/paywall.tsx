@@ -1,5 +1,6 @@
-import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/hooks/use-auth";
+import { AppScreen } from "@/components/app-screen";
+import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import {
   REVENUECAT_ENTITLEMENT_ID,
@@ -108,72 +109,69 @@ export default function PaywallScreen() {
   };
 
   return (
-    <ScreenContainer className="p-0">
+    <AppScreen>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1">
-          <View className="bg-primary px-6 py-6 gap-2">
-            <TouchableOpacity onPress={goBackToJob} className="w-8 h-8">
-              <Ionicons name="chevron-back" size={28} color="white" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-background mt-2">解鎖聯絡資訊</Text>
-            <Text className="text-sm text-background opacity-90">
-              未訂閱可查看工作內容，但無法查看電話與電郵。
-            </Text>
-          </View>
+        <View style={{ flex: 1 }}>
+          <PageHeader
+            title="解鎖聯絡資訊"
+            subtitle="未訂閱可查看工作內容，但無法查看電話與電郵。"
+            showBack
+            onBack={goBackToJob}
+          />
 
-          <View className="px-6 py-8 gap-4">
+          <View style={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }}>
             {!isAuthenticated ? (
-              <View className="bg-surface rounded-lg p-6 border border-border items-center gap-3">
+              <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, alignItems: "center", gap: 12 }}>
                 <Ionicons name="lock-closed" size={40} color={colors.muted} />
-                <Text className="text-foreground font-semibold">請先登入</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600" }}>請先登入</Text>
                 <TouchableOpacity
                   onPress={() => router.push("/login")}
-                  className="bg-primary rounded-lg py-3 px-5 mt-2 active:opacity-80"
+                  style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 20, marginTop: 8 }}
                 >
-                  <Text className="text-white font-semibold">前往登入</Text>
+                  <Text style={{ color: "white", fontWeight: "600" }}>前往登入</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <View className="bg-surface rounded-lg p-6 border border-border gap-2">
-                  <Text className="text-foreground font-bold text-lg">你的訂閱狀態</Text>
-                  <Text className="text-muted text-sm">
+                <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>你的訂閱狀態</Text>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>
                     方案：{meQuery.data?.plan ?? "載入中"}
                   </Text>
-                  <Text className="text-muted text-sm">
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>
                     到期：{meQuery.data?.expiresAt ? new Date(meQuery.data.expiresAt).toLocaleString() : "—"}
                   </Text>
                 </View>
 
                 {Platform.OS === "web" ? (
-                  <View className="bg-surface rounded-lg p-6 border border-border gap-2">
-                    <Text className="text-foreground font-bold text-lg">選擇訂閱</Text>
-                    <Text className="text-muted text-sm leading-relaxed">
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+                    <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>選擇訂閱</Text>
+                    <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
                       Web 版暫未支援內購，請使用 iOS/Android App 內完成訂閱。
                     </Text>
                   </View>
                 ) : (
-                  <View className="bg-surface rounded-lg p-6 border border-border gap-4">
-                    <Text className="text-foreground font-bold text-lg">選擇訂閱</Text>
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
+                    <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>選擇訂閱</Text>
 
                     {isEntitled ? (
-                      <View className="bg-primary bg-opacity-10 rounded-lg p-4 border border-primary border-opacity-20 gap-1">
-                        <Text className="text-foreground font-semibold text-sm">已解鎖</Text>
-                        <Text className="text-muted text-xs">到期：{entitlementExpiresAt}</Text>
+                      <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33`, gap: 4 }}>
+                        <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已解鎖</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>到期：{entitlementExpiresAt}</Text>
                       </View>
                     ) : null}
 
                     {availablePackages.length === 0 ? (
-                      <Text className="text-muted text-sm">載入訂閱方案中…</Text>
+                      <Text style={{ color: colors.muted, fontSize: 14 }}>載入訂閱方案中…</Text>
                     ) : (
                       availablePackages.map((pkg) => (
                         <TouchableOpacity
                           key={pkg.identifier}
                           onPress={() => handlePurchase(pkg)}
                           disabled={Boolean(purchasingId) || restoreLoading}
-                          className="bg-primary rounded-lg py-4 items-center justify-center active:opacity-80"
+                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
                         >
-                          <Text className="text-white font-semibold text-base">
+                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
                             {pkg.product?.title ?? "訂閱"}（{pkg.product?.priceString ?? "—"}）
                           </Text>
                         </TouchableOpacity>
@@ -183,23 +181,23 @@ export default function PaywallScreen() {
                     <TouchableOpacity
                       onPress={handleRestore}
                       disabled={Boolean(purchasingId) || restoreLoading}
-                      className="bg-surface rounded-lg py-4 items-center justify-center border border-border active:opacity-80"
+                      style={{ backgroundColor: colors.surface, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }}
                     >
-                      <Text className="text-foreground font-semibold text-base">
+                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 16 }}>
                         {restoreLoading ? "恢復中…" : "恢復購買"}
                       </Text>
                     </TouchableOpacity>
 
-                    {rcError ? <Text className="text-error text-xs">{rcError}</Text> : null}
+                    {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}
                   </View>
                 )}
 
-                <View className="bg-primary bg-opacity-10 rounded-lg p-4 border border-primary border-opacity-20">
-                  <View className="flex-row gap-3">
+                <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
                     <Ionicons name="information-circle" size={20} color={colors.primary} />
-                    <View className="flex-1">
-                      <Text className="text-foreground font-semibold text-sm">RevenueCat</Text>
-                      <Text className="text-muted text-xs mt-1 leading-relaxed">
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>RevenueCat</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
                         App 端完成購買後，會先以 RevenueCat entitlement 判斷是否解鎖；目前亦會同步更新測試訂閱狀態，方便你即時驗證「查看聯絡資訊」流程。
                       </Text>
                     </View>
@@ -210,6 +208,6 @@ export default function PaywallScreen() {
           </View>
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }

@@ -1,6 +1,6 @@
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
-import { revenueCatLogIn, revenueCatLogOut } from "@/lib/revenuecat";
+import { revenueCatLogIn } from "@/lib/revenuecat";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
@@ -56,7 +56,7 @@ export function useAuth(options?: UseAuthOptions) {
         return;
       }
 
-      // Native platform: use token-based auth
+      // Native platform: use token-based auth, but still validate with API to avoid stale sessions.
       console.log("[useAuth] Native platform: checking for session token...");
       const sessionToken = await Auth.getSessionToken();
       console.log(
@@ -69,16 +69,41 @@ export function useAuth(options?: UseAuthOptions) {
         return;
       }
 
-      // Use cached user info for native (token validates the session)
-      const cachedUser = await Auth.getUserInfo();
-      console.log("[useAuth] Cached user:", cachedUser);
-      if (cachedUser) {
-        console.log("[useAuth] Using cached user info");
-        setUser(cachedUser);
-      } else {
-        console.log("[useAuth] No cached user, setting user to null");
-        setUser(null);
+      console.log("[useAuth] Native: validating session token with API...");
+      let apiUser: Awaited<ReturnType<typeof Api.getMe>> = null;
+      try {
+        apiUser = await Api.getMe();
+      } catch (err) {
+        if (Api.isNetworkError(err)) {
+          console.warn("[useAuth] Native: API unreachable, keeping cached session");
+          const cachedUser = await Auth.getUserInfo();
+          if (cachedUser) {
+            setUser(cachedUser);
+            return;
+          }
+        }
+        throw err;
       }
+
+      if (apiUser) {
+        const userInfo: Auth.User = {
+          id: apiUser.id,
+          openId: apiUser.openId,
+          name: apiUser.name,
+          email: apiUser.email,
+          loginMethod: apiUser.loginMethod,
+          lastSignedIn: new Date(apiUser.lastSignedIn),
+        };
+        setUser(userInfo);
+        await Auth.setUserInfo(userInfo);
+        console.log("[useAuth] Native user set from API:", userInfo);
+        return;
+      }
+
+      console.log("[useAuth] Native: API returned null, clearing auth state");
+      setUser(null);
+      await Auth.removeSessionToken();
+      await Auth.clearUserInfo();
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch user");
       console.error("[useAuth] fetchUser error:", error);
@@ -114,18 +139,20 @@ export function useAuth(options?: UseAuthOptions) {
         console.log("[useAuth] Web: fetching user from API...");
         fetchUser();
       } else {
-        // Native: check for cached user info first for faster initial load
-        Auth.getUserInfo().then((cachedUser) => {
-          console.log("[useAuth] Native cached user check:", cachedUser);
-          if (cachedUser) {
-            console.log("[useAuth] Native: setting cached user immediately");
-            setUser(cachedUser);
-            setLoading(false);
-          } else {
-            // No cached user, check session token
+        // Native: show cached user quickly, then validate in background.
+        Auth.getUserInfo()
+          .then((cachedUser) => {
+            console.log("[useAuth] Native cached user check:", cachedUser);
+            if (cachedUser) {
+              console.log("[useAuth] Native: setting cached user immediately");
+              setUser(cachedUser);
+              setLoading(false);
+            }
+          })
+          .finally(() => {
+            // Always validate token state to prevent stale "logged-in" UI.
             fetchUser();
-          }
-        });
+          });
       }
     } else {
       console.log("[useAuth] autoFetch disabled, setting loading to false");
@@ -144,11 +171,21 @@ export function useAuth(options?: UseAuthOptions) {
 
   useEffect(() => {
     if (Platform.OS === "web") return;
+    const openId = user?.openId ?? null;
+
+    // Keep anonymous RevenueCat state on logged-out screens.
+    // Calling logOut() while already anonymous triggers a native console error/LogBox.
+    if (!openId) return;
+
     (async () => {
-      if (user?.openId) {
-        await revenueCatLogIn(user.openId);
-      } else {
-        await revenueCatLogOut();
+      try {
+        await revenueCatLogIn(openId);
+      } catch (err) {
+        // RevenueCat auth sync should never block initial screen render.
+        console.warn(
+          "[useAuth] RevenueCat auth sync skipped:",
+          err instanceof Error ? err.message : String(err),
+        );
       }
     })();
   }, [user?.openId]);

@@ -1,4 +1,5 @@
 import * as Linking from "expo-linking";
+import Constants from "expo-constants";
 import * as ReactNative from "react-native";
 
 // Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
@@ -24,15 +25,24 @@ export const OWNER_OPEN_ID = env.ownerId;
 export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
 
+function readConfiguredApiBaseUrl(): string {
+  const fromExtra = Constants.expoConfig?.extra?.apiBaseUrl;
+  if (typeof fromExtra === "string" && fromExtra.trim().length > 0) {
+    return fromExtra.trim();
+  }
+  return env.apiBaseUrl;
+}
+
 /**
  * Get the API base URL, deriving from current hostname if not set.
  * Metro runs on 8081, API server runs on 3000.
  * URL pattern: https://PORT-sandboxid.region.domain
  */
 export function getApiBaseUrl(): string {
+  const configured = readConfiguredApiBaseUrl();
   // If API_BASE_URL is set, use it
-  if (API_BASE_URL) {
-    return API_BASE_URL.replace(/\/$/, "");
+  if (configured) {
+    return configured.replace(/\/$/, "");
   }
 
   // On web, derive from current hostname
@@ -50,7 +60,18 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // Fallback to empty (will use relative URL)
+  // Native dev fallback:
+  // - iOS Simulator can access the host machine on localhost
+  // - Android emulator uses 10.0.2.2 to reach the host machine
+  // For physical devices, set EXPO_PUBLIC_API_BASE_URL to your LAN URL.
+  if (ReactNative.Platform.OS === "ios") {
+    return "http://127.0.0.1:3000";
+  }
+
+  if (ReactNative.Platform.OS === "android") {
+    return "http://10.0.2.2:3000";
+  }
+
   return "";
 }
 

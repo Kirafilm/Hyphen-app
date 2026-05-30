@@ -1,9 +1,11 @@
-import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { AppScreen } from "@/components/app-screen";
+import { PageHeader } from "@/components/page-header";
 import { useAuth } from "@/hooks/use-auth";
 import * as Auth from "@/lib/_core/auth";
 import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -16,6 +18,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -24,6 +27,51 @@ export default function LoginScreen() {
     if (!password.trim()) return false;
     return true;
   }, [email, password]);
+
+  const persistNativeUserInfo = async (authUser: {
+    id: string;
+    email?: string | null;
+    user_metadata?: Record<string, unknown> | null;
+  } | null) => {
+    if (!authUser) return;
+
+    const metadata = authUser.user_metadata ?? {};
+    const rawName = metadata.name ?? metadata.full_name;
+    const name = typeof rawName === "string" ? rawName : null;
+
+    await Auth.setUserInfo({
+      id: authUser.id as unknown as number,
+      openId: authUser.id,
+      name,
+      email: authUser.email ?? null,
+      loginMethod: "email",
+      lastSignedIn: new Date(),
+    });
+  };
+
+  const handleForgotPassword = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError("請先輸入電郵地址");
+      setInfo(null);
+      return;
+    }
+
+    setResettingPassword(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const redirectTo = Linking.createURL("/login");
+      const result = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
+      if (result.error) throw result.error;
+      setInfo("重設密碼連結已寄到你的電郵，請查收並依照指示設定新密碼。");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "無法寄出重設密碼郵件";
+      setError(message);
+    } finally {
+      setResettingPassword(false);
+    }
+  };
 
   const submit = async () => {
     if (!canSubmit || submitting) return;
@@ -40,7 +88,12 @@ export default function LoginScreen() {
         const token = result.data.session?.access_token;
         if (!token) throw new Error("登入失敗：未取得 token");
         await Auth.setSessionToken(token);
-        await refresh();
+        await persistNativeUserInfo(result.data.user);
+        try {
+          await refresh();
+        } catch (refreshError) {
+          console.warn("[Login] refresh after sign-in failed:", refreshError);
+        }
         router.replace("/(tabs)");
         return;
       }
@@ -53,7 +106,12 @@ export default function LoginScreen() {
       const token = result.data.session?.access_token;
       if (token) {
         await Auth.setSessionToken(token);
-        await refresh();
+        await persistNativeUserInfo(result.data.user);
+        try {
+          await refresh();
+        } catch (refreshError) {
+          console.warn("[Login] refresh after sign-up failed:", refreshError);
+        }
         router.replace("/(tabs)");
         return;
       }
@@ -69,52 +127,42 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenContainer className="p-0">
+    <AppScreen>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1">
-          <View className="bg-primary px-6 py-6 gap-2">
-            <TouchableOpacity
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="返回"
-              onPress={() => router.back()}
-              className="w-8 h-8"
-            >
-              <Ionicons name="chevron-back" size={28} color="white" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-background mt-2">登入 / 註冊</Text>
-            <Text className="text-sm text-background opacity-90">
-              先使用電郵登入；之後可再加入 Google / Apple。
-            </Text>
-          </View>
+        <View style={{ flex: 1 }}>
+          <PageHeader
+            title="登入 / 註冊"
+            subtitle="先使用電郵登入；之後可再加入 Google / Apple。"
+            showBack
+          />
 
-          <View className="px-6 py-8 gap-4">
-            <View className="bg-surface rounded-lg p-6 border border-border">
-              <View className="items-center gap-3">
-                <View className="w-16 h-16 bg-primary rounded-full items-center justify-center">
+          <View style={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }}>
+            <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border }}>
+              <View style={{ alignItems: "center", gap: 12 }}>
+                <View style={{ width: 64, height: 64, backgroundColor: colors.primary, borderRadius: 32, alignItems: "center", justifyContent: "center" }}>
                   <Ionicons name="log-in" size={32} color="white" />
                 </View>
-                <Text className="text-lg font-bold text-foreground text-center">開始使用</Text>
-                <Text className="text-sm text-muted text-center leading-relaxed">
+                <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, textAlign: "center" }}>開始使用</Text>
+                <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 22 }}>
                   登入後可免費發佈工作；如需查看發佈者電話與電郵，需訂閱月費或年費。
                 </Text>
               </View>
             </View>
 
-            <View className="bg-surface rounded-lg p-6 border border-border gap-4">
-              <View className="flex-row gap-2">
+            <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
                   accessible
                   accessibilityRole="button"
                   accessibilityLabel="切換到登入"
                   onPress={() => setMode("login")}
-                  className={
+                  style={
                     mode === "login"
-                      ? "flex-1 bg-primary rounded-lg py-3 items-center justify-center"
-                      : "flex-1 bg-surface rounded-lg py-3 items-center justify-center border border-border"
+                      ? { flex: 1, backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "center" }
+                      : { flex: 1, backgroundColor: colors.surface, borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }
                   }
                 >
-                  <Text className={mode === "login" ? "text-white font-semibold" : "text-foreground font-semibold"}>
+                  <Text style={mode === "login" ? { color: "white", fontWeight: "600" } : { color: colors.foreground, fontWeight: "600" }}>
                     登入
                   </Text>
                 </TouchableOpacity>
@@ -123,20 +171,20 @@ export default function LoginScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="切換到註冊"
                   onPress={() => setMode("signup")}
-                  className={
+                  style={
                     mode === "signup"
-                      ? "flex-1 bg-primary rounded-lg py-3 items-center justify-center"
-                      : "flex-1 bg-surface rounded-lg py-3 items-center justify-center border border-border"
+                      ? { flex: 1, backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "center" }
+                      : { flex: 1, backgroundColor: colors.surface, borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }
                   }
                 >
-                  <Text className={mode === "signup" ? "text-white font-semibold" : "text-foreground font-semibold"}>
+                  <Text style={mode === "signup" ? { color: "white", fontWeight: "600" } : { color: colors.foreground, fontWeight: "600" }}>
                     註冊
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View>
-                <Text className="text-foreground font-semibold mb-2">電郵</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>電郵</Text>
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
@@ -144,49 +192,75 @@ export default function LoginScreen() {
                   placeholderTextColor={colors.muted}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  className="bg-background rounded-lg px-4 py-3 text-foreground border border-border"
+                  style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
                 />
               </View>
 
               <View>
-                <Text className="text-foreground font-semibold mb-2">密碼</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>密碼</Text>
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
                   placeholder="最少 6 個字元"
                   placeholderTextColor={colors.muted}
                   secureTextEntry
-                  className="bg-background rounded-lg px-4 py-3 text-foreground border border-border"
+                  style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
                 />
               </View>
 
-              {error && <Text className="text-error text-sm">{error}</Text>}
-              {info && <Text className="text-muted text-sm">{info}</Text>}
+              {error && <Text style={{ color: colors.error, fontSize: 14 }}>{error}</Text>}
+              {info && <Text style={{ color: colors.muted, fontSize: 14 }}>{info}</Text>}
 
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel={mode === "login" ? "登入" : "建立帳號"}
                 onPress={submit}
-                disabled={!canSubmit || submitting}
-                className="bg-primary rounded-lg py-4 items-center justify-center active:opacity-80"
+                disabled={!canSubmit || submitting || resettingPassword}
+                style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: (!canSubmit || submitting || resettingPassword) ? 0.8 : 1 }}
               >
                 {submitting ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text className="text-white font-semibold text-base">
+                  <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
                     {mode === "login" ? "登入" : "建立帳號"}
                   </Text>
                 )}
               </TouchableOpacity>
+
+              {mode === "login" && (
+                <TouchableOpacity
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="忘記密碼"
+                  onPress={handleForgotPassword}
+                  disabled={submitting || resettingPassword}
+                  style={{
+                    borderRadius: 8,
+                    paddingVertical: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    opacity: submitting || resettingPassword ? 0.8 : 1,
+                  }}
+                >
+                  {resettingPassword ? (
+                    <ActivityIndicator color={colors.primary} />
+                  ) : (
+                    <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 15 }}>忘記密碼</Text>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
 
-            <View className="bg-primary bg-opacity-10 rounded-lg p-4 border border-primary border-opacity-20">
-              <View className="flex-row gap-3">
+            <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
+              <View style={{ flexDirection: "row", gap: 12 }}>
                 <Ionicons name="information-circle" size={20} color={colors.primary} />
-                <View className="flex-1">
-                  <Text className="text-foreground font-semibold text-sm">提示</Text>
-                  <Text className="text-muted text-xs mt-1 leading-relaxed">
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>提示</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
                     需要先建立 Supabase 專案，並在環境變數填入 EXPO_PUBLIC_SUPABASE_URL 與 EXPO_PUBLIC_SUPABASE_ANON_KEY。
                   </Text>
                 </View>
@@ -195,6 +269,6 @@ export default function LoginScreen() {
           </View>
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }

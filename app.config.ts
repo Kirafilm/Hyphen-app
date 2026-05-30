@@ -26,13 +26,16 @@ const bundleId =
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
+// VPS / staging often uses http://IP:3000 until HTTPS is configured
+const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? "";
+const allowsInsecureApi = apiBaseUrl.startsWith("http://");
+
 const env = {
   // App branding - update these values directly (do not use env vars)
   appName: "Hyphen自由職",
   appSlug: "freehunter-app",
-  // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
-  // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663587208681/ZYsAf6RoFPqFfvu2nSkfnA/icon-5fuvALH5Wr4eUUdESkwWBk.webp",
+  // Leave empty to use ./assets/images/icon.png
+  logoUrl: "",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,
@@ -50,13 +53,20 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
-    "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      ...(allowsInsecureApi
+        ? {
+            NSAppTransportSecurity: {
+              NSAllowsArbitraryLoads: true,
+            },
+          }
+        : {}),
+    },
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: "#00B5B5",
+      backgroundColor: "#FFFFFF",
       foregroundImage: "./assets/images/android-icon-foreground.png",
       backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
@@ -87,6 +97,21 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     [
+      "expo-dev-client",
+      {
+        ios: {
+          launchMode: "launcher",
+        },
+      },
+    ],
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/icon.png",
+        color: "#FFFFFF",
+      },
+    ],
+    [
       "expo-audio",
       {
         microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
@@ -105,18 +130,28 @@ const config: ExpoConfig = {
         image: "./assets/images/splash-icon.png",
         imageWidth: 200,
         resizeMode: "contain",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#FFFFFF",
         dark: {
-          backgroundColor: "#000000",
+          backgroundColor: "#FFFFFF",
         },
       },
     ],
     [
       "expo-build-properties",
       {
+        ios: allowsInsecureApi
+          ? {
+              infoPlist: {
+                NSAppTransportSecurity: {
+                  NSAllowsArbitraryLoads: true,
+                },
+              },
+            }
+          : {},
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
+          usesCleartextTraffic: allowsInsecureApi,
         },
       },
     ],
@@ -124,6 +159,12 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
+  },
+  extra: {
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
+    eas: {
+      projectId: "1df52b3d-10ce-4f91-86fb-552cd7a910e9",
+    },
   },
 };
 

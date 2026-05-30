@@ -1,10 +1,12 @@
-import { ScrollView, Text, View, TouchableOpacity, FlatList, TextInput } from "react-native";
+import { RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ScreenContainer } from "@/components/screen-container";
 import { Ionicons } from "@expo/vector-icons";
-import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
+
+import { AppScreen } from "@/components/app-screen";
+import { PageHeader } from "@/components/page-header";
+import { useColors } from "@/hooks/use-colors";
+import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories } from "@/lib/mock-data";
 
 export default function JobsScreen() {
@@ -13,7 +15,7 @@ export default function JobsScreen() {
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
 
-  const jobsQuery = trpc.jobs.list.useQuery();
+  const jobsQuery = useJobsList();
   const jobs = jobsQuery.data ?? [];
   const normalizedQuery = searchText.trim().toLowerCase();
   const filteredJobs = jobs.filter((job) => {
@@ -50,19 +52,29 @@ export default function JobsScreen() {
   };
 
   return (
-    <ScreenContainer className="p-0">
-      {/* Header */}
-      <View className="bg-primary px-6 py-6 gap-4">
-        <Text className="text-2xl font-bold text-background">職位</Text>
-        {/* Search Bar */}
-        <View className="flex-row items-center bg-background rounded-lg px-4 py-3 gap-2">
+    <AppScreen>
+      <PageHeader title="職位" />
+      <View style={{ paddingHorizontal: 24, paddingBottom: 12, gap: 12 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            backgroundColor: colors.surface,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: colors.border,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+          }}
+        >
           <Ionicons name="search" size={20} color={colors.muted} />
           <TextInput
             placeholder="搜尋職位..."
             placeholderTextColor={colors.muted}
             value={searchText}
             onChangeText={setSearchText}
-            className="flex-1 text-foreground"
+            style={{ flex: 1, color: colors.foreground, fontSize: 14 }}
           />
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -72,74 +84,96 @@ export default function JobsScreen() {
               <TouchableOpacity
                 key={cat}
                 onPress={() => setSelectedCategory(cat)}
-                className={
-                  active
-                    ? "bg-background border border-background rounded-full px-3 py-2"
-                    : "bg-transparent border border-background/40 rounded-full px-3 py-2"
-                }
+                activeOpacity={0.85}
+                style={{
+                  borderRadius: 999,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  backgroundColor: active ? colors.primary : colors.surface,
+                  borderWidth: 1,
+                  borderColor: active ? colors.primary : colors.border,
+                }}
               >
-                <Text className={active ? "text-primary font-semibold text-xs" : "text-background text-xs"}>
-                  {cat}
-                </Text>
+                <Text style={{ color: active ? "#ffffff" : colors.foreground, fontSize: 12, fontWeight: "700" }}>{cat}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
       </View>
 
-      {/* Jobs List */}
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="px-6 py-4">
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 4, paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
+      >
           {filteredJobs.length === 0 ? (
-            <View className="items-center justify-center py-12">
+            <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 48 }}>
               <Ionicons name="search" size={48} color={colors.muted} />
-              <Text className="text-foreground font-semibold mt-4">找不到相關職位</Text>
-              <Text className="text-muted text-sm mt-2">試試其他搜尋條件</Text>
+              <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700", marginTop: 16 }}>找不到相關職位</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>試試其他搜尋條件</Text>
             </View>
           ) : (
-            <FlatList
-              data={filteredJobs}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
+            <View style={{ gap: 12 }}>
+              {filteredJobs.map((item) => (
                 <TouchableOpacity
+                  key={item.id}
                   onPress={() => router.push(`/job/${item.id}`)}
-                  className="bg-surface rounded-lg p-4 mb-3 border border-border active:opacity-80"
+                  activeOpacity={0.85}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    padding: 16,
+                  }}
                 >
-                  <View className="flex-row items-start justify-between gap-2">
-                    <View className="flex-1">
-                      <Text className="text-foreground font-semibold text-sm leading-tight" numberOfLines={2}>
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700", lineHeight: 20 }} numberOfLines={2}>
                         {item.title}
                       </Text>
-                      <View className="flex-row items-center gap-2 mt-2 flex-wrap">
-                        <Text className="text-primary font-bold text-xs">
-                          {formatBudget(item.budget)}
-                        </Text>
-                        <Text className="text-muted text-xs">•</Text>
-                        <Text className="text-muted text-xs">{item.category}</Text>
-                        <Text className="text-muted text-xs">•</Text>
-                        <Text className="text-muted text-xs">{item.location}</Text>
-                        <Text className="text-muted text-xs">•</Text>
-                        <Text className="text-muted text-xs">{formatSchedule(item)}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginTop: 8, gap: 6 }}>
+                        <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>{formatBudget(item.budget)}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>{item.category}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>{item.location}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>{formatSchedule(item)}</Text>
                       </View>
-                      <View className="flex-row items-center gap-2 mt-2">
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                         {item.skills.slice(0, 2).map((skill, index) => (
-                          <View key={index} className="bg-primary bg-opacity-10 rounded px-2 py-1">
-                            <Text className="text-primary text-xs font-medium">{skill}</Text>
+                          <View
+                            key={index}
+                            style={{
+                              backgroundColor: "rgba(124, 103, 255, 0.10)",
+                              borderRadius: 999,
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                            }}
+                          >
+                            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "700" }}>{skill}</Text>
                           </View>
                         ))}
                       </View>
                     </View>
-                    <View className="bg-primary rounded-full p-1">
-                      <Ionicons name="briefcase" size={12} color="white" />
+                    <View
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 999,
+                        backgroundColor: colors.primary,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons name="briefcase" size={12} color="#ffffff" />
                     </View>
                   </View>
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </View>
           )}
-        </View>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }

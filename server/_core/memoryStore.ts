@@ -85,11 +85,14 @@ export function setSubscriptionStatus(userId: number, status: SubscriptionStatus
   subscriptions.set(userId, status);
 }
 
-export function listJobs(viewer: User | null): JobRecord[] {
-  const includeRemoved = Boolean(viewer?.role === "admin");
+export function listJobs(_viewer: User | null): JobRecord[] {
   return jobs
-    .filter((job) => (includeRemoved ? true : !job.removedAt))
+    .filter((job) => !job.removedAt)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export function listAllJobsForModeration(): JobRecord[] {
+  return [...jobs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export function getJobById(id: string): JobRecord | null {
@@ -112,6 +115,13 @@ export function removeJob(id: string) {
   if (!job) return null;
   job.removedAt = new Date();
   return job;
+}
+
+export function deleteJob(id: string) {
+  const index = jobs.findIndex((job) => job.id === id);
+  if (index === -1) return false;
+  jobs.splice(index, 1);
+  return true;
 }
 
 export function canViewJobContact(job: JobRecord, viewer: User | null): boolean {

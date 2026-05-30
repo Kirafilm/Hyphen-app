@@ -3,10 +3,12 @@ import { Appearance, View, useColorScheme as useSystemColorScheme } from "react-
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { SchemeColors, type ColorScheme } from "@/constants/theme";
+import { getStoredThemePreference, setStoredThemePreference } from "@/lib/theme-preference";
 
 type ThemeContextValue = {
   colorScheme: ColorScheme;
   setColorScheme: (scheme: ColorScheme) => void;
+  themeReady: boolean;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -14,6 +16,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useSystemColorScheme() ?? "light";
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>(systemScheme);
+  const [themeReady, setThemeReady] = useState(false);
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
     nativewindColorScheme.set(scheme);
@@ -29,14 +32,37 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setColorScheme = useCallback((scheme: ColorScheme) => {
-    setColorSchemeState(scheme);
-    applyScheme(scheme);
+  const setColorScheme = useCallback(
+    (scheme: ColorScheme) => {
+      setColorSchemeState(scheme);
+      applyScheme(scheme);
+      void setStoredThemePreference(scheme);
+    },
+    [applyScheme],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const stored = await getStoredThemePreference();
+      if (cancelled) return;
+      if (stored) {
+        setColorSchemeState(stored);
+        applyScheme(stored);
+      }
+      setThemeReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [applyScheme]);
 
   useEffect(() => {
+    if (!themeReady) return;
     applyScheme(colorScheme);
-  }, [applyScheme, colorScheme]);
+  }, [applyScheme, colorScheme, themeReady]);
 
   const themeVariables = useMemo(
     () =>
@@ -58,8 +84,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     () => ({
       colorScheme,
       setColorScheme,
+      themeReady,
     }),
-    [colorScheme, setColorScheme],
+    [colorScheme, setColorScheme, themeReady],
   );
 
   return (

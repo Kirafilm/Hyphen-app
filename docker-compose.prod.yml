@@ -1,0 +1,63 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-hyphen_app}
+      MYSQL_USER: ${MYSQL_USER:-hyphen}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - hyphen_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - hyphen
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://${MYSQL_USER:-hyphen}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-hyphen_app}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - hyphen
+
+  # One-time DB setup: docker compose -f docker-compose.prod.yml --profile migrate run --rm migrate
+  migrate:
+    profiles: ["migrate"]
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    env_file: .env
+    environment:
+      # .env often sets NODE_ENV=production; devDeps (drizzle-kit, cross-env) are required to migrate
+      NODE_ENV: development
+      DATABASE_URL: mysql://${MYSQL_USER:-hyphen}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-hyphen_app}
+    command: >-
+      sh -c "corepack enable && corepack prepare pnpm@9.12.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      NODE_OPTIONS=--require=dotenv/config pnpm exec drizzle-kit migrate"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - hyphen
+
+volumes:
+  hyphen_mysql_data:
+
+networks:
+  hyphen:
+    driver: bridge

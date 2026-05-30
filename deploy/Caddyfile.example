@@ -1,0 +1,7 @@
+# Rename domain, then: docker run -d --name caddy --network hyphen-app_hyphen \
+#   -p 80:80 -p 443:443 -v $PWD/deploy/Caddyfile:/etc/caddy/Caddyfile \
+#   -v caddy_data:/data caddy:2-alpine
+
+api.your-domain.com {
+  reverse_proxy api:3000
+}

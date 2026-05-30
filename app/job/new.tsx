@@ -9,9 +9,10 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScreenContainer } from "@/components/screen-container";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
+import { AppScreen } from "@/components/app-screen";
+import { PageHeader } from "@/components/page-header";
 import { categories } from "@/lib/mock-data";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
@@ -242,58 +243,62 @@ export default function PostJobScreen() {
   const calendarCells = getCalendarCells(calendarMonth);
 
   return (
-    <ScreenContainer className="p-0">
+    <AppScreen>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1">
-          {/* Header */}
-          <View className="bg-primary px-6 py-6 gap-2">
-            <TouchableOpacity
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="返回"
-              onPress={() => router.back()}
-              className="w-8 h-8"
-            >
-              <Ionicons name="chevron-back" size={28} color="white" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-background mt-2">發佈新工作</Text>
-            <Text className="text-sm text-background opacity-90">
-              填寫工作詳情，吸引合適的 Freelancer
-            </Text>
-          </View>
+        <View style={{ flex: 1 }}>
+          <PageHeader
+            title="發佈新工作"
+            subtitle="填寫工作詳情，吸引合適的 Freelancer"
+            showBack
+          />
 
-          {/* Form */}
-          <View className="px-6 py-6 gap-5">
+          <View style={{ paddingHorizontal: 24, paddingBottom: 24, gap: 20 }}>
             {/* Title */}
             <View>
-              <Text className="text-foreground font-semibold mb-2">
-                工作標題 <Text className="text-error">*</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
+                工作標題 <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TextInput
                 value={formData.title}
                 onChangeText={(text) => updateField("title", text)}
                 placeholder="例如：網站設計、活動攝影..."
                 placeholderTextColor={colors.muted}
-                className="bg-surface rounded-lg px-4 py-3 text-foreground border border-border"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  color: colors.foreground,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
               />
-              {errors.title && (
-                <Text className="text-error text-xs mt-1">{errors.title}</Text>
-              )}
+              {errors.title && <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.title}</Text>}
             </View>
 
             {/* Category */}
             <View>
-              <Text className="text-foreground font-semibold mb-2">
-                行業類別 <Text className="text-error">*</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
+                行業類別 <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel="選擇行業類別"
                 onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-                className="bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
-                <Text className={formData.category ? "text-foreground" : "text-muted"}>
+                <Text style={{ color: formData.category ? colors.foreground : colors.muted }}>
                   {formData.category || "選擇行業類別"}
                 </Text>
                 <Ionicons
@@ -303,9 +308,18 @@ export default function PostJobScreen() {
                 />
               </TouchableOpacity>
               {showCategoryPicker && (
-                <View className="bg-surface rounded-lg mt-2 border border-border max-h-48">
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    maxHeight: 192,
+                  }}
+                >
                   <ScrollView nestedScrollEnabled>
-                    {categories.map((cat) => (
+                    {categories.map((cat, index) => (
                       <TouchableOpacity
                         key={cat}
                         accessible
@@ -315,9 +329,19 @@ export default function PostJobScreen() {
                           updateField("category", cat);
                           setShowCategoryPicker(false);
                         }}
-                        className="px-4 py-3 border-b border-border last:border-b-0"
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 12,
+                          borderBottomWidth: index === categories.length - 1 ? 0 : 1,
+                          borderBottomColor: colors.border,
+                        }}
                       >
-                        <Text className={formData.category === cat ? "text-primary font-semibold" : "text-foreground"}>
+                        <Text
+                          style={{
+                            color: formData.category === cat ? colors.primary : colors.foreground,
+                            fontWeight: formData.category === cat ? "600" : "400",
+                          }}
+                        >
                           {cat}
                         </Text>
                       </TouchableOpacity>
@@ -325,21 +349,19 @@ export default function PostJobScreen() {
                   </ScrollView>
                 </View>
               )}
-              {errors.category && (
-                <Text className="text-error text-xs mt-1">{errors.category}</Text>
-              )}
+              {errors.category && <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.category}</Text>}
             </View>
 
-            <View className="gap-3">
-              <Text className="text-foreground font-semibold">
-                工作日期及時間 <Text className="text-error">*</Text>
+            <View style={{ gap: 12 }}>
+              <Text style={{ color: colors.foreground, fontWeight: "600" }}>
+                工作日期及時間 <Text style={{ color: colors.error }}>*</Text>
               </Text>
 
-              <View className="gap-3">
-                <View className="gap-2">
-                  <Text className="text-muted text-xs">日期</Text>
-                  <View className="flex-row gap-2">
-                    <View className="flex-1">
+              <View style={{ gap: 12 }}>
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12 }}>日期</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1 }}>
                       {Platform.OS === "web" ? (
                         <>
                           <TouchableOpacity
@@ -348,20 +370,36 @@ export default function PostJobScreen() {
                             accessibilityLabel="選擇日期"
                             disabled={formData.workDateTbd}
                             onPress={() => (formData.workDateTbd ? null : setShowDatePicker((v) => !v))}
-                            className={
-                              formData.workDateTbd
-                                ? "bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between opacity-60"
-                                : "bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between"
-                            }
+                            style={{
+                              backgroundColor: colors.surface,
+                              borderRadius: 8,
+                              paddingHorizontal: 16,
+                              paddingVertical: 12,
+                              borderWidth: 1,
+                              borderColor: colors.border,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              opacity: formData.workDateTbd ? 0.6 : 1,
+                            }}
                           >
-                            <Text className={formData.workDate ? "text-foreground" : "text-muted"}>
+                            <Text style={{ color: formData.workDate ? colors.foreground : colors.muted }}>
                               {formData.workDateTbd ? "日期未定" : formData.workDate || "選擇日期"}
                             </Text>
                             <Ionicons name={showDatePicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
                           </TouchableOpacity>
                           {!formData.workDateTbd && showDatePicker && (
-                            <View className="bg-surface rounded-lg border border-border p-3 mt-2">
-                              <View className="flex-row items-center justify-between mb-3">
+                            <View
+                              style={{
+                                backgroundColor: colors.surface,
+                                borderRadius: 8,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                padding: 12,
+                                marginTop: 8,
+                              }}
+                            >
+                              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                                 <TouchableOpacity
                                   accessible
                                   accessibilityRole="button"
@@ -369,11 +407,11 @@ export default function PostJobScreen() {
                                   onPress={() =>
                                     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
                                   }
-                                  className="w-10 h-10 items-center justify-center"
+                                  style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
                                 >
                                   <Ionicons name="chevron-back" size={18} color={colors.muted} />
                                 </TouchableOpacity>
-                                <Text className="text-foreground font-semibold">{calendarLabel}</Text>
+                                <Text style={{ color: colors.foreground, fontWeight: "600" }}>{calendarLabel}</Text>
                                 <TouchableOpacity
                                   accessible
                                   accessibilityRole="button"
@@ -381,22 +419,22 @@ export default function PostJobScreen() {
                                   onPress={() =>
                                     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
                                   }
-                                  className="w-10 h-10 items-center justify-center"
+                                  style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
                                 >
                                   <Ionicons name="chevron-forward" size={18} color={colors.muted} />
                                 </TouchableOpacity>
                               </View>
-                              <View className="flex-row flex-wrap">
+                              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                                 {["日", "一", "二", "三", "四", "五", "六"].map((d) => (
-                                  <View key={d} className="w-[14.2857%] py-2 items-center">
-                                    <Text className="text-muted text-xs">{d}</Text>
+                                  <View key={d} style={{ width: "14.2857%", paddingVertical: 8, alignItems: "center" }}>
+                                    <Text style={{ color: colors.muted, fontSize: 12 }}>{d}</Text>
                                   </View>
                                 ))}
                                 {calendarCells.map((cell) => {
                                   const ymd = cell.date ? toYmd(cell.date) : "";
                                   const selected = ymd && ymd === formData.workDate;
                                   return (
-                                    <View key={cell.key} className="w-[14.2857%] py-1 items-center">
+                                    <View key={cell.key} style={{ width: "14.2857%", paddingVertical: 4, alignItems: "center" }}>
                                       {cell.date ? (
                                         <TouchableOpacity
                                           accessible
@@ -406,18 +444,26 @@ export default function PostJobScreen() {
                                             updateField("workDate", ymd);
                                             setShowDatePicker(false);
                                           }}
-                                          className={
-                                            selected
-                                              ? "w-9 h-9 rounded-full bg-primary items-center justify-center"
-                                              : "w-9 h-9 rounded-full items-center justify-center"
-                                          }
+                                          style={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 18,
+                                            backgroundColor: selected ? colors.primary : "transparent",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                          }}
                                         >
-                                          <Text className={selected ? "text-white font-semibold" : "text-foreground"}>
+                                          <Text
+                                            style={{
+                                              color: selected ? "white" : colors.foreground,
+                                              fontWeight: selected ? "600" : "400",
+                                            }}
+                                          >
                                             {cell.label}
                                           </Text>
                                         </TouchableOpacity>
                                       ) : (
-                                        <View className="w-9 h-9" />
+                                        <View style={{ width: 36, height: 36 }} />
                                       )}
                                     </View>
                                   );
@@ -433,11 +479,16 @@ export default function PostJobScreen() {
                           onChangeText={(text) => updateField("workDate", text)}
                           placeholder="例如：2026-05-30"
                           placeholderTextColor={colors.muted}
-                          className={
-                            formData.workDateTbd
-                              ? "bg-surface rounded-lg px-4 py-3 text-foreground border border-border opacity-60"
-                              : "bg-surface rounded-lg px-4 py-3 text-foreground border border-border"
-                          }
+                          style={{
+                            backgroundColor: colors.surface,
+                            borderRadius: 8,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            color: colors.foreground,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            opacity: formData.workDateTbd ? 0.6 : 1,
+                          }}
                         />
                       )}
                     </View>
@@ -454,24 +505,37 @@ export default function PostJobScreen() {
                           setErrors((prev) => ({ ...prev, workDate: "" }));
                         }
                       }}
-                      className={
-                        formData.workDateTbd
-                          ? "bg-primary rounded-lg px-3 py-3 items-center justify-center"
-                          : "bg-surface rounded-lg px-3 py-3 items-center justify-center border border-border"
-                      }
+                      style={{
+                        backgroundColor: formData.workDateTbd ? colors.primary : colors.surface,
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        paddingVertical: 12,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: formData.workDateTbd ? 0 : 1,
+                        borderColor: colors.border,
+                      }}
                     >
-                      <Text className={formData.workDateTbd ? "text-white font-semibold text-sm" : "text-foreground font-semibold text-sm"}>
+                      <Text
+                        style={{
+                          color: formData.workDateTbd ? "white" : colors.foreground,
+                          fontWeight: "600",
+                          fontSize: 14,
+                        }}
+                      >
                         日期未定
                       </Text>
                     </TouchableOpacity>
                   </View>
-                  {!formData.workDateTbd && errors.workDate && <Text className="text-error text-xs">{errors.workDate}</Text>}
+                  {!formData.workDateTbd && errors.workDate && (
+                    <Text style={{ color: colors.error, fontSize: 12 }}>{errors.workDate}</Text>
+                  )}
                 </View>
 
-                <View className="gap-2">
-                  <Text className="text-muted text-xs">時間（24小時制）</Text>
-                  <View className="flex-row gap-3">
-                    <View className="flex-1">
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12 }}>時間（24小時制）</Text>
+                  <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+                    <View style={{ flex: 1 }}>
                       <TouchableOpacity
                         accessible
                         accessibilityRole="button"
@@ -482,21 +546,37 @@ export default function PostJobScreen() {
                           setShowStartTimePicker((v) => !v);
                           setShowEndTimePicker(false);
                         }}
-                        className={
-                          formData.workTimeTbd
-                            ? "bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between opacity-60"
-                            : "bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between"
-                        }
+                        style={{
+                          backgroundColor: colors.surface,
+                          borderRadius: 8,
+                          paddingHorizontal: 16,
+                          paddingVertical: 12,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          opacity: formData.workTimeTbd ? 0.6 : 1,
+                        }}
                       >
-                        <Text className={formData.workStartTime ? "text-foreground" : "text-muted"}>
+                        <Text style={{ color: formData.workStartTime ? colors.foreground : colors.muted }}>
                           {formData.workTimeTbd ? "時間未定" : formData.workStartTime || "開始時間"}
                         </Text>
                         <Ionicons name={showStartTimePicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
                       </TouchableOpacity>
                       {!formData.workTimeTbd && showStartTimePicker && (
-                        <View className="bg-surface rounded-lg mt-2 border border-border max-h-48">
+                        <View
+                          style={{
+                            backgroundColor: colors.surface,
+                            borderRadius: 8,
+                            marginTop: 8,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            maxHeight: 192,
+                          }}
+                        >
                           <ScrollView nestedScrollEnabled>
-                            {timeOptions.map((t) => (
+                            {timeOptions.map((t, index) => (
                               <TouchableOpacity
                                 key={t}
                                 accessible
@@ -506,9 +586,19 @@ export default function PostJobScreen() {
                                   updateField("workStartTime", t);
                                   setShowStartTimePicker(false);
                                 }}
-                                className="px-4 py-3 border-b border-border last:border-b-0"
+                                style={{
+                                  paddingHorizontal: 16,
+                                  paddingVertical: 12,
+                                  borderBottomWidth: index === timeOptions.length - 1 ? 0 : 1,
+                                  borderBottomColor: colors.border,
+                                }}
                               >
-                                <Text className={formData.workStartTime === t ? "text-primary font-semibold" : "text-foreground"}>
+                                <Text
+                                  style={{
+                                    color: formData.workStartTime === t ? colors.primary : colors.foreground,
+                                    fontWeight: formData.workStartTime === t ? "600" : "400",
+                                  }}
+                                >
                                   {t}
                                 </Text>
                               </TouchableOpacity>
@@ -517,63 +607,53 @@ export default function PostJobScreen() {
                         </View>
                       )}
                       {!formData.workTimeTbd && errors.workStartTime && (
-                        <Text className="text-error text-xs mt-1">{errors.workStartTime}</Text>
+                        <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.workStartTime}</Text>
                       )}
                     </View>
 
-                    <View className="flex-1">
-                      <View className="flex-row gap-2">
-                        <TouchableOpacity
-                          accessible
-                          accessibilityRole="button"
-                          accessibilityLabel="選擇結束時間"
-                          disabled={formData.workTimeTbd}
-                          onPress={() => {
-                            if (formData.workTimeTbd) return;
-                            setShowEndTimePicker((v) => !v);
-                            setShowStartTimePicker(false);
-                          }}
-                          className={
-                            formData.workTimeTbd
-                              ? "flex-1 bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between opacity-60"
-                              : "flex-1 bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between"
-                          }
-                        >
-                          <Text className={formData.workEndTime ? "text-foreground" : "text-muted"}>
-                            {formData.workTimeTbd ? "時間未定" : formData.workEndTime || "結束時間"}
-                          </Text>
-                          <Ionicons name={showEndTimePicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          accessible
-                          accessibilityRole="button"
-                          accessibilityLabel="時間未定"
-                          onPress={() => {
-                            const next = !formData.workTimeTbd;
-                            updateField("workTimeTbd", next);
-                            if (next) {
-                              updateField("workStartTime", "");
-                              updateField("workEndTime", "");
-                              setShowStartTimePicker(false);
-                              setShowEndTimePicker(false);
-                              setErrors((prev) => ({ ...prev, workStartTime: "", workEndTime: "" }));
-                            }
-                          }}
-                          className={
-                            formData.workTimeTbd
-                              ? "bg-primary rounded-lg px-3 py-3 items-center justify-center"
-                              : "bg-surface rounded-lg px-3 py-3 items-center justify-center border border-border"
-                          }
-                        >
-                          <Text className={formData.workTimeTbd ? "text-white font-semibold text-sm" : "text-foreground font-semibold text-sm"}>
-                            時間未定
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
+                    <View style={{ flex: 1 }}>
+                      <TouchableOpacity
+                        accessible
+                        accessibilityRole="button"
+                        accessibilityLabel="選擇結束時間"
+                        disabled={formData.workTimeTbd}
+                        onPress={() => {
+                          if (formData.workTimeTbd) return;
+                          setShowEndTimePicker((v) => !v);
+                          setShowStartTimePicker(false);
+                        }}
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.surface,
+                          borderRadius: 8,
+                          paddingHorizontal: 16,
+                          paddingVertical: 12,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          opacity: formData.workTimeTbd ? 0.6 : 1,
+                        }}
+                      >
+                        <Text style={{ color: formData.workEndTime ? colors.foreground : colors.muted }}>
+                          {formData.workTimeTbd ? "時間未定" : formData.workEndTime || "結束時間"}
+                        </Text>
+                        <Ionicons name={showEndTimePicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+                      </TouchableOpacity>
                       {!formData.workTimeTbd && showEndTimePicker && (
-                        <View className="bg-surface rounded-lg mt-2 border border-border max-h-48">
+                        <View
+                          style={{
+                            backgroundColor: colors.surface,
+                            borderRadius: 8,
+                            marginTop: 8,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            maxHeight: 192,
+                          }}
+                        >
                           <ScrollView nestedScrollEnabled>
-                            {timeOptions.map((t) => (
+                            {timeOptions.map((t, index) => (
                               <TouchableOpacity
                                 key={t}
                                 accessible
@@ -583,9 +663,19 @@ export default function PostJobScreen() {
                                   updateField("workEndTime", t);
                                   setShowEndTimePicker(false);
                                 }}
-                                className="px-4 py-3 border-b border-border last:border-b-0"
+                                style={{
+                                  paddingHorizontal: 16,
+                                  paddingVertical: 12,
+                                  borderBottomWidth: index === timeOptions.length - 1 ? 0 : 1,
+                                  borderBottomColor: colors.border,
+                                }}
                               >
-                                <Text className={formData.workEndTime === t ? "text-primary font-semibold" : "text-foreground"}>
+                                <Text
+                                  style={{
+                                    color: formData.workEndTime === t ? colors.primary : colors.foreground,
+                                    fontWeight: formData.workEndTime === t ? "600" : "400",
+                                  }}
+                                >
                                   {t}
                                 </Text>
                               </TouchableOpacity>
@@ -594,8 +684,48 @@ export default function PostJobScreen() {
                         </View>
                       )}
                       {!formData.workTimeTbd && errors.workEndTime && (
-                        <Text className="text-error text-xs mt-1">{errors.workEndTime}</Text>
+                        <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.workEndTime}</Text>
                       )}
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <TouchableOpacity
+                        accessible
+                        accessibilityRole="button"
+                        accessibilityLabel="時間未定"
+                        onPress={() => {
+                          const next = !formData.workTimeTbd;
+                          updateField("workTimeTbd", next);
+                          if (next) {
+                            updateField("workStartTime", "");
+                            updateField("workEndTime", "");
+                            setShowStartTimePicker(false);
+                            setShowEndTimePicker(false);
+                            setErrors((prev) => ({ ...prev, workStartTime: "", workEndTime: "" }));
+                          }
+                        }}
+                        style={{
+                          backgroundColor: formData.workTimeTbd ? colors.primary : colors.surface,
+                          borderRadius: 8,
+                          paddingHorizontal: 12,
+                          paddingVertical: 12,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderWidth: formData.workTimeTbd ? 0 : 1,
+                          borderColor: colors.border,
+                          minHeight: 48,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: formData.workTimeTbd ? "white" : colors.foreground,
+                            fontWeight: "600",
+                            fontSize: 14,
+                          }}
+                        >
+                          時間未定
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
@@ -604,8 +734,8 @@ export default function PostJobScreen() {
 
             {/* Description */}
             <View>
-              <Text className="text-foreground font-semibold mb-2">
-                工作描述 <Text className="text-error">*</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
+                工作描述 <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TextInput
                 value={formData.description}
@@ -615,26 +745,43 @@ export default function PostJobScreen() {
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
-                className="bg-surface rounded-lg px-4 py-3 text-foreground border border-border min-h-[120px]"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  color: colors.foreground,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  minHeight: 120,
+                }}
               />
-              {errors.description && (
-                <Text className="text-error text-xs mt-1">{errors.description}</Text>
-              )}
+              {errors.description && <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.description}</Text>}
             </View>
 
             {/* Budget */}
             <View>
-              <Text className="text-foreground font-semibold mb-2">
-                預算範圍 <Text className="text-error">*</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
+                預算範圍 <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel="選擇預算範圍"
                 onPress={() => setShowBudgetPicker(!showBudgetPicker)}
-                className="bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
-                <Text className={formData.budgetRange ? "text-foreground" : "text-muted"}>
+                <Text style={{ color: formData.budgetRange ? colors.foreground : colors.muted }}>
                   {formData.budgetRange || "選擇預算範圍"}
                 </Text>
                 <Ionicons
@@ -644,8 +791,16 @@ export default function PostJobScreen() {
                 />
               </TouchableOpacity>
               {showBudgetPicker && (
-                <View className="bg-surface rounded-lg mt-2 border border-border">
-                  {budgetRanges.map((range) => (
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  {budgetRanges.map((range, index) => (
                     <TouchableOpacity
                       key={range}
                       accessible
@@ -655,46 +810,72 @@ export default function PostJobScreen() {
                         updateField("budgetRange", range);
                         setShowBudgetPicker(false);
                       }}
-                      className="px-4 py-3 border-b border-border last:border-b-0"
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        borderBottomWidth: index === budgetRanges.length - 1 ? 0 : 1,
+                        borderBottomColor: colors.border,
+                      }}
                     >
-                      <Text className={formData.budgetRange === range ? "text-primary font-semibold" : "text-foreground"}>
+                      <Text
+                        style={{
+                          color: formData.budgetRange === range ? colors.primary : colors.foreground,
+                          fontWeight: formData.budgetRange === range ? "600" : "400",
+                        }}
+                      >
                         {range}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
-              {errors.budgetRange && (
-                <Text className="text-error text-xs mt-1">{errors.budgetRange}</Text>
-              )}
-              <View className="flex-row items-center mt-3">
+              {errors.budgetRange && <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.budgetRange}</Text>}
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
                 <Switch
                   value={formData.isNegotiable}
                   onValueChange={(value) => updateField("isNegotiable", value)}
                   trackColor={{ false: colors.border, true: colors.primary }}
                 />
-                <Text className="text-foreground text-sm ml-2">預算可商議</Text>
+                <Text style={{ color: colors.foreground, fontSize: 14, marginLeft: 8 }}>預算可商議</Text>
               </View>
             </View>
 
             {/* Location */}
             <View>
-              <Text className="text-foreground font-semibold mb-2">工作地點</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>工作地點</Text>
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel="選擇工作地點"
                 onPress={() => setShowLocationPicker((v) => !v)}
-                className="bg-surface rounded-lg px-4 py-3 border border-border flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
-                <Text className={formData.location ? "text-foreground" : "text-muted"}>
+                <Text style={{ color: formData.location ? colors.foreground : colors.muted }}>
                   {formData.location || "選擇工作地點"}
                 </Text>
                 <Ionicons name={showLocationPicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
               </TouchableOpacity>
               {showLocationPicker && (
-                <View className="bg-surface rounded-lg mt-2 border border-border">
-                  {locations.map((loc) => (
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  {locations.map((loc, index) => (
                     <TouchableOpacity
                       key={loc}
                       accessible
@@ -704,9 +885,19 @@ export default function PostJobScreen() {
                         updateField("location", loc);
                         setShowLocationPicker(false);
                       }}
-                      className="px-4 py-3 border-b border-border last:border-b-0"
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        borderBottomWidth: index === locations.length - 1 ? 0 : 1,
+                        borderBottomColor: colors.border,
+                      }}
                     >
-                      <Text className={formData.location === loc ? "text-primary font-semibold" : "text-foreground"}>
+                      <Text
+                        style={{
+                          color: formData.location === loc ? colors.primary : colors.foreground,
+                          fontWeight: formData.location === loc ? "600" : "400",
+                        }}
+                      >
                         {loc}
                       </Text>
                     </TouchableOpacity>
@@ -717,32 +908,48 @@ export default function PostJobScreen() {
 
             {/* Skills */}
             <View>
-              <Text className="text-foreground font-semibold mb-2">所需技能</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>所需技能</Text>
               <TextInput
                 value={formData.skills}
                 onChangeText={(text) => updateField("skills", text)}
                 placeholder="例如：UI設計、React、攝影（用逗號分隔）"
                 placeholderTextColor={colors.muted}
-                className="bg-surface rounded-lg px-4 py-3 text-foreground border border-border"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  color: colors.foreground,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
               />
-              <Text className="text-muted text-xs mt-1">選填，有助於配對更精準的 Freelancer</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>選填，有助於配對更精準的 Freelancer</Text>
             </View>
 
             {/* Contact */}
-            <View className="gap-4">
+            <View style={{ gap: 16 }}>
               <View>
-                <Text className="text-foreground font-semibold mb-2">聯絡人</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>聯絡人</Text>
                 <TextInput
                   value={formData.contactPerson}
                   onChangeText={(text) => updateField("contactPerson", text)}
                   placeholder="例如：陳小姐"
                   placeholderTextColor={colors.muted}
-                  className="bg-surface rounded-lg px-4 py-3 text-foreground border border-border"
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    color: colors.foreground,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
                 />
               </View>
               <View>
-                <Text className="text-foreground font-semibold mb-2">
-                  聯絡電郵 <Text className="text-error">*</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
+                  聯絡電郵 <Text style={{ color: colors.error }}>*</Text>
                 </Text>
                 <TextInput
                   value={formData.contactEmail}
@@ -751,14 +958,22 @@ export default function PostJobScreen() {
                   placeholderTextColor={colors.muted}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  className="bg-surface rounded-lg px-4 py-3 text-foreground border border-border"
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    color: colors.foreground,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
                 />
                 {errors.contactEmail && (
-                  <Text className="text-error text-xs mt-1">{errors.contactEmail}</Text>
+                  <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.contactEmail}</Text>
                 )}
               </View>
               <View>
-                <Text className="text-foreground font-semibold mb-2">
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
                   聯絡電話
                 </Text>
                 <TextInput
@@ -767,12 +982,20 @@ export default function PostJobScreen() {
                   placeholder="例如：+852 9123 4567"
                   placeholderTextColor={colors.muted}
                   keyboardType="phone-pad"
-                  className="bg-surface rounded-lg px-4 py-3 text-foreground border border-border"
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    color: colors.foreground,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
                 />
               </View>
             </View>
 
-            {submitError && <Text className="text-error text-sm">{submitError}</Text>}
+            {submitError && <Text style={{ color: colors.error, fontSize: 14 }}>{submitError}</Text>}
 
             {/* Submit Button */}
             <TouchableOpacity
@@ -781,9 +1004,17 @@ export default function PostJobScreen() {
               accessibilityLabel="發佈工作"
               onPress={handleSubmit}
               disabled={createMutation.isPending}
-              className="bg-primary rounded-lg py-4 items-center justify-center mt-4 active:opacity-80"
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: 8,
+                paddingVertical: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 16,
+                opacity: createMutation.isPending ? 0.8 : 1,
+              }}
             >
-              <Text className="text-white font-semibold text-base">
+              <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
                 {createMutation.isPending ? "發佈中..." : "發佈工作"}
               </Text>
             </TouchableOpacity>
@@ -794,13 +1025,21 @@ export default function PostJobScreen() {
               accessibilityRole="button"
               accessibilityLabel="取消"
               onPress={() => router.back()}
-              className="bg-surface rounded-lg py-4 items-center justify-center border border-border active:opacity-80"
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 8,
+                paddingVertical: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
             >
-              <Text className="text-foreground font-semibold text-base">取消</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 16 }}>取消</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }

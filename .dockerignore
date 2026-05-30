@@ -1,0 +1,12 @@
+node_modules
+.expo
+.home
+.git
+dist
+ios
+android
+.cursor
+*.md
+.env
+.env.*
+!.env.production.example

@@ -67,3 +67,12 @@ export const jobSkills = mysqlTable(
     pk: primaryKey({ columns: [t.jobId, t.skill] }),
   }),
 );
+
+/** Expo push tokens for new-job alerts; one row per device token. */
+export const pushDevices = mysqlTable("push_devices", {
+  expoPushToken: varchar("expoPushToken", { length: 255 }).primaryKey(),
+  userId: int("userId").references(() => users.id),
+  platform: varchar("platform", { length: 16 }),
+  jobAlertsEnabled: int("jobAlertsEnabled").notNull().default(1),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});

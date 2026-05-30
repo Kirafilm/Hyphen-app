@@ -1,10 +1,11 @@
-import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/hooks/use-auth";
+import { AppScreen } from "@/components/app-screen";
+import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { FlatList, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function ModerationScreen() {
   const router = useRouter();
@@ -14,66 +15,159 @@ export default function ModerationScreen() {
   const meQuery = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const isAdmin = meQuery.data?.role === "admin";
 
-  const jobsQuery = trpc.jobs.list.useQuery(undefined, { enabled: isAdmin });
+  const jobsQuery = trpc.jobs.listForModeration.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
+
+  const invalidateJobs = async () => {
+    await Promise.all([utils.jobs.list.invalidate(), utils.jobs.listForModeration.invalidate()]);
+  };
+
   const removeMutation = trpc.jobs.remove.useMutation({
-    onSuccess: async () => {
-      await utils.jobs.list.invalidate();
-    },
+    onSuccess: invalidateJobs,
   });
 
-  return (
-    <ScreenContainer className="p-0">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1">
-          <View className="bg-primary px-6 py-6 gap-2">
-            <TouchableOpacity onPress={() => router.back()} className="w-8 h-8">
-              <Ionicons name="chevron-back" size={28} color="white" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-background mt-2">內容管理</Text>
-            <Text className="text-sm text-background opacity-90">清理垃圾工作或廣告內容</Text>
-          </View>
+  const deleteMutation = trpc.jobs.delete.useMutation({
+    onSuccess: invalidateJobs,
+  });
 
-          <View className="px-6 py-6 gap-4">
+  const confirmRemove = (id: string) => {
+    Alert.alert("下架工作", "下架後一般用户將看不到此工作，可在下方「已下架」區永久刪除。", [
+      { text: "取消", style: "cancel" },
+      { text: "下架", style: "destructive", onPress: () => removeMutation.mutate({ id }) },
+    ]);
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("永久刪除", "此操作無法復原，確定要永久刪除此工作嗎？", [
+      { text: "取消", style: "cancel" },
+      { text: "刪除", style: "destructive", onPress: () => deleteMutation.mutate({ id }) },
+    ]);
+  };
+
+  const activeJobs = (jobsQuery.data ?? []).filter((item) => !item.removedAt);
+  const removedJobs = (jobsQuery.data ?? []).filter((item) => Boolean(item.removedAt));
+
+  const renderJobCard = (item: (typeof activeJobs)[number], removed: boolean) => (
+    <View
+      key={item.id}
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: removed ? "rgba(239, 68, 68, 0.20)" : colors.border,
+        gap: 12,
+        opacity: removed ? 0.85 : 1,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={{ color: colors.foreground, fontWeight: "600" }}>{item.title}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12 }}>{item.category}</Text>
+          {removed ? (
+            <Text style={{ color: colors.error, fontSize: 12, fontWeight: "600" }}>已下架</Text>
+          ) : null}
+        </View>
+        <View style={{ gap: 8 }}>
+          {!removed ? (
+            <TouchableOpacity
+              onPress={() => confirmRemove(item.id)}
+              disabled={removeMutation.isPending || deleteMutation.isPending}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: "rgba(245, 158, 11, 0.12)",
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderWidth: 1,
+                borderColor: "rgba(245, 158, 11, 0.25)",
+              }}
+            >
+              <Text style={{ color: "#d97706", fontWeight: "600", fontSize: 12 }}>下架</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity
+            onPress={() => confirmDelete(item.id)}
+            disabled={removeMutation.isPending || deleteMutation.isPending}
+            activeOpacity={0.85}
+            style={{
+              backgroundColor: "rgba(239, 68, 68, 0.10)",
+              borderRadius: 8,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderWidth: 1,
+              borderColor: "rgba(239, 68, 68, 0.20)",
+            }}
+          >
+            <Text style={{ color: colors.error, fontWeight: "600", fontSize: 12 }}>刪除</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <TouchableOpacity
+        onPress={() => router.push(`/job/${item.id}`)}
+        activeOpacity={0.85}
+        style={{
+          backgroundColor: `${colors.primary}1A`,
+          borderRadius: 8,
+          paddingVertical: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 1,
+          borderColor: `${colors.primary}33`,
+        }}
+      >
+        <Text style={{ color: colors.primary, fontWeight: "600" }}>查看</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <AppScreen>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ flex: 1 }}>
+          <PageHeader title="內容管理" subtitle="下架隱藏工作，刪除則永久移除" showBack />
+
+          <View style={{ paddingHorizontal: 24, paddingBottom: 24, gap: 20 }}>
             {!isAdmin ? (
-              <View className="bg-surface rounded-lg p-6 border border-border items-center gap-3">
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  padding: 24,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
                 <Ionicons name="lock-closed" size={40} color={colors.muted} />
-                <Text className="text-foreground font-semibold">需要管理員權限</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600" }}>需要管理員權限</Text>
               </View>
+            ) : jobsQuery.isLoading ? (
+              <ActivityIndicator size="large" color={colors.primary} />
             ) : (
-              <FlatList
-                data={jobsQuery.data ?? []}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <View className="bg-surface rounded-lg p-4 mb-3 border border-border gap-3">
-                    <View className="flex-row items-start justify-between gap-3">
-                      <View className="flex-1">
-                        <Text className="text-foreground font-semibold">{item.title}</Text>
-                        <Text className="text-muted text-xs mt-1">{item.category}</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => removeMutation.mutate({ id: item.id })}
-                        disabled={removeMutation.isPending}
-                        className="bg-error bg-opacity-10 rounded-lg px-3 py-2 border border-error border-opacity-20 active:opacity-80"
-                      >
-                        <Text className="text-error font-semibold text-xs">下架</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => router.push(`/job/${item.id}`)}
-                      className="bg-primary bg-opacity-10 rounded-lg py-3 items-center justify-center border border-primary border-opacity-20 active:opacity-80"
-                    >
-                      <Text className="text-primary font-semibold">查看</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              />
+              <>
+                <View style={{ gap: 12 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>進行中 ({activeJobs.length})</Text>
+                  {activeJobs.length === 0 ? (
+                    <Text style={{ color: colors.muted, fontSize: 14 }}>沒有進行中的工作</Text>
+                  ) : (
+                    activeJobs.map((item) => renderJobCard(item, false))
+                  )}
+                </View>
+                <View style={{ gap: 12 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>已下架 ({removedJobs.length})</Text>
+                  {removedJobs.length === 0 ? (
+                    <Text style={{ color: colors.muted, fontSize: 14 }}>沒有已下架的工作</Text>
+                  ) : (
+                    removedJobs.map((item) => renderJobCard(item, true))
+                  )}
+                </View>
+              </>
             )}
           </View>
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
-
