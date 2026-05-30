@@ -1,0 +1,63 @@
+# EAS uses ONLY this file (not .gitignore). Keep in sync with .gitignore + backend extras.
+
+# dependencies — never upload; EAS runs pnpm install on the server
+node_modules/
+
+# Expo / Metro
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+.cache/
+
+# Native (EAS generates these)
+ios/
+android/
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# env & secrets
+.env
+.env.*
+.env*.local
+*.pem
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# logs & archives
+logs/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.tgz
+*.tar.gz
+
+# dev-only
+.webdev/
+.home/
+app-example
+*.tsbuildinfo
+
+# Backend / VPS — not needed for mobile bundle (keep server/ for tRPC types)
+Dockerfile
+docker-compose.prod.yml
+docker-compose.yml
+deploy/
+tests/
+
+# Server runtime output
+dist/index.js

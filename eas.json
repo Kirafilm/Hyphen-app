@@ -1,11 +1,30 @@
 {
   "cli": {
+    "version": ">= 12.0.0",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "node": "22.14.0",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.hyphenjob.com"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "node": "22.14.0",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.hyphenjob.com"
+      }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
