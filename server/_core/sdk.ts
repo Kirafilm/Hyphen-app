@@ -19,6 +19,22 @@ import type {
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0;
 
+/** Read JWT alg header without verifying — used to route Supabase vs app session tokens. */
+function getJwtAlgorithm(token: string): string | null {
+  try {
+    const headerPart = token.split(".")[0];
+    if (!headerPart) return null;
+    const normalized = headerPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const header = JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as {
+      alg?: unknown;
+    };
+    return typeof header.alg === "string" ? header.alg : null;
+  } catch {
+    return null;
+  }
+}
+
 export type SessionPayload = {
   openId: string;
   appId: string;
@@ -242,7 +258,12 @@ class SDKServer {
 
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = token || cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
+    const tokenAlg = sessionCookie ? getJwtAlgorithm(sessionCookie) : null;
+    // Native app stores Supabase access tokens (RS256/ES256). Only verify HS256 app sessions here.
+    const session =
+      sessionCookie && (!tokenAlg || tokenAlg === "HS256")
+        ? await this.verifySession(sessionCookie)
+        : null;
     const signedInAt = new Date();
 
     if (!session) {
