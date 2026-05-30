@@ -6,6 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories } from "@/lib/mock-data";
+import { formatJobSchedule } from "@/lib/job-schedule";
+import { formatPublishedDate } from "@/lib/utils";
 import { AppScreen } from "@/components/app-screen";
 import { HyphenLogo } from "@/components/hyphen-logo";
 
@@ -25,21 +27,6 @@ export default function HomeScreen() {
       budget.max < budget.min;
     if (invalid) return `${budget.currency} $待確認`;
     return `${budget.currency} $${budget.min.toLocaleString()}-${budget.max.toLocaleString()}`;
-  };
-
-  const formatSchedule = (job: any) => {
-    const dateTbd = Boolean(job?.workDateTbd);
-    const timeTbd = Boolean(job?.workTimeTbd);
-    const d = job?.workDate;
-    const s = job?.workStartTime;
-    const e = job?.workEndTime;
-    if (dateTbd && timeTbd) return "日期未定／時間未定";
-    if (dateTbd && s && e) return `日期未定 ${s}-${e}`;
-    if (timeTbd && d) return `${d} 時間未定`;
-    if (dateTbd) return "日期未定";
-    if (timeTbd) return "時間未定";
-    if (d && s && e) return `${d} ${s}-${e}`;
-    return job?.timeline ?? "未指定";
   };
 
   return (
@@ -136,6 +123,11 @@ export default function HomeScreen() {
               <View style={{ paddingVertical: 24, alignItems: "center", justifyContent: "center" }}>
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
+            ) : jobsQuery.isError ? (
+              <View style={{ paddingVertical: 24, alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>無法載入職位</Text>
+                <Text style={{ color: colors.muted, fontSize: 13 }}>API 連線失敗，請下拉重新整理</Text>
+              </View>
             ) : latestJobs.length === 0 ? (
               <View style={{ paddingVertical: 24, alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ color: colors.muted, fontSize: 14 }}>暫時未有職位</Text>
@@ -160,14 +152,16 @@ export default function HomeScreen() {
                         <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14, lineHeight: 20 }} numberOfLines={2}>
                           {item.title}
                         </Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginTop: 8, gap: 6 }}>
-                          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>{formatBudget(item.budget)}</Text>
-                          <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
-                          <Text style={{ color: colors.muted, fontSize: 12 }}>{item.category}</Text>
-                          <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
-                          <Text style={{ color: colors.muted, fontSize: 12 }}>{item.location}</Text>
-                          <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
-                          <Text style={{ color: colors.muted, fontSize: 12 }}>{formatSchedule(item)}</Text>
+                        <View style={{ marginTop: 8, gap: 4 }}>
+                          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+                            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>{formatBudget(item.budget)}</Text>
+                            <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
+                            <Text style={{ color: colors.muted, fontSize: 12 }}>{item.category}</Text>
+                            <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
+                            <Text style={{ color: colors.muted, fontSize: 12 }}>{item.location}</Text>
+                          </View>
+                          <Text style={{ color: colors.muted, fontSize: 12 }}>{formatJobSchedule(item)}</Text>
+                          <Text style={{ color: colors.muted, fontSize: 12 }}>發佈日期：{formatPublishedDate(item.createdAt)}</Text>
                         </View>
                       </View>
                       <View

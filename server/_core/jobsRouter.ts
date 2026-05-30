@@ -1,7 +1,4 @@
-import { z } from "zod";
-import { protectedProcedure, publicProcedure, router, adminProcedure } from "./trpc";
-import * as db from "../db";
-import { notifyNewJobPosted } from "./pushNotifications";
+import { isWorkDateWindow } from "@/lib/job-schedule";
 
 function isSubscriptionActive(status: db.SubscriptionStatus) {
   if (status.plan === "none") return false;
@@ -126,6 +123,10 @@ export const jobsRouter = router({
             .transform((value) => (value === "" ? null : value)),
         })
         .superRefine((val, ctx) => {
+          if (isWorkDateWindow(val.timeline)) {
+            return;
+          }
+
           const workDateTbd = val.workDateTbd ?? val.workDateTimeTbd ?? false;
           const workTimeTbd = val.workTimeTbd ?? val.workDateTimeTbd ?? false;
 
@@ -148,8 +149,9 @@ export const jobsRouter = router({
         }),
     )
     .mutation(async ({ ctx, input }) => {
-      const workDateTbd = input.workDateTbd ?? input.workDateTimeTbd ?? false;
-      const workTimeTbd = input.workTimeTbd ?? input.workDateTimeTbd ?? false;
+      const usesWindow = isWorkDateWindow(input.timeline);
+      const workDateTbd = usesWindow ? true : (input.workDateTbd ?? input.workDateTimeTbd ?? false);
+      const workTimeTbd = usesWindow ? true : (input.workTimeTbd ?? input.workDateTimeTbd ?? false);
 
       const job = await db.createJob({
         title: input.title,
@@ -157,9 +159,9 @@ export const jobsRouter = router({
         category: input.category,
         workDateTbd,
         workTimeTbd,
-        workDate: input.workDate,
-        workStartTime: input.workStartTime,
-        workEndTime: input.workEndTime,
+        workDate: usesWindow ? null : input.workDate,
+        workStartTime: usesWindow ? null : input.workStartTime,
+        workEndTime: usesWindow ? null : input.workEndTime,
         budgetMin: input.budgetMin,
         budgetMax: input.budgetMax,
         currency: input.currency,

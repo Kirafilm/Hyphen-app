@@ -260,6 +260,8 @@ export const categories = [
   "其他",
 ];
 
+export const jobLocations = ["香港", "澳門", "台灣", "英國"];
+
 // Sample User Data
 export const mockUser: User = {
   id: 'user1',

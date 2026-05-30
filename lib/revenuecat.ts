@@ -12,6 +12,18 @@ function getApiKey() {
   return undefined;
 }
 
+function isTestStoreApiKey(key: string) {
+  return key.startsWith("test_");
+}
+
+/** Release builds must not call Purchases.configure with a Test Store key — SDK force-quits the app. */
+export function isRevenueCatEnabled() {
+  const apiKey = getApiKey();
+  if (!apiKey) return false;
+  if (!__DEV__ && isTestStoreApiKey(apiKey)) return false;
+  return true;
+}
+
 async function getPurchasesModule() {
   if (Platform.OS === "web") return null;
   if (!purchasesModulePromise) {
@@ -28,6 +40,10 @@ async function ensureConfigured() {
 
   const apiKey = getApiKey();
   if (!apiKey) return null;
+  if (!isRevenueCatEnabled()) {
+    console.warn("[RevenueCat] Skipped in release build (Test Store key or missing production key).");
+    return null;
+  }
 
   mod.default.configure({ apiKey });
   if (__DEV__) {

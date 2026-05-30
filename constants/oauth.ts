@@ -26,6 +26,10 @@ export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
 
 function readConfiguredApiBaseUrl(): string {
+  // In dev, prefer Metro-inlined EXPO_PUBLIC_* so .env changes apply without native rebuild.
+  if (__DEV__ && env.apiBaseUrl) {
+    return env.apiBaseUrl;
+  }
   const fromExtra = Constants.expoConfig?.extra?.apiBaseUrl;
   if (typeof fromExtra === "string" && fromExtra.trim().length > 0) {
     return fromExtra.trim();

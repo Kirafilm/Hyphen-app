@@ -3,7 +3,7 @@ import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useAuth } from "@/hooks/use-auth";
 import * as Auth from "@/lib/_core/auth";
-import { supabase } from "@/lib/supabase";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
@@ -61,8 +61,12 @@ export default function LoginScreen() {
     setError(null);
     setInfo(null);
     try {
+      if (!isSupabaseConfigured) {
+        setError("此版本未設定 Supabase，無法重設密碼。請更新 App 或聯絡開發者。");
+        return;
+      }
       const redirectTo = Linking.createURL("/login");
-      const result = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
+      const result = await getSupabase().auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
       if (result.error) throw result.error;
       setInfo("重設密碼連結已寄到你的電郵，請查收並依照指示設定新密碼。");
     } catch (e) {
@@ -75,10 +79,15 @@ export default function LoginScreen() {
 
   const submit = async () => {
     if (!canSubmit || submitting) return;
+    if (!isSupabaseConfigured) {
+      setError("此版本未設定 Supabase，無法登入。請更新 App 或聯絡開發者。");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setInfo(null);
     try {
+      const supabase = getSupabase();
       if (mode === "login") {
         const result = await supabase.auth.signInWithPassword({
           email: email.trim(),

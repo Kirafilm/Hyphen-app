@@ -46,7 +46,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "0.1.0",
+  version: "0.1.1",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -113,8 +113,9 @@ const config: ExpoConfig = {
     [
       "expo-notifications",
       {
-        icon: "./assets/images/icon.png",
-        color: "#FFFFFF",
+        // Android status-bar icon (white silhouette). iOS uses AppIcon from `icon` above.
+        icon: "./assets/images/android-icon-monochrome.png",
+        color: "#0D9488",
       },
     ],
     [

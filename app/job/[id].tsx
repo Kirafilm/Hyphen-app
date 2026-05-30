@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemo } from "react";
+import { formatJobSchedule } from "@/lib/job-schedule";
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,20 +51,7 @@ export default function JobDetailScreen() {
     return `${job.budget.currency} $${min.toLocaleString()}-${max.toLocaleString()}`;
   }, [job]);
 
-  const scheduleDisplay = useMemo(() => {
-    if (!job) return { main: "", sub: null as string | null };
-    if (job.workDateTbd && job.workTimeTbd) return { main: "日期未定／時間未定", sub: null };
-    if (job.workDateTbd && job.workStartTime && job.workEndTime) {
-      return { main: "日期未定", sub: `${job.workStartTime} - ${job.workEndTime}` };
-    }
-    if (job.workTimeTbd && job.workDate) return { main: job.workDate, sub: "時間未定" };
-    if (job.workDateTbd) return { main: "日期未定", sub: null };
-    if (job.workTimeTbd) return { main: "時間未定", sub: null };
-    if (job.workDate && job.workStartTime && job.workEndTime) {
-      return { main: job.workDate, sub: `${job.workStartTime} - ${job.workEndTime}` };
-    }
-    return { main: job.timeline || "未指定", sub: null };
-  }, [job]);
+  const scheduleDisplay = useMemo(() => formatJobSchedule(job ?? {}), [job]);
 
   if (jobQuery.isLoading) {
     return (
@@ -98,7 +86,9 @@ export default function JobDetailScreen() {
         <View style={{ flex: 1 }}>
           <PageHeader
             title={job.title}
-            subtitle={isAdmin && job.removedAt ? "已下架" : undefined}
+            subtitle={
+              isAdmin && job.removedAt ? `${job.category} · 已下架` : job.category
+            }
             showBack
           />
 
@@ -111,30 +101,13 @@ export default function JobDetailScreen() {
                   <Text style={{ color: colors.primary, fontWeight: "bold", fontSize: 18, marginTop: 4 }}>{budgetText}</Text>
                 </View>
                 <View>
-                  <Text style={{ color: colors.muted, fontSize: 12 }}>工作日期及時間</Text>
-                  <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 15, marginTop: 4 }}>{scheduleDisplay.main}</Text>
-                  {scheduleDisplay.sub ? (
-                    <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 14, marginTop: 4 }}>{scheduleDisplay.sub}</Text>
-                  ) : null}
+                  <Text style={{ color: colors.muted, fontSize: 12 }}>工作日期</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 15, marginTop: 4 }}>{scheduleDisplay}</Text>
                 </View>
               </View>
               <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Ionicons name="location" size={16} color={colors.primary} />
                 <Text style={{ color: colors.foreground, fontWeight: "500" }}>{job.location}</Text>
-              </View>
-            </View>
-
-            {/* Client Info */}
-            <View>
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, marginBottom: 12 }}>客戶信息</Text>
-              <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: "white", fontWeight: "bold" }}>{job.clientName.charAt(0)}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.foreground, fontWeight: "600" }}>{job.clientName}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>{job.category}</Text>
-                </View>
               </View>
             </View>
 
