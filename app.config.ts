@@ -29,6 +29,8 @@ const schemeFromBundleId = `manus${timestamp}`;
 // VPS / staging often uses http://IP:3000 until HTTPS is configured
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? "";
 const allowsInsecureApi = apiBaseUrl.startsWith("http://");
+// Only embed expo-dev-client for EAS "development" profile builds.
+const isDevClientBuild = process.env.APP_VARIANT === "development";
 
 const env = {
   // App branding - update these values directly (do not use env vars)
@@ -96,14 +98,18 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
-    [
-      "expo-dev-client",
-      {
-        ios: {
-          launchMode: "launcher",
-        },
-      },
-    ],
+    ...(isDevClientBuild
+      ? [
+          [
+            "expo-dev-client",
+            {
+              ios: {
+                launchMode: "launcher",
+              },
+            },
+          ] as const,
+        ]
+      : []),
     [
       "expo-notifications",
       {
