@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
@@ -14,9 +14,17 @@ import { formatPublishedDate } from "@/lib/utils";
 export default function JobsScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const [selectedLocation, setSelectedLocation] = useState<string>("全部");
+
+  useEffect(() => {
+    if (typeof categoryParam !== "string" || !categoryParam) return;
+    if (categoryParam === "全部" || categories.includes(categoryParam)) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [categoryParam]);
 
   const jobsQuery = useJobsList();
   const jobs = jobsQuery.data ?? [];

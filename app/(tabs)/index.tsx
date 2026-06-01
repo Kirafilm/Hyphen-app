@@ -91,7 +91,7 @@ export default function HomeScreen() {
               {categories.slice(0, 6).map((item) => (
                 <TouchableOpacity
                   key={item}
-                  onPress={() => router.push("/(tabs)/jobs")}
+                  onPress={() => router.push({ pathname: "/(tabs)/jobs", params: { category: item } })}
                   activeOpacity={0.85}
                   style={{
                     width: "48%",
