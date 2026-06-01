@@ -8,3 +8,13 @@ api.your-domain.com {
 	encode gzip
 	reverse_proxy api:3000
 }
+
+# Legal pages + landing (see deploy/WEB.md)
+#   node scripts/build-legal-web.mjs
+#   deploy web/ to /var/www/hyphen/web on VPS
+your-domain.com, www.your-domain.com {
+	encode gzip
+	root * /var/www/hyphen/web
+	file_server
+	try_files {path} {path}/ /index.html
+}

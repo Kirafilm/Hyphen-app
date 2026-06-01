@@ -18,6 +18,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "qr": "node scripts/generate_qr.mjs",
+    "build:legal-web": "node scripts/build-legal-web.mjs",
     "eas-build-pre-install": "corepack enable && corepack prepare pnpm@9.12.0 --activate",
     "eas-build-post-install": "node -e \"const fs=require('fs'),path=require('path');try{const d=path.dirname(require.resolve('react-native-css-interop/package.json'));fs.mkdirSync(path.join(d,'.cache'),{recursive:true});}catch(e){}\""
   },

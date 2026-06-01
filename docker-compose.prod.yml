@@ -48,6 +48,8 @@ services:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      # Legal pages (privacy / terms) — host path from deploy/WEB.md
+      - /var/www/hyphen/web:/var/www/hyphen/web:ro
     depends_on:
       api:
         condition: service_started

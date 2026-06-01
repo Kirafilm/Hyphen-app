@@ -114,7 +114,7 @@ eas submit --platform ios --profile production
 | 年龄分级 | 问卷填写 |
 | 加密 | 已在 Info.plist 声明 `ITSAppUsesNonExemptEncryption: false` |
 
-**隐私政策**：商店要求 **HTTPS 网页链接**，不能只填 App 内路由。可放 `https://hyphenjob.com/privacy` 或 GitHub Pages。
+**隐私政策**：商店要求 **HTTPS 网页链接**。部署 `deploy/web/` 后使用 `https://hyphenjob.com/privacy/`（见 `deploy/WEB.md`）。
 
 ---
 
