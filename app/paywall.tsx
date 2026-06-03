@@ -11,10 +11,19 @@ import {
 } from "@/lib/revenuecat";
 import { trpc } from "@/lib/trpc";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import type { CustomerInfo, PurchasesOfferings, PurchasesPackage } from "react-native-purchases";
+
+const APP_VARIANT = Constants.expoConfig?.extra?.appVariant ?? "production";
+
+/** Shown in dev/preview when StoreKit offerings are unavailable (e.g. ASC Missing Metadata). */
+const PAYWALL_PREVIEW_PLANS = [
+  { id: "hyphen_pro_monthly", title: "Hyphen Pro 月費計劃", priceLabel: "HK$288/月" },
+  { id: "hyphen_pro_yearly", title: "Hyphen Pro 年費計劃", priceLabel: "HK$2,888/年" },
+] as const;
 
 export default function PaywallScreen() {
   const router = useRouter();
@@ -46,6 +55,12 @@ export default function PaywallScreen() {
     const pkgs = offerings?.current?.availablePackages;
     return Array.isArray(pkgs) ? pkgs : [];
   }, [offerings]);
+
+  const showPreviewPlans =
+    Platform.OS !== "web" &&
+    (APP_VARIANT !== "production" || __DEV__) &&
+    !isEntitled &&
+    availablePackages.length === 0;
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -161,7 +176,18 @@ export default function PaywallScreen() {
                       </View>
                     ) : null}
 
-                    {availablePackages.length === 0 ? (
+                    {showPreviewPlans ? (
+                      PAYWALL_PREVIEW_PLANS.map((plan) => (
+                        <View
+                          key={plan.id}
+                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
+                        >
+                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
+                            {plan.title}（{plan.priceLabel}）
+                          </Text>
+                        </View>
+                      ))
+                    ) : availablePackages.length === 0 ? (
                       <Text style={{ color: colors.muted, fontSize: 14 }}>載入訂閱方案中…</Text>
                     ) : (
                       availablePackages.map((pkg) => (
@@ -188,7 +214,9 @@ export default function PaywallScreen() {
                       </Text>
                     </TouchableOpacity>
 
-                    {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}
+                    {rcError && !showPreviewPlans ? (
+                      <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text>
+                    ) : null}
                   </View>
                 )}
 
@@ -196,9 +224,13 @@ export default function PaywallScreen() {
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <Ionicons name="information-circle" size={20} color={colors.primary} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>RevenueCat</Text>
+                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>訂閱說明</Text>
                       <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
-                        App 端完成購買後，會先以 RevenueCat entitlement 判斷是否解鎖；目前亦會同步更新測試訂閱狀態，方便你即時驗證「查看聯絡資訊」流程。
+                        {showPreviewPlans
+                          ? "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。"
+                          : APP_VARIANT !== "production"
+                            ? "App 端完成購買後，會先以 RevenueCat entitlement 判斷是否解鎖；目前亦會同步更新測試訂閱狀態，方便你即時驗證「查看聯絡資訊」流程。"
+                            : "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。"}
                       </Text>
                     </View>
                   </View>

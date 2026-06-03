@@ -169,6 +169,7 @@ const config: ExpoConfig = {
   },
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
+    appVariant: process.env.APP_VARIANT ?? "production",
     eas: {
       projectId: "1df52b3d-10ce-4f91-86fb-552cd7a910e9",
     },
