@@ -55,6 +55,29 @@ async function ensureConfigured() {
 
 export const REVENUECAT_ENTITLEMENT_ID = "pro";
 
+export const SUBSCRIPTION_PRODUCT_IDS = ["hyphen_pro_monthly", "hyphen_pro_yearly"] as const;
+
+export type PurchasesStoreProduct = import("react-native-purchases").PurchasesStoreProduct;
+
+export async function revenueCatGetSubscriptionProducts(): Promise<PurchasesStoreProduct[]> {
+  const mod = await ensureConfigured();
+  if (!mod) return [];
+  const category = mod.PRODUCT_CATEGORY?.SUBSCRIPTION;
+  const products = category
+    ? await mod.default.getProducts([...SUBSCRIPTION_PRODUCT_IDS], category)
+    : await mod.default.getProducts([...SUBSCRIPTION_PRODUCT_IDS]);
+  return Array.isArray(products) ? products : [];
+}
+
+export async function revenueCatPurchaseStoreProduct(product: PurchasesStoreProduct) {
+  const mod = await ensureConfigured();
+  if (!mod) return null;
+  if (typeof mod.default.purchaseStoreProduct === "function") {
+    return mod.default.purchaseStoreProduct(product);
+  }
+  return mod.default.purchaseProduct(product);
+}
+
 export async function revenueCatLogIn(openId: string) {
   const mod = await ensureConfigured();
   if (!mod) return null;

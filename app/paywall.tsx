@@ -6,8 +6,11 @@ import {
   REVENUECAT_ENTITLEMENT_ID,
   revenueCatGetCustomerInfo,
   revenueCatGetOfferings,
+  revenueCatGetSubscriptionProducts,
   revenueCatPurchasePackage,
+  revenueCatPurchaseStoreProduct,
   revenueCatRestorePurchases,
+  type PurchasesStoreProduct,
 } from "@/lib/revenuecat";
 import { trpc } from "@/lib/trpc";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,6 +42,7 @@ export default function PaywallScreen() {
   });
 
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
+  const [storeProducts, setStoreProducts] = useState<PurchasesStoreProduct[]>([]);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
@@ -60,25 +64,36 @@ export default function PaywallScreen() {
     Platform.OS !== "web" &&
     (APP_VARIANT !== "production" || __DEV__) &&
     !isEntitled &&
-    availablePackages.length === 0;
+    availablePackages.length === 0 &&
+    storeProducts.length === 0;
+
+  const storeProductById = useMemo(() => {
+    const map = new Map<string, PurchasesStoreProduct>();
+    for (const product of storeProducts) {
+      if (product.identifier) map.set(product.identifier, product);
+    }
+    return map;
+  }, [storeProducts]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
     if (Platform.OS === "web") return;
     (async () => {
+      setRcError(null);
       const nextOfferings = await revenueCatGetOfferings();
       if (nextOfferings) setOfferings(nextOfferings);
+      const products = await revenueCatGetSubscriptionProducts();
+      setStoreProducts(products);
       const nextCustomerInfo = await revenueCatGetCustomerInfo();
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
     })().catch((e) => setRcError(e instanceof Error ? e.message : String(e)));
   }, [isAuthenticated]);
 
-  const maybeActivateDebugSubscription = (pkg: PurchasesPackage, nextCustomerInfo?: CustomerInfo | null) => {
+  const maybeActivateDebugSubscription = (productId: string, nextCustomerInfo?: CustomerInfo | null) => {
     const info = nextCustomerInfo ?? customerInfo;
     const entitled = info?.entitlements?.active?.[REVENUECAT_ENTITLEMENT_ID];
     if (!entitled) return;
 
-    const productId = pkg.product?.identifier ?? "";
     if (productId === "hyphen_pro_monthly") {
       activateMutation.mutate({ plan: "monthly" });
     }
@@ -94,7 +109,46 @@ export default function PaywallScreen() {
       const result = await revenueCatPurchasePackage(pkg);
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
-      maybeActivateDebugSubscription(pkg, nextCustomerInfo);
+      maybeActivateDebugSubscription(pkg.product?.identifier ?? "", nextCustomerInfo);
+    } catch (e) {
+      setRcError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPurchasingId(null);
+    }
+  };
+
+  const handlePurchaseProduct = async (product: PurchasesStoreProduct) => {
+    setRcError(null);
+    setPurchasingId(product.identifier);
+    try {
+      const result = await revenueCatPurchaseStoreProduct(product);
+      const nextCustomerInfo = result?.customerInfo ?? null;
+      if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
+      maybeActivateDebugSubscription(product.identifier, nextCustomerInfo);
+    } catch (e) {
+      setRcError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPurchasingId(null);
+    }
+  };
+
+  const handlePurchaseProductId = async (productId: string) => {
+    const existing = storeProductById.get(productId);
+    if (existing) {
+      await handlePurchaseProduct(existing);
+      return;
+    }
+    setRcError(null);
+    setPurchasingId(productId);
+    try {
+      const products = await revenueCatGetSubscriptionProducts();
+      setStoreProducts(products);
+      const product = products.find((p) => p.identifier === productId);
+      if (!product) {
+        setRcError("無法從 App Store 載入此訂閱產品，請稍後再試。");
+        return;
+      }
+      await handlePurchaseProduct(product);
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -176,18 +230,35 @@ export default function PaywallScreen() {
                       </View>
                     ) : null}
 
+                    {storeProducts.length > 0 && availablePackages.length === 0
+                      ? storeProducts.map((product) => (
+                          <TouchableOpacity
+                            key={product.identifier}
+                            onPress={() => handlePurchaseProduct(product)}
+                            disabled={Boolean(purchasingId) || restoreLoading}
+                            style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
+                          >
+                            <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
+                              {product.title || product.identifier}（{product.priceString ?? "—"}）
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      : null}
+
                     {showPreviewPlans ? (
                       PAYWALL_PREVIEW_PLANS.map((plan) => (
-                        <View
+                        <TouchableOpacity
                           key={plan.id}
+                          onPress={() => handlePurchaseProductId(plan.id)}
+                          disabled={Boolean(purchasingId) || restoreLoading}
                           style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
                         >
                           <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
                             {plan.title}（{plan.priceLabel}）
                           </Text>
-                        </View>
+                        </TouchableOpacity>
                       ))
-                    ) : availablePackages.length === 0 ? (
+                    ) : availablePackages.length === 0 && storeProducts.length === 0 ? (
                       <Text style={{ color: colors.muted, fontSize: 14 }}>載入訂閱方案中…</Text>
                     ) : (
                       availablePackages.map((pkg) => (
@@ -214,9 +285,7 @@ export default function PaywallScreen() {
                       </Text>
                     </TouchableOpacity>
 
-                    {rcError && !showPreviewPlans ? (
-                      <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text>
-                    ) : null}
+                    {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}
                   </View>
                 )}
 
