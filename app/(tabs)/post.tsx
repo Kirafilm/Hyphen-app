@@ -6,18 +6,21 @@ import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
+import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
 export default function PostScreen() {
   const router = useRouter();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
 
+  const pad = screenPaddingHorizontal();
+
   return (
     <AppScreen>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <PageHeader title="發佈工作" subtitle="快速找到最合適的 Freelancer" />
 
-          <View style={{ paddingHorizontal: 24, paddingTop: 8, gap: 16 }}>
+          <View style={{ paddingHorizontal: pad, paddingTop: 8, gap: 16, width: "100%" }}>
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -25,6 +28,9 @@ export default function PostScreen() {
                 borderWidth: 1,
                 borderColor: colors.border,
                 padding: 24,
+                maxWidth: isWeb ? 640 : undefined,
+                alignSelf: isWeb ? "center" : "stretch",
+                width: isWeb ? "100%" : undefined,
               }}
             >
               <View style={{ alignItems: "center" }}>
@@ -48,6 +54,7 @@ export default function PostScreen() {
               </View>
             </View>
 
+            <View style={{ flexDirection: isWeb ? "row" : "column", gap: 12, alignItems: "stretch" }}>
             {[
               ["1", "選擇行業類別", "從設計、開發、營銷等多個行業中選擇"],
               ["2", "填寫工作詳情", "描述您的需求、預算和期限"],
@@ -56,14 +63,16 @@ export default function PostScreen() {
               <View
                 key={step}
                 style={{
+                  flex: isWeb ? 1 : undefined,
                   backgroundColor: colors.surface,
                   borderRadius: 16,
                   borderWidth: 1,
                   borderColor: colors.border,
-                  padding: 16,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 14,
+                  padding: isWeb ? 20 : 16,
+                  flexDirection: isWeb ? "column" : "row",
+                  alignItems: isWeb ? "flex-start" : "center",
+                  gap: isWeb ? 12 : 14,
+                  alignSelf: "stretch",
                 }}
               >
                 <View
@@ -74,16 +83,18 @@ export default function PostScreen() {
                     backgroundColor: colors.primary,
                     alignItems: "center",
                     justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
                   <Text style={{ color: "#ffffff", fontWeight: "800" }}>{step}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: isWeb ? undefined : 1 }}>
                   <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: "700" }}>{title}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>{body}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>{body}</Text>
                 </View>
               </View>
             ))}
+            </View>
 
             <TouchableOpacity
               onPress={() => (isAuthenticated ? router.push("/job/new") : router.push("/login"))}
@@ -95,6 +106,9 @@ export default function PostScreen() {
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 8,
+                maxWidth: isWeb ? 360 : undefined,
+                alignSelf: isWeb ? "center" : "stretch",
+                width: isWeb ? "100%" : undefined,
               }}
             >
               <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "800" }}>開始發佈工作</Text>
@@ -109,6 +123,9 @@ export default function PostScreen() {
                 padding: 16,
                 flexDirection: "row",
                 gap: 12,
+                maxWidth: isWeb ? 640 : undefined,
+                alignSelf: isWeb ? "center" : "stretch",
+                width: isWeb ? "100%" : undefined,
               }}
             >
               <Ionicons name="information-circle" size={20} color={colors.primary} />

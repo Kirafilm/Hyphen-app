@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
+import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -29,6 +30,9 @@ export default function ProfileScreen() {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+        flexBasis: isWeb ? "48%" : "auto",
+        minWidth: isWeb ? 280 : undefined,
+        flexGrow: isWeb ? 1 : 0,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -39,12 +43,14 @@ export default function ProfileScreen() {
     </TouchableOpacity>
   );
 
+  const pad = screenPaddingHorizontal();
+
   return (
     <AppScreen>
         <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-          <PageHeader title="個人" />
+          <PageHeader title="個人" subtitle={isWeb ? "管理帳戶、訂閱與設定" : undefined} />
 
-          <View style={{ paddingHorizontal: 24, paddingBottom: 16 }}>
+          <View style={{ paddingHorizontal: pad, paddingBottom: 16 }}>
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -52,6 +58,9 @@ export default function ProfileScreen() {
                 borderWidth: 1,
                 borderColor: colors.border,
                 padding: 24,
+                maxWidth: isWeb ? 560 : undefined,
+                alignSelf: isWeb ? "center" : "stretch",
+                width: isWeb ? "100%" : undefined,
               }}
             >
               <View style={{ alignItems: "center", marginBottom: 16 }}>
@@ -78,7 +87,17 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <View style={{ paddingHorizontal: 24, gap: 10 }}>
+          <View
+            style={{
+              paddingHorizontal: pad,
+              gap: 10,
+              flexDirection: isWeb ? "row" : "column",
+              flexWrap: isWeb ? "wrap" : "nowrap",
+              maxWidth: isWeb ? 720 : undefined,
+              alignSelf: isWeb ? "center" : "stretch",
+              width: isWeb ? "100%" : undefined,
+            }}
+          >
             {!isAuthenticated ? (
               <TouchableOpacity
                 onPress={() => router.push("/login")}
@@ -90,6 +109,7 @@ export default function ProfileScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  flexBasis: isWeb ? "100%" : "auto",
                 }}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -111,7 +131,7 @@ export default function ProfileScreen() {
             {isAuthenticated && <MenuRow icon="log-out" label="登出" onPress={() => logout()} danger />}
           </View>
 
-          <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+          <View style={{ paddingHorizontal: pad, paddingTop: 24 }}>
             <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>© Hyphen - All Rights Reserved</Text>
           </View>
         </ScrollView>

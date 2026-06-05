@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemo } from "react";
 import { formatJobSchedule } from "@/lib/job-schedule";
+import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,6 +54,8 @@ export default function JobDetailScreen() {
 
   const scheduleDisplay = useMemo(() => formatJobSchedule(job ?? {}), [job]);
 
+  const pad = screenPaddingHorizontal();
+
   if (jobQuery.isLoading) {
     return (
       <AppScreen>
@@ -92,9 +95,10 @@ export default function JobDetailScreen() {
             showBack
           />
 
-          <View style={{ paddingHorizontal: 24, paddingBottom: 24, gap: 24 }}>
+          <View style={{ paddingHorizontal: pad, paddingBottom: 24, gap: 24 }}>
+            <View style={{ flexDirection: isWeb ? "row" : "column", gap: 16, alignItems: "stretch" }}>
             {/* Budget & Location */}
-            <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border, gap: 12 }}>
+            <View style={{ flex: isWeb ? 1 : undefined, backgroundColor: colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, gap: 12 }}>
               <View style={{ gap: 16 }}>
                 <View>
                   <Text style={{ color: colors.muted, fontSize: 12 }}>預算</Text>
@@ -111,28 +115,7 @@ export default function JobDetailScreen() {
               </View>
             </View>
 
-            {/* Description */}
-            <View>
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, marginBottom: 12 }}>工作描述</Text>
-              <Text style={{ color: colors.foreground, lineHeight: 22 }}>{job.description}</Text>
-            </View>
-
-            {/* Skills */}
-            <View>
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, marginBottom: 12 }}>所需技能</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {job.skills.map((skill, index) => (
-                  <View
-                    key={index}
-                    style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 9999, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: `${colors.primary}33` }}
-                  >
-                    <Text style={{ color: colors.primary, fontWeight: "500", fontSize: 14 }}>{skill}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.border, gap: 12 }}>
+            <View style={{ flex: isWeb ? 1 : undefined, backgroundColor: colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, gap: 12 }}>
               <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground }}>聯絡資訊</Text>
               {job.contactLocked ? (
                 <>
@@ -143,13 +126,13 @@ export default function JobDetailScreen() {
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <TouchableOpacity
                       onPress={() => (isAuthenticated ? router.push({ pathname: "/paywall", params: { jobId: job.id } }) : router.push("/login"))}
-                      style={{ flex: 1, backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "center" }}
+                      style={{ flex: 1, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: "center", justifyContent: "center" }}
                     >
                       <Text style={{ color: "white", fontWeight: "600" }}>立即訂閱</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => router.push("/(tabs)/jobs")}
-                      style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }}
+                      style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 12, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }}
                     >
                       <Text style={{ color: colors.foreground, fontWeight: "600" }}>返回列表</Text>
                     </TouchableOpacity>
@@ -173,6 +156,28 @@ export default function JobDetailScreen() {
                   </View>
                 </View>
               )}
+            </View>
+            </View>
+
+            {/* Description */}
+            <View>
+              <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, marginBottom: 12 }}>工作描述</Text>
+              <Text style={{ color: colors.foreground, lineHeight: 22 }}>{job.description}</Text>
+            </View>
+
+            {/* Skills */}
+            <View>
+              <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, marginBottom: 12 }}>所需技能</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {job.skills.map((skill, index) => (
+                  <View
+                    key={index}
+                    style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 9999, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: `${colors.primary}33` }}
+                  >
+                    <Text style={{ color: colors.primary, fontWeight: "500", fontSize: 14 }}>{skill}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
 
             {/* CTA Buttons */}

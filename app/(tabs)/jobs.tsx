@@ -10,6 +10,7 @@ import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories, jobLocations } from "@/lib/mock-data";
 import { formatJobSchedule } from "@/lib/job-schedule";
 import { formatPublishedDate } from "@/lib/utils";
+import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
 export default function JobsScreen() {
   const router = useRouter();
@@ -58,10 +59,12 @@ export default function JobsScreen() {
     return `${budget.currency} $${budget.min.toLocaleString()}-${budget.max.toLocaleString()}`;
   };
 
+  const pad = screenPaddingHorizontal();
+
   return (
     <AppScreen>
-      <PageHeader title="職位" />
-      <View style={{ paddingHorizontal: 24, paddingBottom: 12, gap: 12 }}>
+      <PageHeader title="職位" subtitle={isWeb ? "按分類、地區或關鍵字搜尋自由工作" : undefined} />
+      <View style={{ paddingHorizontal: pad, paddingBottom: 12, gap: 12 }}>
         <View
           style={{
             flexDirection: "row",
@@ -135,7 +138,7 @@ export default function JobsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 4, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: pad, paddingTop: 4, paddingBottom: 32 }}
         refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
       >
           {jobsQuery.isError ? (
@@ -155,18 +158,22 @@ export default function JobsScreen() {
               <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>試試其他搜尋條件</Text>
             </View>
           ) : (
-            <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: isWeb ? "row" : "column", flexWrap: isWeb ? "wrap" : "nowrap", gap: 16 }}>
               {filteredJobs.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   onPress={() => router.push(`/job/${item.id}`)}
                   activeOpacity={0.85}
                   style={{
+                    flexGrow: isWeb ? 1 : 0,
+                    flexBasis: isWeb ? "48%" : "auto",
+                    minWidth: isWeb ? 320 : undefined,
+                    maxWidth: isWeb ? "100%" : undefined,
                     backgroundColor: colors.surface,
                     borderRadius: 16,
                     borderWidth: 1,
                     borderColor: colors.border,
-                    padding: 16,
+                    padding: 18,
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>

@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -16,9 +16,11 @@ type PageHeaderProps = {
 export function PageHeader({ title, subtitle, showBack = false, onBack, large = true }: PageHeaderProps) {
   const router = useRouter();
   const colors = useColors();
+  const isWeb = Platform.OS === "web";
+  const horizontalPadding = isWeb ? 0 : 24;
 
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16, gap: 8 }}>
+    <View style={{ paddingHorizontal: horizontalPadding, paddingTop: isWeb ? 20 : 8, paddingBottom: 16, gap: 8 }}>
       {showBack ? (
         <TouchableOpacity
           accessible
@@ -32,7 +34,7 @@ export function PageHeader({ title, subtitle, showBack = false, onBack, large = 
       ) : null}
       <Text
         style={{
-          fontSize: large ? 28 : 24,
+          fontSize: large ? (isWeb ? 32 : 28) : 24,
           fontWeight: "800",
           color: colors.foreground,
           marginTop: showBack ? 4 : 8,

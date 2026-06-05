@@ -9,6 +9,7 @@ import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -135,17 +136,19 @@ export default function LoginScreen() {
     }
   };
 
+  const pad = screenPaddingHorizontal();
+
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
+        <View style={{ flex: 1, maxWidth: isWeb ? 520 : undefined, alignSelf: isWeb ? "center" : "stretch", width: isWeb ? "100%" : undefined }}>
           <PageHeader
             title="登入 / 註冊"
             subtitle="先使用電郵登入；之後可再加入 Google / Apple。"
             showBack
           />
 
-          <View style={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }}>
+          <View style={{ paddingHorizontal: pad, paddingVertical: 16, gap: 16 }}>
             <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border }}>
               <View style={{ alignItems: "center", gap: 12 }}>
                 <View style={{ width: 64, height: 64, backgroundColor: colors.primary, borderRadius: 32, alignItems: "center", justifyContent: "center" }}>
@@ -262,18 +265,6 @@ export default function LoginScreen() {
                   )}
                 </TouchableOpacity>
               )}
-            </View>
-
-            <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                <Ionicons name="information-circle" size={20} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>提示</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
-                    需要先建立 Supabase 專案，並在環境變數填入 EXPO_PUBLIC_SUPABASE_URL 與 EXPO_PUBLIC_SUPABASE_ANON_KEY。
-                  </Text>
-                </View>
-              </View>
             </View>
           </View>
         </View>

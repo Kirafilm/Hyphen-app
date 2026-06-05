@@ -1,7 +1,6 @@
 import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useMemo } from "react";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
@@ -9,11 +8,9 @@ import { categories } from "@/lib/mock-data";
 import { formatJobSchedule } from "@/lib/job-schedule";
 import { formatPublishedDate } from "@/lib/utils";
 import { AppScreen } from "@/components/app-screen";
-import { HyphenLogo } from "@/components/hyphen-logo";
 import type { AppRouter } from "@/server/routers";
 import type { inferRouterOutputs } from "@trpc/server";
 
-const WEB_MAX_WIDTH = 1120;
 type JobItem = inferRouterOutputs<AppRouter>["jobs"]["list"][number];
 
 function formatBudget(budget: { currency: string; min: number; max: number }) {
@@ -81,33 +78,7 @@ export default function HomeWebScreen() {
         contentContainerStyle={{ paddingBottom: 48 }}
         refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
       >
-        <View style={{ width: "100%", maxWidth: WEB_MAX_WIDTH, alignSelf: "center", paddingHorizontal: 32, paddingTop: 28 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <HyphenLogo height={44} />
-              <View>
-                <Text style={{ fontSize: 26, fontWeight: "800", color: colors.foreground }}>Hyphen 自由職</Text>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.muted, marginTop: 2 }}>Web Beta</Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {[
-                { label: "首頁", href: "/(tabs)" as const },
-                { label: "職位", href: "/(tabs)/jobs" as const },
-                { label: "發佈", href: "/(tabs)/post" as const },
-                { label: "個人", href: "/(tabs)/profile" as const },
-              ].map((link) => (
-                <TouchableOpacity
-                  key={link.label}
-                  onPress={() => router.push(link.href)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
-                >
-                  <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 13 }}>{link.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
+        <View style={{ width: "100%", paddingTop: 8, paddingBottom: 48 }}>
           <View style={{ flexDirection: "row", gap: 24, alignItems: "stretch" }}>
             <View style={{ flex: 2, backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 28, gap: 16 }}>
               <View style={{ alignSelf: "flex-start", backgroundColor: `${colors.primary}18`, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }}>

@@ -6,6 +6,7 @@ export type SubscriptionPlan = "none" | "monthly" | "yearly";
 export type SubscriptionStatus = {
   plan: SubscriptionPlan;
   expiresAt: Date | null;
+  stripeCustomerId?: string | null;
 };
 
 export type JobRecord = {
