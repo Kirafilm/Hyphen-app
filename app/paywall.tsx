@@ -18,6 +18,7 @@ import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 import type { CustomerInfo, PurchasesOfferings, PurchasesPackage } from "react-native-purchases";
 
 const APP_VARIANT = Constants.expoConfig?.extra?.appVariant ?? "production";
@@ -41,6 +42,7 @@ export default function PaywallScreen() {
     onSuccess: () => meQuery.refetch(),
   });
   const stripeCheckoutMutation = trpc.subscription.createStripeCheckout.useMutation();
+  const stripePortalMutation = trpc.subscription.createStripePortal.useMutation();
 
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeProducts, setStoreProducts] = useState<PurchasesStoreProduct[]>([]);
@@ -67,6 +69,22 @@ export default function PaywallScreen() {
     !isEntitled &&
     availablePackages.length === 0 &&
     storeProducts.length === 0;
+
+  const subscriptionNote = useMemo(() => {
+    if (Platform.OS === "web") {
+      return "付款由 Stripe 安全處理。訂閱會自動續期。如需取消或更改方案，請點擊「管理訂閱」進入 Stripe 安全頁面自行操作。";
+    }
+    if (showPreviewPlans) {
+      return "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。";
+    }
+    if (APP_VARIANT !== "production") {
+      return "App 端完成購買後，會先以 RevenueCat entitlement 判斷是否解鎖；目前亦會同步更新測試訂閱狀態，方便你即時驗證「查看聯絡資訊」流程。";
+    }
+    if (Platform.OS === "android") {
+      return "付款將由 Google Play 處理。訂閱會自動續期，可隨時在 Google Play → 付款與訂閱 中取消。";
+    }
+    return "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。";
+  }, [showPreviewPlans]);
 
   const storeProductById = useMemo(() => {
     const map = new Map<string, PurchasesStoreProduct>();
@@ -185,6 +203,24 @@ export default function PaywallScreen() {
     }
   };
 
+  const handleStripePortal = async () => {
+    setRcError(null);
+    setPurchasingId("portal");
+    try {
+      const result = await stripePortalMutation.mutateAsync();
+      if (typeof window !== "undefined" && result.url) {
+        window.location.href = result.url;
+      }
+    } catch (e) {
+      setRcError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPurchasingId(null);
+    }
+  };
+
+  const canManageStripeOnWeb =
+    Platform.OS === "web" && Boolean(meQuery.data?.active || meQuery.data?.stripeCustomerId);
+
   const goBackToJob = () => {
     if (params.jobId) {
       router.replace(`/job/${params.jobId}`);
@@ -193,10 +229,12 @@ export default function PaywallScreen() {
     router.back();
   };
 
+  const pad = screenPaddingHorizontal();
+
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
+        <View style={{ flex: 1, maxWidth: isWeb ? 720 : undefined, alignSelf: isWeb ? "center" : "stretch", width: isWeb ? "100%" : undefined }}>
           <PageHeader
             title="解鎖聯絡資訊"
             subtitle="未訂閱可查看工作內容，但無法查看電話與電郵。"
@@ -204,7 +242,7 @@ export default function PaywallScreen() {
             onBack={goBackToJob}
           />
 
-          <View style={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }}>
+          <View style={{ paddingHorizontal: pad, paddingVertical: 16, gap: 16 }}>
             {!isAuthenticated ? (
               <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, alignItems: "center", gap: 12 }}>
                 <Ionicons name="lock-closed" size={40} color={colors.muted} />
@@ -229,34 +267,56 @@ export default function PaywallScreen() {
                 </View>
 
                 {Platform.OS === "web" ? (
-                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
+                  <View style={{ flexDirection: isWeb ? "row" : "column", flexWrap: "wrap", gap: 16 }}>
+                    <View style={{ flex: 1, minWidth: 280, backgroundColor: colors.surface, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
                     <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>選擇訂閱</Text>
                     <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
                       網頁版使用 Stripe 付款。同一帳戶在 App 內購買亦可解鎖聯絡資訊。
                     </Text>
                     {meQuery.data?.active ? (
-                      <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
-                        <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已訂閱</Text>
+                      <View style={{ gap: 12 }}>
+                        <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
+                          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已訂閱</Text>
+                        </View>
+                        {canManageStripeOnWeb ? (
+                          <TouchableOpacity
+                            onPress={handleStripePortal}
+                            disabled={Boolean(purchasingId) || stripePortalMutation.isPending}
+                            style={{
+                              backgroundColor: colors.background,
+                              borderRadius: 12,
+                              paddingVertical: 16,
+                              alignItems: "center",
+                              borderWidth: 1,
+                              borderColor: colors.border,
+                            }}
+                          >
+                            <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 15 }}>
+                              {stripePortalMutation.isPending || purchasingId === "portal" ? "開啟中…" : "管理訂閱（取消 / 更改）"}
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
                       </View>
                     ) : (
                       <>
                         <TouchableOpacity
                           onPress={() => handleStripeCheckout("monthly")}
                           disabled={Boolean(purchasingId) || stripeCheckoutMutation.isPending}
-                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center" }}
+                          style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 16, alignItems: "center" }}
                         >
                           <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 月費計劃（HK$288/月）</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleStripeCheckout("yearly")}
                           disabled={Boolean(purchasingId) || stripeCheckoutMutation.isPending}
-                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center" }}
+                          style={{ backgroundColor: colors.background, borderRadius: 12, paddingVertical: 16, alignItems: "center", borderWidth: 1, borderColor: colors.primary }}
                         >
-                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 年費計劃（HK$2,888/年）</Text>
+                          <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 16 }}>Hyphen Pro 年費計劃（HK$2,888/年）</Text>
                         </TouchableOpacity>
                       </>
                     )}
                     {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}
+                    </View>
                   </View>
                 ) : (
                   <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
@@ -334,12 +394,19 @@ export default function PaywallScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>訂閱說明</Text>
                       <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
-                        {showPreviewPlans
-                          ? "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。"
-                          : APP_VARIANT !== "production"
-                            ? "App 端完成購買後，會先以 RevenueCat entitlement 判斷是否解鎖；目前亦會同步更新測試訂閱狀態，方便你即時驗證「查看聯絡資訊」流程。"
-                            : "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。"}
+                        {subscriptionNote}
                       </Text>
+                      {canManageStripeOnWeb ? (
+                        <TouchableOpacity
+                          onPress={handleStripePortal}
+                          disabled={Boolean(purchasingId) || stripePortalMutation.isPending}
+                          style={{ marginTop: 10 }}
+                        >
+                          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>
+                            {stripePortalMutation.isPending || purchasingId === "portal" ? "開啟中…" : "管理訂閱 →"}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
                     </View>
                   </View>
                 </View>

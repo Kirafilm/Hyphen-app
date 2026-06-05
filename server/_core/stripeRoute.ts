@@ -93,6 +93,19 @@ export function registerStripeRoutes(app: Express) {
             const userId = parseUserId(session.metadata?.userId ?? session.client_reference_id);
             if (!userId || session.mode !== "subscription" || !session.subscription) break;
 
+            const customerId =
+              typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
+            if (customerId) {
+              await db.setStripeCustomerId(userId, customerId);
+              try {
+                await stripe.customers.update(customerId, {
+                  metadata: { userId: String(userId) },
+                });
+              } catch (err) {
+                console.warn("[stripe] failed to tag customer metadata:", err);
+              }
+            }
+
             const subscriptionId =
               typeof session.subscription === "string" ? session.subscription : session.subscription.id;
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);

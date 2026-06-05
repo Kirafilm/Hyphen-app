@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./trpc";
 import * as db from "../db";
-import { getStripeClient, isStripeConfigured, stripeCheckoutUrls, stripePriceIdForPlan } from "./stripe";
+import { getStripeClient, isStripeConfigured, stripeCheckoutUrls, stripePortalReturnUrl, stripePriceIdForPlan } from "./stripe";
 
 const planSchema = z.union([z.literal("none"), z.literal("monthly"), z.literal("yearly")]);
 const paidPlanSchema = z.union([z.literal("monthly"), z.literal("yearly")]);
@@ -13,6 +13,37 @@ function planToDurationMs(plan: db.SubscriptionPlan) {
   return 0;
 }
 
+async function resolveStripeCustomerId(
+  stripe: NonNullable<ReturnType<typeof getStripeClient>>,
+  userId: number,
+  email?: string | null,
+) {
+  const existing = await db.getStripeCustomerId(userId);
+  if (existing) return existing;
+
+  const result = await stripe.customers.search({
+    query: `metadata['userId']:'${userId}'`,
+  });
+  let customerId = result.data[0]?.id ?? null;
+
+  if (!customerId && email) {
+    const byEmail = await stripe.customers.list({ email, limit: 5 });
+    const match =
+      byEmail.data.find((customer) => customer.metadata?.userId === String(userId)) ?? byEmail.data[0] ?? null;
+    customerId = match?.id ?? null;
+  }
+
+  if (customerId) {
+    await db.setStripeCustomerId(userId, customerId);
+    try {
+      await stripe.customers.update(customerId, { metadata: { userId: String(userId) } });
+    } catch {
+      // non-fatal
+    }
+  }
+  return customerId;
+}
+
 export const subscriptionRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
     const status = await db.getSubscriptionStatus(ctx.user.id);
@@ -20,6 +51,7 @@ export const subscriptionRouter = router({
       plan: status.plan,
       expiresAt: status.expiresAt,
       active: status.expiresAt ? status.expiresAt.getTime() > Date.now() && status.plan !== "none" : false,
+      stripeCustomerId: status.stripeCustomerId ?? null,
     };
   }),
 
@@ -43,12 +75,18 @@ export const subscriptionRouter = router({
       }
 
       const { success, cancel } = stripeCheckoutUrls();
+      const existingCustomerId = await db.getStripeCustomerId(ctx.user.id);
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: success,
         cancel_url: cancel,
         client_reference_id: String(ctx.user.id),
+        ...(existingCustomerId
+          ? { customer: existingCustomerId }
+          : ctx.user.email
+            ? { customer_email: ctx.user.email }
+            : {}),
         metadata: {
           userId: String(ctx.user.id),
           plan: input.plan,
@@ -67,6 +105,39 @@ export const subscriptionRouter = router({
 
       return { url: session.url } as const;
     }),
+
+  createStripePortal: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!isStripeConfigured()) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Stripe 尚未設定。",
+      });
+    }
+
+    const stripe = getStripeClient();
+    if (!stripe) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Stripe 尚未設定。" });
+    }
+
+    const customerId = await resolveStripeCustomerId(stripe, ctx.user.id, ctx.user.email);
+    if (!customerId) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "找不到網頁訂閱記錄。若你係 App 內購買，請到 App Store / Google Play 管理訂閱。",
+      });
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: stripePortalReturnUrl(),
+    });
+
+    if (!session.url) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "無法開啟訂閱管理頁面" });
+    }
+
+    return { url: session.url } as const;
+  }),
 
   debugActivate: protectedProcedure
     .input(z.object({ plan: planSchema }))

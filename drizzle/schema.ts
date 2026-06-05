@@ -29,6 +29,7 @@ export const subscriptions = mysqlTable("subscriptions", {
   userId: int("userId").notNull().primaryKey().references(() => users.id),
   plan: mysqlEnum("plan", ["none", "monthly", "yearly"]).default("none").notNull(),
   expiresAt: timestamp("expiresAt"),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 64 }),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 

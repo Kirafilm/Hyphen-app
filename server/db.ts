@@ -200,7 +200,7 @@ export async function getUserByOpenId(openId: string) {
 }
 
 export type SubscriptionPlan = "none" | "monthly" | "yearly";
-export type SubscriptionStatus = { plan: SubscriptionPlan; expiresAt: Date | null };
+export type SubscriptionStatus = { plan: SubscriptionPlan; expiresAt: Date | null; stripeCustomerId?: string | null };
 
 export async function getSubscriptionStatus(userId: number): Promise<SubscriptionStatus> {
   const db = await getDb();
@@ -213,6 +213,7 @@ export async function getSubscriptionStatus(userId: number): Promise<Subscriptio
       .select({
         plan: subscriptions.plan,
         expiresAt: subscriptions.expiresAt,
+        stripeCustomerId: subscriptions.stripeCustomerId,
       })
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
@@ -220,11 +221,51 @@ export async function getSubscriptionStatus(userId: number): Promise<Subscriptio
 
     if (rows.length === 0) return { plan: "none", expiresAt: null };
     const row = rows[0]!;
-    return { plan: row.plan as SubscriptionPlan, expiresAt: row.expiresAt ?? null };
+    return {
+      plan: row.plan as SubscriptionPlan,
+      expiresAt: row.expiresAt ?? null,
+      stripeCustomerId: row.stripeCustomerId ?? null,
+    };
   } catch (error) {
     if (isDbConnectionError(error)) {
       resetDb();
       return _memorySubscriptions.get(userId) ?? { plan: "none", expiresAt: null };
+    }
+    throw error;
+  }
+}
+
+export async function getStripeCustomerId(userId: number): Promise<string | null> {
+  const status = await getSubscriptionStatus(userId);
+  return status.stripeCustomerId ?? null;
+}
+
+export async function setStripeCustomerId(userId: number, stripeCustomerId: string): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn) {
+    const existing = _memorySubscriptions.get(userId) ?? { plan: "none", expiresAt: null };
+    _memorySubscriptions.set(userId, { ...existing, stripeCustomerId });
+    return;
+  }
+
+  try {
+    await dbConn
+      .insert(subscriptions)
+      .values({
+        userId,
+        plan: "none",
+        expiresAt: null,
+        stripeCustomerId,
+      })
+      .onDuplicateKeyUpdate({
+        set: { stripeCustomerId },
+      });
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      const existing = _memorySubscriptions.get(userId) ?? { plan: "none", expiresAt: null };
+      _memorySubscriptions.set(userId, { ...existing, stripeCustomerId });
+      return;
     }
     throw error;
   }

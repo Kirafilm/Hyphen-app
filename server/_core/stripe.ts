@@ -40,3 +40,11 @@ export function stripeCheckoutUrls() {
     (webBase ? `${webBase}/paywall?checkout=canceled` : "http://localhost:8081/paywall?checkout=canceled");
   return { success, cancel };
 }
+
+export function stripePortalReturnUrl() {
+  const webBase = process.env.EXPO_PUBLIC_WEB_URL?.trim()?.replace(/\/$/, "");
+  return (
+    process.env.STRIPE_PORTAL_RETURN_URL?.trim() ||
+    (webBase ? `${webBase}/paywall` : "http://localhost:8081/paywall")
+  );
+}
