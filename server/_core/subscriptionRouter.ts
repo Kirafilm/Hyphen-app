@@ -13,13 +13,35 @@ function planToDurationMs(plan: db.SubscriptionPlan) {
   return 0;
 }
 
+function isStripeMissingCustomer(err: unknown) {
+  if (!err || typeof err !== "object") return false;
+  const code = "code" in err ? String((err as { code?: unknown }).code) : "";
+  const message = err instanceof Error ? err.message : String(err);
+  return code === "resource_missing" || message.includes("No such customer");
+}
+
 async function resolveStripeCustomerId(
   stripe: NonNullable<ReturnType<typeof getStripeClient>>,
   userId: number,
   email?: string | null,
 ) {
   const existing = await db.getStripeCustomerId(userId);
-  if (existing) return existing;
+  if (existing) {
+    try {
+      const customer = await stripe.customers.retrieve(existing);
+      if ("deleted" in customer && customer.deleted) {
+        await db.clearStripeCustomerId(userId);
+      } else {
+        return existing;
+      }
+    } catch (err) {
+      if (isStripeMissingCustomer(err)) {
+        await db.clearStripeCustomerId(userId);
+      } else {
+        throw err;
+      }
+    }
+  }
 
   const result = await stripe.customers.search({
     query: `metadata['userId']:'${userId}'`,
@@ -75,15 +97,15 @@ export const subscriptionRouter = router({
       }
 
       const { success, cancel } = stripeCheckoutUrls();
-      const existingCustomerId = await db.getStripeCustomerId(ctx.user.id);
+      const customerId = await resolveStripeCustomerId(stripe, ctx.user.id, ctx.user.email);
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: success,
         cancel_url: cancel,
         client_reference_id: String(ctx.user.id),
-        ...(existingCustomerId
-          ? { customer: existingCustomerId }
+        ...(customerId
+          ? { customer: customerId }
           : ctx.user.email
             ? { customer_email: ctx.user.email }
             : {}),

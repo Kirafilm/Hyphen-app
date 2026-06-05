@@ -271,6 +271,28 @@ export async function setStripeCustomerId(userId: number, stripeCustomerId: stri
   }
 }
 
+export async function clearStripeCustomerId(userId: number): Promise<void> {
+  const dbConn = await getDb();
+  if (!dbConn) {
+    const existing = _memorySubscriptions.get(userId);
+    if (!existing) return;
+    _memorySubscriptions.set(userId, { ...existing, stripeCustomerId: null });
+    return;
+  }
+
+  try {
+    await dbConn.update(subscriptions).set({ stripeCustomerId: null }).where(eq(subscriptions.userId, userId));
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      const existing = _memorySubscriptions.get(userId);
+      if (existing) _memorySubscriptions.set(userId, { ...existing, stripeCustomerId: null });
+      return;
+    }
+    throw error;
+  }
+}
+
 export async function setSubscriptionStatus(userId: number, status: SubscriptionStatus): Promise<void> {
   const db = await getDb();
   if (!db) {
