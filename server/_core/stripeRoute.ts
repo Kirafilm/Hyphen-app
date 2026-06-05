@@ -22,6 +22,21 @@ function parseUserId(raw: string | number | undefined | null): number | null {
   return Number.isFinite(id) && id > 0 ? id : null;
 }
 
+function subscriptionExpiresAt(
+  subscription: Stripe.Subscription,
+  plan: Exclude<db.SubscriptionPlan, "none">,
+): Date {
+  const item = subscription.items.data[0];
+  const periodEnd =
+    item?.current_period_end ??
+    (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end;
+  if (typeof periodEnd === "number" && Number.isFinite(periodEnd)) {
+    return new Date(periodEnd * 1000);
+  }
+  const days = plan === "yearly" ? 365 : 30;
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
 async function syncSubscriptionRecord(subscription: Stripe.Subscription) {
   const userId = parseUserId(subscription.metadata?.userId);
   if (!userId) return;
@@ -31,8 +46,7 @@ async function syncSubscriptionRecord(subscription: Stripe.Subscription) {
   if (!plan) return;
 
   if (subscription.status === "active" || subscription.status === "trialing") {
-    const expiresAt = new Date(subscription.current_period_end * 1000);
-    await applySubscriptionFromStripe(userId, plan, expiresAt);
+    await applySubscriptionFromStripe(userId, plan, subscriptionExpiresAt(subscription, plan));
     return;
   }
 
