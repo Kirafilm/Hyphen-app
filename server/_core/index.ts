@@ -6,6 +6,7 @@ import { registerContactRoute } from "./contactRoute";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerStripeRoutes } from "./stripeRoute";
+import { registerRevenueCatRoutes } from "./revenueCatRoute";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -35,6 +36,7 @@ async function startServer() {
   });
 
   registerStripeRoutes(app);
+  registerRevenueCatRoutes(app);
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
