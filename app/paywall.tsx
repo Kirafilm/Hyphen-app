@@ -40,6 +40,7 @@ export default function PaywallScreen() {
   const activateMutation = trpc.subscription.debugActivate.useMutation({
     onSuccess: () => meQuery.refetch(),
   });
+  const stripeCheckoutMutation = trpc.subscription.createStripeCheckout.useMutation();
 
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeProducts, setStoreProducts] = useState<PurchasesStoreProduct[]>([]);
@@ -169,6 +170,21 @@ export default function PaywallScreen() {
     }
   };
 
+  const handleStripeCheckout = async (plan: "monthly" | "yearly") => {
+    setRcError(null);
+    setPurchasingId(plan);
+    try {
+      const result = await stripeCheckoutMutation.mutateAsync({ plan });
+      if (typeof window !== "undefined" && result.url) {
+        window.location.href = result.url;
+      }
+    } catch (e) {
+      setRcError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPurchasingId(null);
+    }
+  };
+
   const goBackToJob = () => {
     if (params.jobId) {
       router.replace(`/job/${params.jobId}`);
@@ -213,11 +229,34 @@ export default function PaywallScreen() {
                 </View>
 
                 {Platform.OS === "web" ? (
-                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
                     <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>選擇訂閱</Text>
                     <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
-                      Web 版暫未支援內購，請使用 iOS/Android App 內完成訂閱。
+                      網頁版使用 Stripe 付款。同一帳戶在 App 內購買亦可解鎖聯絡資訊。
                     </Text>
+                    {meQuery.data?.active ? (
+                      <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
+                        <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已訂閱</Text>
+                      </View>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => handleStripeCheckout("monthly")}
+                          disabled={Boolean(purchasingId) || stripeCheckoutMutation.isPending}
+                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center" }}
+                        >
+                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 月費計劃（HK$288/月）</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleStripeCheckout("yearly")}
+                          disabled={Boolean(purchasingId) || stripeCheckoutMutation.isPending}
+                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center" }}
+                        >
+                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 年費計劃（HK$2,888/年）</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}
                   </View>
                 ) : (
                   <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>

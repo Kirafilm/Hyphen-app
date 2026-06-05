@@ -14,6 +14,9 @@
     "preview": {
       "distribution": "internal",
       "node": "22.14.0",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "APP_VARIANT": "preview",
         "EXPO_PUBLIC_API_BASE_URL": "https://api.hyphenjob.com"
@@ -30,6 +33,10 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleTeamId": "5MH48AUNP5"
+      }
+    }
   }
 }

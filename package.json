@@ -61,6 +61,7 @@
     "express": "^4.22.1",
     "jose": "6.1.0",
     "mysql2": "^3.16.0",
+    "stripe": "^17.6.0",
     "nativewind": "^4.2.1",
     "react-native-css-interop": "0.2.1",
     "react": "19.1.0",

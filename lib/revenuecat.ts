@@ -72,10 +72,7 @@ export async function revenueCatGetSubscriptionProducts(): Promise<PurchasesStor
 export async function revenueCatPurchaseStoreProduct(product: PurchasesStoreProduct) {
   const mod = await ensureConfigured();
   if (!mod) return null;
-  if (typeof mod.default.purchaseStoreProduct === "function") {
-    return mod.default.purchaseStoreProduct(product);
-  }
-  return mod.default.purchaseProduct(product);
+  return mod.default.purchaseStoreProduct(product);
 }
 
 export async function revenueCatLogIn(openId: string) {
