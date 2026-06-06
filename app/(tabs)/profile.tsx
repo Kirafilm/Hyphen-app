@@ -1,11 +1,10 @@
 import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useState } from "react";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
-import { useSubscriptionSyncOnFocus } from "@/components/subscription-sync-bootstrap";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobileSubscriptionSync } from "@/hooks/use-mobile-subscription-sync";
@@ -19,7 +18,6 @@ export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuth();
   const meQuery = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const subscriptionQuery = trpc.subscription.me.useQuery(undefined, { enabled: isAuthenticated });
-  const syncSubscriptionOnFocus = useSubscriptionSyncOnFocus();
   const { syncSubscription, isSyncing, lastMessage } = useMobileSubscriptionSync();
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
   const role = meQuery.data?.role ?? "user";
@@ -40,12 +38,6 @@ export default function ProfileScreen() {
       setSyncFeedback(err instanceof Error ? err.message : "同步失敗");
     }
   }, [lastMessage, subscriptionQuery, syncSubscription, user?.email, user?.openId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void syncSubscriptionOnFocus();
-    }, [syncSubscriptionOnFocus]),
-  );
 
   const MenuRow = ({ icon, label, onPress, accent, danger = false }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress?: () => void; accent?: string; danger?: boolean }) => (
     <TouchableOpacity

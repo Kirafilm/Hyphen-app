@@ -4,7 +4,6 @@ import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import {
-  getActiveProEntitlement,
   linkRevenueCatAccount,
   planFromProductId,
   revenueCatGetCustomerInfo,
@@ -221,10 +220,10 @@ export default function PaywallScreen() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [rcError, setRcError] = useState<string | null>(null);
 
-  const entitlement = useMemo(() => getActiveProEntitlement(customerInfo?.entitlements?.active), [customerInfo]);
-
-  const isEntitled = Boolean(entitlement);
-  const entitlementExpiresAt = entitlement?.expirationDate ? new Date(entitlement.expirationDate).toLocaleString() : "—";
+  const isSubscribed = Boolean(meQuery.data?.active);
+  const subscriptionExpiresAt = meQuery.data?.expiresAt
+    ? new Date(meQuery.data.expiresAt).toLocaleString()
+    : "—";
 
   const availablePackages: PurchasesPackage[] = useMemo(() => {
     const pkgs = offerings?.current?.availablePackages;
@@ -234,11 +233,11 @@ export default function PaywallScreen() {
   const showPreviewPlans =
     Platform.OS !== "web" &&
     (APP_VARIANT !== "production" || __DEV__) &&
-    !isEntitled &&
+    !isSubscribed &&
     availablePackages.length === 0 &&
     storeProducts.length === 0;
 
-  const showLaunchPromo = !meQuery.data?.active && !isEntitled;
+  const showLaunchPromo = !isSubscribed;
 
   const sortedStoreProducts = useMemo(() => {
     const order = { monthly: 0, yearly: 1 } as const;
@@ -297,13 +296,9 @@ export default function PaywallScreen() {
       const nextCustomerInfo = await revenueCatGetCustomerInfo();
       if (nextCustomerInfo) {
         setCustomerInfo(nextCustomerInfo);
-        if (!meQuery.data?.active) {
-          await syncSubscription(nextCustomerInfo);
-          await meQuery.refetch();
-        }
       }
     })().catch((e) => setRcError(e instanceof Error ? e.message : String(e)));
-  }, [isAuthenticated, meQuery, syncSubscription, user?.openId]);
+  }, [isAuthenticated, user?.email, user?.openId]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);
@@ -527,10 +522,10 @@ export default function PaywallScreen() {
                   <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
                     <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>選擇訂閱</Text>
 
-                    {isEntitled ? (
+                    {isSubscribed ? (
                       <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33`, gap: 4 }}>
                         <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已解鎖</Text>
-                        <Text style={{ color: colors.muted, fontSize: 12 }}>到期：{entitlementExpiresAt}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12 }}>到期：{subscriptionExpiresAt}</Text>
                       </View>
                     ) : null}
 

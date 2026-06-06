@@ -113,7 +113,7 @@ export async function revenueCatLogIn(openId: string, email?: string | null) {
   return linkRevenueCatAccount(openId, email);
 }
 
-/** Bind RevenueCat to the Supabase user id and merge any anonymous/test purchases. */
+/** Bind RevenueCat to the Supabase user id. Does not restore Play/App Store purchases — use {@link restoreRevenueCatPurchases} after explicit user action. */
 export async function linkRevenueCatAccount(openId: string, email?: string | null) {
   const mod = await ensureConfigured();
   if (!mod) return null;
@@ -140,17 +140,14 @@ export async function linkRevenueCatAccount(openId: string, email?: string | nul
     }
   }
 
-  try {
-    const restored = await mod.default.restorePurchases();
-    if (restored) customerInfo = restored;
-  } catch (err) {
-    console.warn(
-      "[RevenueCat] restorePurchases skipped:",
-      err instanceof Error ? err.message : String(err),
-    );
-  }
-
   return customerInfo ?? mod.default.getCustomerInfo();
+}
+
+/** Restore store purchases for the current store account — only call from the paywall "恢復購買" button. */
+export async function restoreRevenueCatPurchases() {
+  const mod = await ensureConfigured();
+  if (!mod) return null;
+  return mod.default.restorePurchases();
 }
 
 export async function revenueCatLogOut() {
@@ -173,9 +170,7 @@ export async function revenueCatPurchasePackage(pkg: import("react-native-purcha
 }
 
 export async function revenueCatRestorePurchases() {
-  const mod = await ensureConfigured();
-  if (!mod) return null;
-  return mod.default.restorePurchases();
+  return restoreRevenueCatPurchases();
 }
 
 export async function revenueCatGetCustomerInfo() {

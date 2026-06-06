@@ -1,6 +1,6 @@
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
-import { revenueCatLogIn, linkRevenueCatAccount } from "@/lib/revenuecat";
+import { revenueCatLogIn, linkRevenueCatAccount, revenueCatLogOut } from "@/lib/revenuecat";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
@@ -117,6 +117,16 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
+      if (Platform.OS !== "web") {
+        try {
+          await revenueCatLogOut();
+        } catch (err) {
+          console.warn(
+            "[Auth] RevenueCat logOut skipped:",
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+      }
       await Api.logout();
     } catch (err) {
       console.error("[Auth] Logout API call failed:", err);
