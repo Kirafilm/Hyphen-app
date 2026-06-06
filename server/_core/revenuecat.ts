@@ -24,6 +24,21 @@ export function isRevenueCatApiConfigured() {
   return Boolean(process.env.REVENUECAT_SECRET_API_KEY?.trim());
 }
 
+function revenueCatSecretKey() {
+  return process.env.REVENUECAT_SECRET_API_KEY?.trim() ?? "";
+}
+
+function revenueCatProjectId() {
+  return process.env.REVENUECAT_PROJECT_ID?.trim() ?? "";
+}
+
+function revenueCatAuthHeaders(secret: string) {
+  return {
+    Authorization: `Bearer ${secret}`,
+    "Content-Type": "application/json",
+  };
+}
+
 type RevenueCatEntitlementPayload = {
   expires_date?: string | null;
   product_identifier?: string | null;
@@ -34,6 +49,115 @@ type RevenueCatSubscriberResponse = {
     entitlements?: Record<string, RevenueCatEntitlementPayload>;
   };
 };
+
+type RevenueCatV2Product = {
+  store_identifier?: string | null;
+};
+
+type RevenueCatV2Subscription = {
+  gives_access?: boolean;
+  status?: string;
+  current_period_ends_at?: number | null;
+  pending_changes?: { product?: RevenueCatV2Product | null } | null;
+  entitlements?: {
+    items?: Array<{
+      lookup_key?: string | null;
+      products?: { items?: RevenueCatV2Product[] | null } | null;
+    }> | null;
+  } | null;
+};
+
+type RevenueCatV2ListResponse<T> = {
+  items?: T[] | null;
+};
+
+function parseSubscriptionRecord(
+  subscription: RevenueCatV2Subscription,
+): RevenueCatActiveSubscription | null {
+  if (!subscription.gives_access) return null;
+  if (subscription.status !== "active" && subscription.status !== "trialing") return null;
+
+  const storeIdentifiers: string[] = [];
+  const pendingStoreId = subscription.pending_changes?.product?.store_identifier;
+  if (pendingStoreId) storeIdentifiers.push(pendingStoreId);
+
+  for (const entitlement of subscription.entitlements?.items ?? []) {
+    for (const product of entitlement.products?.items ?? []) {
+      if (product.store_identifier) storeIdentifiers.push(product.store_identifier);
+    }
+  }
+
+  for (const storeIdentifier of storeIdentifiers) {
+    const plan = planFromRevenueCatProductId(storeIdentifier);
+    if (!plan) continue;
+
+    const endsAtMs = subscription.current_period_ends_at;
+    const expiresAt =
+      typeof endsAtMs === "number" && Number.isFinite(endsAtMs)
+        ? new Date(endsAtMs)
+        : new Date(Date.now() + planToDurationMs(plan));
+    if (expiresAt.getTime() <= Date.now()) return null;
+
+    return { plan, expiresAt };
+  }
+
+  return null;
+}
+
+async function fetchActiveSubscriptionFromRevenueCatV1(
+  appUserId: string,
+  secret: string,
+): Promise<RevenueCatActiveSubscription | null> {
+  const res = await fetch(
+    `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`,
+    { headers: revenueCatAuthHeaders(secret) },
+  );
+
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.warn("[revenuecat] v1 subscriber lookup failed:", res.status, body.slice(0, 200));
+    return null;
+  }
+
+  const data = (await res.json()) as RevenueCatSubscriberResponse;
+  const entitlements = data.subscriber?.entitlements ?? {};
+  const preferred = parseEntitlement(entitlements[REVENUECAT_ENTITLEMENT_ID]);
+  if (preferred) return preferred;
+
+  for (const entitlement of Object.values(entitlements)) {
+    const parsed = parseEntitlement(entitlement);
+    if (parsed) return parsed;
+  }
+
+  return null;
+}
+
+async function fetchActiveSubscriptionFromRevenueCatV2(
+  appUserId: string,
+  secret: string,
+  projectId: string,
+): Promise<RevenueCatActiveSubscription | null> {
+  const res = await fetch(
+    `https://api.revenuecat.com/v2/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(appUserId)}/subscriptions`,
+    { headers: revenueCatAuthHeaders(secret) },
+  );
+
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.warn("[revenuecat] v2 subscriptions lookup failed:", res.status, body.slice(0, 200));
+    return null;
+  }
+
+  const data = (await res.json()) as RevenueCatV2ListResponse<RevenueCatV2Subscription>;
+  for (const subscription of data.items ?? []) {
+    const parsed = parseSubscriptionRecord(subscription);
+    if (parsed) return parsed;
+  }
+
+  return null;
+}
 
 export type RevenueCatActiveSubscription = {
   plan: Exclude<SubscriptionPlan, "none">;
@@ -65,37 +189,16 @@ function parseEntitlement(
 export async function fetchActiveSubscriptionFromRevenueCat(
   appUserId: string,
 ): Promise<RevenueCatActiveSubscription | null> {
-  const secret = process.env.REVENUECAT_SECRET_API_KEY?.trim();
+  const secret = revenueCatSecretKey();
   if (!secret) return null;
 
-  const res = await fetch(
-    `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
-
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.warn("[revenuecat] subscriber lookup failed:", res.status, body.slice(0, 200));
-    return null;
+  const projectId = revenueCatProjectId();
+  if (projectId) {
+    const v2 = await fetchActiveSubscriptionFromRevenueCatV2(appUserId, secret, projectId);
+    if (v2) return v2;
   }
 
-  const data = (await res.json()) as RevenueCatSubscriberResponse;
-  const entitlements = data.subscriber?.entitlements ?? {};
-  const preferred = parseEntitlement(entitlements[REVENUECAT_ENTITLEMENT_ID]);
-  if (preferred) return preferred;
-
-  for (const entitlement of Object.values(entitlements)) {
-    const parsed = parseEntitlement(entitlement);
-    if (parsed) return parsed;
-  }
-
-  return null;
+  return fetchActiveSubscriptionFromRevenueCatV1(appUserId, secret);
 }
 
 export type RevenueCatWebhookBody = {
