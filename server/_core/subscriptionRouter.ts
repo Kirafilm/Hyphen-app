@@ -91,7 +91,7 @@ export const subscriptionRouter = router({
     if (!isRevenueCatApiConfigured()) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
-        message: "RevenueCat Secret API Key 尚未設定（REVENUECAT_SECRET_API_KEY）。",
+        message: "API 未設定 REVENUECAT_SECRET_API_KEY，無法向 RevenueCat 查詢。",
       });
     }
 
@@ -101,7 +101,11 @@ export const subscriptionRouter = router({
     });
     if (!active) {
       await db.setSubscriptionStatus(ctx.user.id, { plan: "none", expiresAt: null });
-      return { active: false, plan: "none" as const, expiresAt: null };
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message:
+          "RevenueCat 目前沒有有效訂閱。Sandbox 月費約 5 分鐘過期一次，請在 RevenueCat 出現 Renewed 後 1–2 分鐘內再試。",
+      });
     }
 
     await db.setSubscriptionStatus(ctx.user.id, { plan: active.plan, expiresAt: active.expiresAt });

@@ -30,9 +30,9 @@ export function SubscriptionSyncBootstrap() {
   }, [syncSubscription, user?.email, user?.openId]);
 
   useEffect(() => {
-    if (!isAuthenticated || meQuery.isLoading || meQuery.data?.active) return;
+    if (!isAuthenticated || meQuery.isLoading) return;
     void runSync();
-  }, [isAuthenticated, meQuery.isLoading, meQuery.data?.active, runSync]);
+  }, [isAuthenticated, meQuery.isLoading, runSync]);
 
   return null;
 }

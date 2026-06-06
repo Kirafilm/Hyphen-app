@@ -101,13 +101,23 @@ type RevenueCatV2ListResponse<T> = {
 function parseSubscriptionRecord(
   subscription: RevenueCatV2Subscription,
 ): RevenueCatActiveSubscription | null {
-  if (!subscription.gives_access) return null;
+  const endsAtMs = subscription.current_period_ends_at;
+  const fallbackExpiresAt =
+    typeof endsAtMs === "number" && Number.isFinite(endsAtMs)
+      ? new Date(endsAtMs)
+      : new Date(Date.now() + planToDurationMs("monthly"));
+
+  const periodActive = fallbackExpiresAt.getTime() > Date.now();
+  if (!subscription.gives_access && !periodActive) return null;
 
   const storeIdentifiers: string[] = [];
   const pendingStoreId = subscription.pending_changes?.product?.store_identifier;
   if (pendingStoreId) storeIdentifiers.push(pendingStoreId);
 
   for (const entitlement of subscription.entitlements?.items ?? []) {
+    if (entitlement.lookup_key && isProEntitlementKey(entitlement.lookup_key) && periodActive) {
+      return { plan: "monthly", expiresAt: fallbackExpiresAt };
+    }
     for (const product of entitlement.products?.items ?? []) {
       if (product.store_identifier) storeIdentifiers.push(product.store_identifier);
     }
@@ -115,21 +125,12 @@ function parseSubscriptionRecord(
 
   if (subscription.product_id) storeIdentifiers.push(subscription.product_id);
 
-  const endsAtMs = subscription.current_period_ends_at;
-  const fallbackExpiresAt =
-    typeof endsAtMs === "number" && Number.isFinite(endsAtMs)
-      ? new Date(endsAtMs)
-      : new Date(Date.now() + planToDurationMs("monthly"));
-
-  if (fallbackExpiresAt.getTime() <= Date.now()) return null;
-
   for (const storeIdentifier of storeIdentifiers) {
     const plan = planFromRevenueCatProductId(storeIdentifier);
     if (!plan) continue;
     return { plan, expiresAt: fallbackExpiresAt };
   }
 
-  // Active subscription without a parsed product id — still unlock access.
   return { plan: "monthly", expiresAt: fallbackExpiresAt };
 }
 

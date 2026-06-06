@@ -12,52 +12,36 @@ function isActiveStatus(status: db.SubscriptionStatus) {
   return status.plan !== "none" && status.expiresAt !== null && status.expiresAt.getTime() > Date.now();
 }
 
-/** Read DB first; if inactive, verify with RevenueCat and mirror into DB. */
+/** Prefer live RevenueCat status whenever the server API key is configured. */
 export async function resolveSubscriptionStatus(user: {
   id: number;
   openId: string;
   email?: string | null;
 }): Promise<ResolvedSubscription> {
-  let status = await db.getSubscriptionStatus(user.id);
-  if (isActiveStatus(status)) {
-    return {
-      plan: status.plan,
-      expiresAt: status.expiresAt,
-      active: true,
-      stripeCustomerId: status.stripeCustomerId ?? null,
-    };
-  }
-
+  const status = await db.getSubscriptionStatus(user.id);
   const openId = user.openId?.trim();
-  if (!openId || !isRevenueCatApiConfigured()) {
-    return {
-      plan: status.plan,
-      expiresAt: status.expiresAt,
-      active: false,
-      stripeCustomerId: status.stripeCustomerId ?? null,
-    };
-  }
 
-  const fromStore = await fetchActiveSubscriptionFromRevenueCatForUser({
-    openId,
-    email: user.email,
-  });
-  if (!fromStore) {
-    return {
-      plan: status.plan,
-      expiresAt: status.expiresAt,
-      active: false,
-      stripeCustomerId: status.stripeCustomerId ?? null,
-    };
+  if (openId && isRevenueCatApiConfigured()) {
+    const fromStore = await fetchActiveSubscriptionFromRevenueCatForUser({
+      openId,
+      email: user.email,
+    });
+    if (fromStore) {
+      await db.setSubscriptionStatus(user.id, { plan: fromStore.plan, expiresAt: fromStore.expiresAt });
+      const updated = await db.getSubscriptionStatus(user.id);
+      return {
+        plan: updated.plan,
+        expiresAt: updated.expiresAt,
+        active: true,
+        stripeCustomerId: updated.stripeCustomerId ?? null,
+      };
+    }
   }
-
-  await db.setSubscriptionStatus(user.id, { plan: fromStore.plan, expiresAt: fromStore.expiresAt });
-  status = await db.getSubscriptionStatus(user.id);
 
   return {
     plan: status.plan,
     expiresAt: status.expiresAt,
-    active: true,
+    active: isActiveStatus(status),
     stripeCustomerId: status.stripeCustomerId ?? null,
   };
 }
