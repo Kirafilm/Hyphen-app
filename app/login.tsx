@@ -4,10 +4,10 @@ import { PageHeader } from "@/components/page-header";
 import { useAuth } from "@/hooks/use-auth";
 import * as Auth from "@/lib/_core/auth";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Ionicons } from "@expo/vector-icons";
-import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
@@ -20,6 +20,10 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -28,6 +32,35 @@ export default function LoginScreen() {
     if (!password.trim()) return false;
     return true;
   }, [email, password]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    const supabase = getSupabase();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setRecoveryMode(true);
+        setMode("login");
+        setInfo("請設定新密碼。");
+        setError(null);
+      }
+    });
+
+    if (isWeb && typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+      setRecoveryMode(true);
+      setInfo("請設定新密碼。");
+    }
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const canUpdatePassword = useMemo(() => {
+    return newPassword.trim().length >= 6 && newPassword === confirmPassword;
+  }, [confirmPassword, newPassword]);
 
   const persistNativeUserInfo = async (authUser: {
     id: string;
@@ -66,7 +99,7 @@ export default function LoginScreen() {
         setError("此版本未設定 Supabase，無法重設密碼。請更新 App 或聯絡開發者。");
         return;
       }
-      const redirectTo = Linking.createURL("/login");
+      const redirectTo = getAuthRedirectUrl("/login");
       const result = await getSupabase().auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
       if (result.error) throw result.error;
       setInfo("重設密碼連結已寄到你的電郵，請查收並依照指示設定新密碼。");
@@ -75,6 +108,36 @@ export default function LoginScreen() {
       setError(message);
     } finally {
       setResettingPassword(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!canUpdatePassword || updatingPassword) return;
+    setUpdatingPassword(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const { error: updateError } = await getSupabase().auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+
+      const { data, error: sessionError } = await getSupabase().auth.getSession();
+      if (sessionError) throw sessionError;
+      const token = data.session?.access_token;
+      if (!token) throw new Error("密碼已更新，但未能建立登入狀態，請用新密碼重新登入。");
+
+      await Auth.setSessionToken(token);
+      await persistNativeUserInfo(data.session?.user ?? null);
+      try {
+        await refresh();
+      } catch (refreshError) {
+        console.warn("[Login] refresh after password reset failed:", refreshError);
+      }
+      setRecoveryMode(false);
+      router.replace("/(tabs)");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "無法更新密碼");
+    } finally {
+      setUpdatingPassword(false);
     }
   };
 
@@ -162,6 +225,44 @@ export default function LoginScreen() {
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
+              {recoveryMode ? (
+                <>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 18 }}>重設密碼</Text>
+                  <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>請輸入新密碼並確認。</Text>
+                  <View>
+                    <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>新密碼</Text>
+                    <TextInput
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      placeholder="最少 6 個字元"
+                      placeholderTextColor={colors.muted}
+                      secureTextEntry
+                      style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
+                    />
+                  </View>
+                  <View>
+                    <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>確認新密碼</Text>
+                    <TextInput
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      placeholder="再次輸入新密碼"
+                      placeholderTextColor={colors.muted}
+                      secureTextEntry
+                      style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
+                    />
+                  </View>
+                  {error && <Text style={{ color: colors.error, fontSize: 14 }}>{error}</Text>}
+                  {info && <Text style={{ color: colors.muted, fontSize: 14 }}>{info}</Text>}
+                  <TouchableOpacity
+                    onPress={handleUpdatePassword}
+                    disabled={!canUpdatePassword || updatingPassword}
+                    style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: !canUpdatePassword || updatingPassword ? 0.8 : 1 }}
+                  >
+                    {updatingPassword ? <ActivityIndicator color="white" /> : <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>更新密碼</Text>}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
                   accessible
@@ -264,6 +365,8 @@ export default function LoginScreen() {
                     <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 15 }}>忘記密碼</Text>
                   )}
                 </TouchableOpacity>
+              )}
+                </>
               )}
             </View>
           </View>

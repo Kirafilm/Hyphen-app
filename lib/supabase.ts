@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
 import { API_BASE_URL } from "@/constants/oauth";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
@@ -19,7 +20,7 @@ function createSupabaseClient(): SupabaseClient {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
-      detectSessionInUrl: false,
+      detectSessionInUrl: Platform.OS === "web",
     },
     global: {
       headers: API_BASE_URL ? { "x-client-info": "hyphen-app" } : {},
