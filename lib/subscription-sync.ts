@@ -1,6 +1,6 @@
 import type { CustomerInfo, PurchasesEntitlementInfo } from "react-native-purchases";
 
-import { REVENUECAT_ENTITLEMENT_ID, planFromProductId } from "@/lib/revenuecat";
+import { REVENUECAT_ENTITLEMENT_IDS, planFromProductId } from "@/lib/revenuecat";
 
 export type MobileSubscriptionSync = {
   plan: "monthly" | "yearly";
@@ -33,8 +33,10 @@ export function mobileSubscriptionFromCustomerInfo(
   const active = info?.entitlements?.active;
   if (!active) return null;
 
-  const preferred = parseEntitlement(active[REVENUECAT_ENTITLEMENT_ID]);
-  if (preferred) return preferred;
+  const preferred =
+    REVENUECAT_ENTITLEMENT_IDS.map((id) => active[id]).find(Boolean) ?? undefined;
+  const parsedPreferred = parseEntitlement(preferred);
+  if (parsedPreferred) return parsedPreferred;
 
   for (const entitlement of Object.values(active)) {
     const parsed = parseEntitlement(entitlement);

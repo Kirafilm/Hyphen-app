@@ -53,15 +53,41 @@ async function ensureConfigured() {
   return mod;
 }
 
-export const REVENUECAT_ENTITLEMENT_ID = "pro";
+/** Must match RevenueCat Dashboard → Entitlements → Identifier exactly. */
+export const REVENUECAT_ENTITLEMENT_ID = "Hyphen Pro";
+
+export const REVENUECAT_ENTITLEMENT_IDS = ["Hyphen Pro", "pro"] as const;
+
+export function getActiveProEntitlement(
+  active: Record<string, import("react-native-purchases").PurchasesEntitlementInfo> | undefined,
+) {
+  if (!active) return undefined;
+  for (const id of REVENUECAT_ENTITLEMENT_IDS) {
+    if (active[id]) return active[id];
+  }
+  return Object.values(active)[0];
+}
 
 export const SUBSCRIPTION_PRODUCT_IDS = ["hyphen_pro_monthly", "hyphen_pro_yearly"] as const;
 
 export function planFromProductId(productId: string): "monthly" | "yearly" | null {
   const normalized = productId.trim().toLowerCase();
   const base = normalized.split(":")[0]?.trim() ?? normalized;
-  if (base === "hyphen_pro_monthly" || base.includes("monthly")) return "monthly";
-  if (base === "hyphen_pro_yearly" || base.includes("yearly") || base.includes("annual")) return "yearly";
+  if (
+    base === "hyphen_pro_monthly" ||
+    base.includes("monthly") ||
+    normalized.includes(":p1m")
+  ) {
+    return "monthly";
+  }
+  if (
+    base === "hyphen_pro_yearly" ||
+    base.includes("yearly") ||
+    base.includes("annual") ||
+    normalized.includes(":p1y")
+  ) {
+    return "yearly";
+  }
   return null;
 }
 

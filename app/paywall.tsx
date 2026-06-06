@@ -4,7 +4,7 @@ import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import {
-  REVENUECAT_ENTITLEMENT_ID,
+  getActiveProEntitlement,
   linkRevenueCatAccount,
   revenueCatGetCustomerInfo,
   revenueCatGetOfferings,
@@ -84,9 +84,7 @@ export default function PaywallScreen() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [rcError, setRcError] = useState<string | null>(null);
 
-  const entitlement = useMemo(() => {
-    return customerInfo?.entitlements?.active?.[REVENUECAT_ENTITLEMENT_ID];
-  }, [customerInfo]);
+  const entitlement = useMemo(() => getActiveProEntitlement(customerInfo?.entitlements?.active), [customerInfo]);
 
   const isEntitled = Boolean(entitlement);
   const entitlementExpiresAt = entitlement?.expirationDate ? new Date(entitlement.expirationDate).toLocaleString() : "—";

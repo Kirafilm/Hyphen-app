@@ -2,8 +2,8 @@ import type { Express, Request, Response } from "express";
 import express from "express";
 import * as db from "../db";
 import {
-  REVENUECAT_ENTITLEMENT_ID,
-  isRevenueCatWebhookConfigured,
+  REVENUECAT_ENTITLEMENT_IDS,
+  isProEntitlementKey,
   planFromRevenueCatProductId,
   revenueCatEventGrantsAccess,
   revenueCatEventRevokesAccess,
@@ -13,7 +13,7 @@ import {
 
 function hasProEntitlement(entitlementIds: string[] | null | undefined) {
   if (!entitlementIds?.length) return true;
-  return entitlementIds.includes(REVENUECAT_ENTITLEMENT_ID);
+  return entitlementIds.some((id) => isProEntitlementKey(id));
 }
 
 async function syncFromRevenueCatEvent(event: NonNullable<RevenueCatWebhookBody["event"]>) {

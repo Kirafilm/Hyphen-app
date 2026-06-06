@@ -1,6 +1,13 @@
 import type { SubscriptionPlan } from "../db";
 
-export const REVENUECAT_ENTITLEMENT_ID = "pro";
+export const REVENUECAT_ENTITLEMENT_ID = "Hyphen Pro";
+
+export const REVENUECAT_ENTITLEMENT_IDS = ["Hyphen Pro", "pro"] as const;
+
+export function isProEntitlementKey(key: string) {
+  const normalized = key.trim().toLowerCase();
+  return REVENUECAT_ENTITLEMENT_IDS.some((id) => id.toLowerCase() === normalized) || normalized.includes("pro");
+}
 
 export function isRevenueCatWebhookConfigured() {
   return Boolean(process.env.REVENUECAT_WEBHOOK_AUTHORIZATION?.trim());
@@ -15,8 +22,21 @@ export function verifyRevenueCatWebhookAuthorization(header: string | undefined)
 export function planFromRevenueCatProductId(productId: string): Exclude<SubscriptionPlan, "none"> | null {
   const normalized = productId.trim().toLowerCase();
   const base = normalized.split(":")[0]?.trim() ?? normalized;
-  if (base === "hyphen_pro_monthly" || base.includes("monthly")) return "monthly";
-  if (base === "hyphen_pro_yearly" || base.includes("yearly") || base.includes("annual")) return "yearly";
+  if (
+    base === "hyphen_pro_monthly" ||
+    base.includes("monthly") ||
+    normalized.includes(":p1m")
+  ) {
+    return "monthly";
+  }
+  if (
+    base === "hyphen_pro_yearly" ||
+    base.includes("yearly") ||
+    base.includes("annual") ||
+    normalized.includes(":p1y")
+  ) {
+    return "yearly";
+  }
   return null;
 }
 
@@ -131,8 +151,16 @@ async function fetchActiveSubscriptionFromRevenueCatV1(
 
   const data = (await res.json()) as RevenueCatSubscriberResponse;
   const entitlements = data.subscriber?.entitlements ?? {};
-  const preferred = parseEntitlement(entitlements[REVENUECAT_ENTITLEMENT_ID]);
-  if (preferred) return preferred;
+  for (const id of REVENUECAT_ENTITLEMENT_IDS) {
+    const preferred = parseEntitlement(entitlements[id]);
+    if (preferred) return preferred;
+  }
+
+  for (const [key, entitlement] of Object.entries(entitlements)) {
+    if (!isProEntitlementKey(key)) continue;
+    const parsed = parseEntitlement(entitlement);
+    if (parsed) return parsed;
+  }
 
   for (const entitlement of Object.values(entitlements)) {
     const parsed = parseEntitlement(entitlement);
@@ -165,12 +193,17 @@ async function fetchActiveSubscriptionFromRevenueCatV2(
   }
 
   const data = (await res.json()) as RevenueCatV2ListResponse<RevenueCatV2Subscription>;
+  let best: RevenueCatActiveSubscription | null = null;
+
   for (const subscription of data.items ?? []) {
     const parsed = parseSubscriptionRecord(subscription);
-    if (parsed) return parsed;
+    if (!parsed) continue;
+    if (!best || parsed.expiresAt.getTime() > best.expiresAt.getTime()) {
+      best = parsed;
+    }
   }
 
-  return null;
+  return best;
 }
 
 async function fetchActiveSubscriptionFromRevenueCatV2Entitlements(
