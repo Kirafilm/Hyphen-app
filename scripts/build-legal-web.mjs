@@ -21,12 +21,23 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+const GOOGLE_AW_ID = "AW-18199669116";
+const GOOGLE_TAG_SNIPPET = `  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${GOOGLE_AW_ID}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${GOOGLE_AW_ID}');
+  </script>`;
+
 function header(active) {
   const privacyClass = active === "privacy" ? ' aria-current="page"' : "";
   const termsClass = active === "terms" ? ' aria-current="page"' : "";
   return `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+${GOOGLE_TAG_SNIPPET}
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{TITLE}} | Hyphen自由職</title>
