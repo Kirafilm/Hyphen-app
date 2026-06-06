@@ -132,7 +132,7 @@ export default function PostScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>提示</Text>
                 <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
-                  發佈工作完全免費。您只需在選定 Freelancer 後才需支付費用。
+                  發佈工作完全免費。
                 </Text>
               </View>
             </View>

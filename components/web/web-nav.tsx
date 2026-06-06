@@ -56,7 +56,7 @@ export function WebNav() {
           <HyphenLogo height={40} />
           <View>
             <Text style={{ fontSize: 22, fontWeight: "800", color: colors.foreground }}>Hyphen 自由職</Text>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginTop: 1 }}>Web Beta</Text>
+            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginTop: 1 }}>連接自由職業者與工作機會</Text>
           </View>
         </TouchableOpacity>
 
