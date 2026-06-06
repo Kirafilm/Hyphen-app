@@ -2,6 +2,10 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./trpc";
 import * as db from "../db";
+import {
+  fetchActiveSubscriptionFromRevenueCat,
+  isRevenueCatApiConfigured,
+} from "./revenuecat";
 import { getStripeClient, isStripeConfigured, stripeCheckoutUrls, stripePortalReturnUrl, stripePriceIdForPlan } from "./stripe";
 
 const planSchema = z.union([z.literal("none"), z.literal("monthly"), z.literal("yearly")]);
@@ -75,6 +79,29 @@ export const subscriptionRouter = router({
       active: status.expiresAt ? status.expiresAt.getTime() > Date.now() && status.plan !== "none" : false,
       stripeCustomerId: status.stripeCustomerId ?? null,
     };
+  }),
+
+  /** Verify App Store / Play subscription with RevenueCat and mirror it into our DB. */
+  syncFromStore: protectedProcedure.mutation(async ({ ctx }) => {
+    const openId = ctx.user.openId?.trim();
+    if (!openId) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "缺少使用者 ID" });
+    }
+    if (!isRevenueCatApiConfigured()) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "RevenueCat Secret API Key 尚未設定（REVENUECAT_SECRET_API_KEY）。",
+      });
+    }
+
+    const active = await fetchActiveSubscriptionFromRevenueCat(openId);
+    if (!active) {
+      await db.setSubscriptionStatus(ctx.user.id, { plan: "none", expiresAt: null });
+      return { active: false, plan: "none" as const, expiresAt: null };
+    }
+
+    await db.setSubscriptionStatus(ctx.user.id, { plan: active.plan, expiresAt: active.expiresAt });
+    return { active: true, plan: active.plan, expiresAt: active.expiresAt };
   }),
 
   createStripeCheckout: protectedProcedure

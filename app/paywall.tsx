@@ -72,7 +72,7 @@ export default function PaywallScreen() {
   const meQuery = trpc.subscription.me.useQuery(undefined, {
     enabled: isAuthenticated,
   });
-  const { syncFromCustomerInfo } = useMobileSubscriptionSync();
+  const { syncSubscription } = useMobileSubscriptionSync();
   const stripeCheckoutMutation = trpc.subscription.createStripeCheckout.useMutation();
   const stripePortalMutation = trpc.subscription.createStripePortal.useMutation();
 
@@ -139,11 +139,12 @@ export default function PaywallScreen() {
       if (nextCustomerInfo) {
         setCustomerInfo(nextCustomerInfo);
         if (!meQuery.data?.active) {
-          syncFromCustomerInfo(nextCustomerInfo);
+          await syncSubscription(nextCustomerInfo);
+          await meQuery.refetch();
         }
       }
     })().catch((e) => setRcError(e instanceof Error ? e.message : String(e)));
-  }, [isAuthenticated, meQuery.data?.active, syncFromCustomerInfo]);
+  }, [isAuthenticated, meQuery, syncSubscription]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);
@@ -152,7 +153,8 @@ export default function PaywallScreen() {
       const result = await revenueCatPurchasePackage(pkg);
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
-      syncFromCustomerInfo(nextCustomerInfo);
+      await syncSubscription(nextCustomerInfo);
+      await meQuery.refetch();
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -167,7 +169,8 @@ export default function PaywallScreen() {
       const result = await revenueCatPurchaseStoreProduct(product);
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
-      syncFromCustomerInfo(nextCustomerInfo);
+      await syncSubscription(nextCustomerInfo);
+      await meQuery.refetch();
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -206,7 +209,8 @@ export default function PaywallScreen() {
       const nextCustomerInfo = await revenueCatRestorePurchases();
       if (nextCustomerInfo) {
         setCustomerInfo(nextCustomerInfo);
-        syncFromCustomerInfo(nextCustomerInfo);
+        await syncSubscription(nextCustomerInfo);
+        await meQuery.refetch();
       }
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));

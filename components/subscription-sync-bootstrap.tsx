@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -10,29 +10,50 @@ import { trpc } from "@/lib/trpc";
 export function SubscriptionSyncBootstrap() {
   const { isAuthenticated, user } = useAuth();
   const meQuery = trpc.subscription.me.useQuery(undefined, { enabled: isAuthenticated });
-  const { syncFromCustomerInfo } = useMobileSubscriptionSync();
+  const { syncSubscription } = useMobileSubscriptionSync();
   const syncingRef = useRef(false);
 
-  useEffect(() => {
-    if (Platform.OS === "web" || !isAuthenticated || !user?.openId) return;
-    if (meQuery.isLoading || meQuery.data?.active || syncingRef.current) return;
-
+  const runSync = useCallback(async () => {
+    if (Platform.OS === "web" || !user?.openId || syncingRef.current) return;
     syncingRef.current = true;
-    (async () => {
-      try {
-        await revenueCatLogIn(user.openId!);
-        const info = await revenueCatGetCustomerInfo();
-        syncFromCustomerInfo(info);
-      } catch (err) {
-        console.warn(
-          "[SubscriptionSync] skipped:",
-          err instanceof Error ? err.message : String(err),
-        );
-      } finally {
-        syncingRef.current = false;
-      }
-    })();
-  }, [isAuthenticated, user?.openId, meQuery.isLoading, meQuery.data?.active, syncFromCustomerInfo]);
+    try {
+      await revenueCatLogIn(user.openId);
+      const info = await revenueCatGetCustomerInfo();
+      await syncSubscription(info);
+    } catch (err) {
+      console.warn(
+        "[SubscriptionSync] skipped:",
+        err instanceof Error ? err.message : String(err),
+      );
+    } finally {
+      syncingRef.current = false;
+    }
+  }, [syncSubscription, user?.openId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || meQuery.isLoading || meQuery.data?.active) return;
+    void runSync();
+  }, [isAuthenticated, meQuery.isLoading, meQuery.data?.active, runSync]);
 
   return null;
+}
+
+export function useSubscriptionSyncOnFocus() {
+  const { isAuthenticated, user } = useAuth();
+  const meQuery = trpc.subscription.me.useQuery(undefined, { enabled: isAuthenticated });
+  const { syncSubscription } = useMobileSubscriptionSync();
+  const syncingRef = useRef(false);
+
+  return useCallback(async () => {
+    if (Platform.OS === "web" || !isAuthenticated || !user?.openId || syncingRef.current) return;
+    syncingRef.current = true;
+    try {
+      await revenueCatLogIn(user.openId);
+      const info = await revenueCatGetCustomerInfo();
+      await syncSubscription(info);
+      await meQuery.refetch();
+    } finally {
+      syncingRef.current = false;
+    }
+  }, [isAuthenticated, meQuery, syncSubscription, user?.openId]);
 }

@@ -58,9 +58,10 @@ export const REVENUECAT_ENTITLEMENT_ID = "pro";
 export const SUBSCRIPTION_PRODUCT_IDS = ["hyphen_pro_monthly", "hyphen_pro_yearly"] as const;
 
 export function planFromProductId(productId: string): "monthly" | "yearly" | null {
-  const base = productId.split(":")[0]?.trim() ?? productId;
-  if (base === "hyphen_pro_monthly") return "monthly";
-  if (base === "hyphen_pro_yearly") return "yearly";
+  const normalized = productId.trim().toLowerCase();
+  const base = normalized.split(":")[0]?.trim() ?? normalized;
+  if (base === "hyphen_pro_monthly" || base.includes("monthly")) return "monthly";
+  if (base === "hyphen_pro_yearly" || base.includes("yearly") || base.includes("annual")) return "yearly";
   return null;
 }
 
