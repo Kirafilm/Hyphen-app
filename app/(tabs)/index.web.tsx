@@ -84,10 +84,10 @@ export default function HomeWebScreen() {
                 <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>Web 桌面優先體驗</Text>
               </View>
               <Text style={{ fontSize: 34, fontWeight: "800", color: colors.foreground, lineHeight: 42 }}>
-                用桌面版更快搵自由工作，同時保留 App 發佈流程。
+                {"用桌面版更快搵自由工作，\n簡易的發佈流程。"}
               </Text>
               <Text style={{ color: colors.muted, fontSize: 15, lineHeight: 24 }}>
-                在網頁瀏覽職缺、按分類搜尋；需要發佈或完整訂閱流程時，可繼續使用 iOS / Android App。
+                在網頁瀏覽職缺、按分類搜尋；iOS / Android App 將會陸續推出。
               </Text>
               <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
                 <TouchableOpacity
