@@ -201,6 +201,7 @@ function SubscriptionPlanButton({
   );
 }
 
+export default function PaywallScreen() {
   const router = useRouter();
   const colors = useColors();
   const params = useLocalSearchParams<{ jobId?: string }>();
