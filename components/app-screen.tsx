@@ -1,4 +1,4 @@
-import { Platform, View, type ViewProps } from "react-native";
+import { Platform, View, type ScrollViewProps, type ViewProps } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/use-colors";
@@ -11,10 +11,23 @@ type AppScreenProps = ViewProps & {
   edges?: Edge[];
   safeArea?: boolean;
   children: React.ReactNode;
+  /** Full-width page scroll on web (scrollbar at viewport edge). */
+  webScroll?: boolean;
+  refreshControl?: ScrollViewProps["refreshControl"];
+  contentContainerStyle?: ScrollViewProps["contentContainerStyle"];
 };
 
 /** Full-screen wrapper with the shared ethereal background. */
-export function AppScreen({ edges = ["top", "left", "right"], safeArea = true, children, style, ...props }: AppScreenProps) {
+export function AppScreen({
+  edges = ["top", "left", "right"],
+  safeArea = true,
+  children,
+  webScroll = false,
+  refreshControl,
+  contentContainerStyle,
+  style,
+  ...props
+}: AppScreenProps) {
   const colors = useColors();
   const colorScheme = useColorScheme();
 
@@ -22,7 +35,9 @@ export function AppScreen({ edges = ["top", "left", "right"], safeArea = true, c
   const content = isWeb ? (
     <>
       <WebNav />
-      <WebContainer>{children}</WebContainer>
+      <WebContainer scroll={webScroll} refreshControl={refreshControl} contentContainerStyle={contentContainerStyle}>
+        {children}
+      </WebContainer>
     </>
   ) : (
     children

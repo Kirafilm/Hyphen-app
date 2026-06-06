@@ -1,4 +1,4 @@
-import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, RefreshControl, Text, TouchableOpacity, View } from "react-native";
 import { useMemo } from "react";
 import { useRouter } from "expo-router";
 
@@ -6,7 +6,6 @@ import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories } from "@/lib/mock-data";
 import { formatJobSchedule } from "@/lib/job-schedule";
-import { formatPublishedDate } from "@/lib/utils";
 import { AppScreen } from "@/components/app-screen";
 import type { AppRouter } from "@/server/routers";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -38,8 +37,9 @@ function JobCard({
       onPress={onPress}
       activeOpacity={0.85}
       style={{
-        flex: 1,
+        width: "32%",
         minWidth: 280,
+        flexGrow: 0,
         backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 1,
@@ -69,16 +69,15 @@ export default function HomeWebScreen() {
   const jobs = jobsQuery.data ?? [];
 
   const featuredJobs = useMemo(() => jobs.slice(0, 3), [jobs]);
-  const latestJobs = useMemo(() => jobs.slice(0, 10), [jobs]);
+  const latestJobs = useMemo(() => jobs.slice(0, 12), [jobs]);
   const regionCount = useMemo(() => new Set(jobs.map((j) => j.location).filter(Boolean)).size || 1, [jobs]);
 
   return (
-    <AppScreen>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
-      >
-        <View style={{ width: "100%", paddingTop: 8, paddingBottom: 48 }}>
+    <AppScreen
+      webScroll
+      refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
+    >
+      <View style={{ width: "100%", paddingTop: 8 }}>
           <View style={{ flexDirection: "row", gap: 24, alignItems: "stretch" }}>
             <View style={{ flex: 2, backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 28, gap: 16 }}>
               <View style={{ alignSelf: "flex-start", backgroundColor: `${colors.primary}18`, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }}>
@@ -168,23 +167,17 @@ export default function HomeWebScreen() {
                 <Text style={{ color: colors.primary, fontWeight: "700" }}>查看全部</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ gap: 12 }}>
-              {latestJobs.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={() => router.push(`/job/${item.id}`)}
-                  style={{ backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 16 }}
-                >
-                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 15 }}>{item.title}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 13, marginTop: 6 }}>
-                    {formatBudget(item.budget)} · {item.location} · {formatPublishedDate(item.createdAt)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {jobsQuery.isLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+                {latestJobs.map((item) => (
+                  <JobCard key={item.id} item={item} colors={colors} onPress={() => router.push(`/job/${item.id}`)} />
+                ))}
+              </View>
+            )}
           </View>
         </View>
-      </ScrollView>
     </AppScreen>
   );
 }

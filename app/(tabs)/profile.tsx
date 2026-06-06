@@ -45,22 +45,91 @@ export default function ProfileScreen() {
 
   const pad = screenPaddingHorizontal();
 
+  const promoPoints = [
+    { icon: "mail-outline" as const, text: "沒有繁複的認證，經電郵註冊即可使用。" },
+    { icon: "shield-checkmark-outline" as const, text: "不收集任何私隱資料。" },
+    { icon: "eye-outline" as const, text: "有專人監督所有發佈，防止垃圾內容。" },
+  ];
+
+  const PromoBox = () => (
+    <View
+      style={{
+        flex: isWeb ? 1 : undefined,
+        backgroundColor: colors.surface,
+        borderRadius: isWeb ? 24 : 18,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: isWeb ? 28 : 20,
+        gap: 16,
+        maxWidth: isWeb ? undefined : 560,
+        alignSelf: isWeb ? "stretch" : "center",
+        width: isWeb ? undefined : "100%",
+      }}
+    >
+      <View
+        style={{
+          alignSelf: "flex-start",
+          backgroundColor: `${colors.primary}18`,
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 999,
+        }}
+      >
+        <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>平台承諾</Text>
+      </View>
+      <Text style={{ color: colors.foreground, fontSize: isWeb ? 22 : 18, fontWeight: "800", lineHeight: isWeb ? 30 : 26 }}>
+        簡單、安全、可信賴
+      </Text>
+      <View style={{ gap: 14 }}>
+        {promoPoints.map((point) => (
+          <View key={point.text} style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                backgroundColor: `${colors.primary}14`,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name={point.icon} size={18} color={colors.primary} />
+            </View>
+            <Text style={{ flex: 1, color: colors.muted, fontSize: 14, lineHeight: 22 }}>{point.text}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
   return (
     <AppScreen>
         <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
           <PageHeader title="個人" subtitle={isWeb ? "管理帳戶、訂閱與設定" : undefined} />
 
-          <View style={{ paddingHorizontal: pad, paddingBottom: 16 }}>
+          <View
+            style={{
+              paddingHorizontal: pad,
+              paddingBottom: 16,
+              flexDirection: isWeb ? "row" : "column",
+              gap: isWeb ? 24 : 16,
+              maxWidth: isWeb ? 960 : undefined,
+              alignSelf: isWeb ? "center" : "stretch",
+              width: isWeb ? "100%" : undefined,
+              alignItems: "stretch",
+            }}
+          >
             <View
               style={{
+                flex: isWeb ? 1.2 : undefined,
                 backgroundColor: colors.surface,
-                borderRadius: 18,
+                borderRadius: isWeb ? 24 : 18,
                 borderWidth: 1,
                 borderColor: colors.border,
                 padding: 24,
-                maxWidth: isWeb ? 560 : undefined,
-                alignSelf: isWeb ? "center" : "stretch",
-                width: isWeb ? "100%" : undefined,
+                maxWidth: isWeb ? undefined : 560,
+                alignSelf: isWeb ? "stretch" : "center",
+                width: isWeb ? undefined : "100%",
               }}
             >
               <View style={{ alignItems: "center", marginBottom: 16 }}>
@@ -85,6 +154,8 @@ export default function ProfileScreen() {
                 {isAuthenticated ? (subscriptionQuery.data?.active ? "已訂閱，可查看聯絡資訊" : "未訂閱，只可查看工作內容") : "請先登入"}
               </Text>
             </View>
+
+            <PromoBox />
           </View>
 
           <View
