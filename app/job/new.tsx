@@ -353,6 +353,9 @@ export default function PostJobScreen() {
               <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
                 工作描述 <Text style={{ color: colors.error }}>*</Text>
               </Text>
+              <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8, lineHeight: 18 }}>
+                禁止工作描述內容內填寫聯絡資訊
+              </Text>
               <TextInput
                 value={formData.description}
                 onChangeText={(text) => updateField("description", text)}

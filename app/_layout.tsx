@@ -26,6 +26,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { NotificationBootstrap } from "@/components/notification-bootstrap";
+import { SubscriptionSyncBootstrap } from "@/components/subscription-sync-bootstrap";
 import { ThemeStatusBar } from "@/components/theme-status-bar";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -103,6 +104,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings" />
           </Stack>
           <NotificationBootstrap />
+          <SubscriptionSyncBootstrap />
           <ThemeStatusBar />
         </QueryClientProvider>
       </trpc.Provider>

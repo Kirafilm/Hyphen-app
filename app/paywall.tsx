@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
+import { useMobileSubscriptionSync } from "@/hooks/use-mobile-subscription-sync";
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
@@ -71,9 +72,7 @@ export default function PaywallScreen() {
   const meQuery = trpc.subscription.me.useQuery(undefined, {
     enabled: isAuthenticated,
   });
-  const activateMutation = trpc.subscription.debugActivate.useMutation({
-    onSuccess: () => meQuery.refetch(),
-  });
+  const { syncFromCustomerInfo } = useMobileSubscriptionSync();
   const stripeCheckoutMutation = trpc.subscription.createStripeCheckout.useMutation();
   const stripePortalMutation = trpc.subscription.createStripePortal.useMutation();
 
@@ -137,22 +136,14 @@ export default function PaywallScreen() {
       const products = await revenueCatGetSubscriptionProducts();
       setStoreProducts(products);
       const nextCustomerInfo = await revenueCatGetCustomerInfo();
-      if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
+      if (nextCustomerInfo) {
+        setCustomerInfo(nextCustomerInfo);
+        if (!meQuery.data?.active) {
+          syncFromCustomerInfo(nextCustomerInfo);
+        }
+      }
     })().catch((e) => setRcError(e instanceof Error ? e.message : String(e)));
-  }, [isAuthenticated]);
-
-  const maybeActivateDebugSubscription = (productId: string, nextCustomerInfo?: CustomerInfo | null) => {
-    const info = nextCustomerInfo ?? customerInfo;
-    const entitled = info?.entitlements?.active?.[REVENUECAT_ENTITLEMENT_ID];
-    if (!entitled) return;
-
-    if (productId === "hyphen_pro_monthly") {
-      activateMutation.mutate({ plan: "monthly" });
-    }
-    if (productId === "hyphen_pro_yearly") {
-      activateMutation.mutate({ plan: "yearly" });
-    }
-  };
+  }, [isAuthenticated, meQuery.data?.active, syncFromCustomerInfo]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);
@@ -161,7 +152,7 @@ export default function PaywallScreen() {
       const result = await revenueCatPurchasePackage(pkg);
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
-      maybeActivateDebugSubscription(pkg.product?.identifier ?? "", nextCustomerInfo);
+      syncFromCustomerInfo(nextCustomerInfo);
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -176,7 +167,7 @@ export default function PaywallScreen() {
       const result = await revenueCatPurchaseStoreProduct(product);
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
-      maybeActivateDebugSubscription(product.identifier, nextCustomerInfo);
+      syncFromCustomerInfo(nextCustomerInfo);
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -213,7 +204,10 @@ export default function PaywallScreen() {
     setRestoreLoading(true);
     try {
       const nextCustomerInfo = await revenueCatRestorePurchases();
-      if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
+      if (nextCustomerInfo) {
+        setCustomerInfo(nextCustomerInfo);
+        syncFromCustomerInfo(nextCustomerInfo);
+      }
     } catch (e) {
       setRcError(e instanceof Error ? e.message : String(e));
     } finally {

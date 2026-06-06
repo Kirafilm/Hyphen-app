@@ -162,10 +162,23 @@ export const subscriptionRouter = router({
   }),
 
   debugActivate: protectedProcedure
-    .input(z.object({ plan: planSchema }))
+    .input(
+      z.object({
+        plan: planSchema,
+        expiresAt: z.coerce.date().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const ms = planToDurationMs(input.plan);
-      const expiresAt = ms ? new Date(Date.now() + ms) : null;
+      if (input.plan === "none") {
+        await db.setSubscriptionStatus(ctx.user.id, { plan: "none", expiresAt: null });
+        return { success: true } as const;
+      }
+
+      const expiresAt = input.expiresAt ?? new Date(Date.now() + planToDurationMs(input.plan));
+      if (expiresAt.getTime() <= Date.now()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "訂閱已過期" });
+      }
+
       await db.setSubscriptionStatus(ctx.user.id, { plan: input.plan, expiresAt });
       return { success: true } as const;
     }),
