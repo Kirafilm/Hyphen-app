@@ -1,6 +1,6 @@
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
-import { revenueCatLogIn } from "@/lib/revenuecat";
+import { revenueCatLogIn, linkRevenueCatAccount } from "@/lib/revenuecat";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
@@ -179,7 +179,7 @@ export function useAuth(options?: UseAuthOptions) {
 
     (async () => {
       try {
-        await revenueCatLogIn(openId);
+        await linkRevenueCatAccount(openId, user?.email ?? null);
       } catch (err) {
         // RevenueCat auth sync should never block initial screen render.
         console.warn(
@@ -188,7 +188,7 @@ export function useAuth(options?: UseAuthOptions) {
         );
       }
     })();
-  }, [user?.openId]);
+  }, [user?.openId, user?.email]);
 
   return {
     user,

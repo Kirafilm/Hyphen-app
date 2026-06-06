@@ -1,5 +1,5 @@
 import * as db from "../db";
-import { fetchActiveSubscriptionFromRevenueCat, isRevenueCatApiConfigured } from "./revenuecat";
+import { fetchActiveSubscriptionFromRevenueCatForUser, isRevenueCatApiConfigured } from "./revenuecat";
 
 export type ResolvedSubscription = {
   plan: db.SubscriptionPlan;
@@ -16,6 +16,7 @@ function isActiveStatus(status: db.SubscriptionStatus) {
 export async function resolveSubscriptionStatus(user: {
   id: number;
   openId: string;
+  email?: string | null;
 }): Promise<ResolvedSubscription> {
   let status = await db.getSubscriptionStatus(user.id);
   if (isActiveStatus(status)) {
@@ -37,7 +38,10 @@ export async function resolveSubscriptionStatus(user: {
     };
   }
 
-  const fromStore = await fetchActiveSubscriptionFromRevenueCat(openId);
+  const fromStore = await fetchActiveSubscriptionFromRevenueCatForUser({
+    openId,
+    email: user.email,
+  });
   if (!fromStore) {
     return {
       plan: status.plan,

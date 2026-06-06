@@ -5,10 +5,10 @@ import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import {
   REVENUECAT_ENTITLEMENT_ID,
+  linkRevenueCatAccount,
   revenueCatGetCustomerInfo,
   revenueCatGetOfferings,
   revenueCatGetSubscriptionProducts,
-  revenueCatLogIn,
   revenueCatPurchasePackage,
   revenueCatPurchaseStoreProduct,
   revenueCatRestorePurchases,
@@ -133,7 +133,7 @@ export default function PaywallScreen() {
     (async () => {
       setRcError(null);
       if (user?.openId) {
-        await revenueCatLogIn(user.openId);
+        await linkRevenueCatAccount(user.openId, user.email ?? null);
       }
       const nextOfferings = await revenueCatGetOfferings();
       if (nextOfferings) setOfferings(nextOfferings);

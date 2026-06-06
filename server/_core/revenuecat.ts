@@ -255,6 +255,47 @@ export async function fetchActiveSubscriptionFromRevenueCat(
   return fetchActiveSubscriptionFromRevenueCatV1(appUserId, secret);
 }
 
+async function findRevenueCatCustomerIdsByEmail(email: string): Promise<string[]> {
+  const secret = revenueCatSecretKey();
+  const projectId = revenueCatProjectId();
+  if (!secret || !projectId) return [];
+
+  const res = await fetch(
+    `https://api.revenuecat.com/v2/projects/${encodeURIComponent(projectId)}/customers?search=${encodeURIComponent(email)}&limit=20`,
+    { headers: revenueCatAuthHeaders(secret) },
+  );
+
+  if (!res.ok) return [];
+
+  const data = (await res.json()) as RevenueCatV2ListResponse<{ id?: string | null }>;
+  return (data.items ?? [])
+    .map((item) => item.id?.trim())
+    .filter((id): id is string => Boolean(id));
+}
+
+export async function fetchActiveSubscriptionFromRevenueCatForUser(user: {
+  openId: string;
+  email?: string | null;
+}): Promise<RevenueCatActiveSubscription | null> {
+  const candidateIds = new Set<string>();
+  const openId = user.openId?.trim();
+  if (openId) candidateIds.add(openId);
+
+  const email = user.email?.trim();
+  if (email) {
+    for (const id of await findRevenueCatCustomerIdsByEmail(email)) {
+      candidateIds.add(id);
+    }
+  }
+
+  for (const appUserId of candidateIds) {
+    const active = await fetchActiveSubscriptionFromRevenueCat(appUserId);
+    if (active) return active;
+  }
+
+  return null;
+}
+
 export type RevenueCatWebhookBody = {
   api_version?: string;
   event?: {

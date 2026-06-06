@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useMobileSubscriptionSync } from "@/hooks/use-mobile-subscription-sync";
-import { revenueCatGetCustomerInfo, revenueCatLogIn } from "@/lib/revenuecat";
+import { linkRevenueCatAccount } from "@/lib/revenuecat";
 import { trpc } from "@/lib/trpc";
 
 /** Keeps server subscription status in sync with RevenueCat after App Store / Play purchases. */
@@ -17,8 +17,7 @@ export function SubscriptionSyncBootstrap() {
     if (Platform.OS === "web" || !user?.openId || syncingRef.current) return;
     syncingRef.current = true;
     try {
-      await revenueCatLogIn(user.openId);
-      const info = await revenueCatGetCustomerInfo();
+      const info = await linkRevenueCatAccount(user.openId, user.email ?? null);
       await syncSubscription(info);
     } catch (err) {
       console.warn(
@@ -28,7 +27,7 @@ export function SubscriptionSyncBootstrap() {
     } finally {
       syncingRef.current = false;
     }
-  }, [syncSubscription, user?.openId]);
+  }, [syncSubscription, user?.email, user?.openId]);
 
   useEffect(() => {
     if (!isAuthenticated || meQuery.isLoading || meQuery.data?.active) return;
@@ -48,12 +47,11 @@ export function useSubscriptionSyncOnFocus() {
     if (Platform.OS === "web" || !isAuthenticated || !user?.openId || syncingRef.current) return;
     syncingRef.current = true;
     try {
-      await revenueCatLogIn(user.openId);
-      const info = await revenueCatGetCustomerInfo();
+      const info = await linkRevenueCatAccount(user.openId, user.email ?? null);
       await syncSubscription(info);
       await meQuery.refetch();
     } finally {
       syncingRef.current = false;
     }
-  }, [isAuthenticated, meQuery, syncSubscription, user?.openId]);
+  }, [isAuthenticated, meQuery, syncSubscription, user?.email, user?.openId]);
 }

@@ -83,15 +83,48 @@ export async function revenueCatPurchaseStoreProduct(product: PurchasesStoreProd
   return mod.default.purchaseStoreProduct(product);
 }
 
-export async function revenueCatLogIn(openId: string) {
+export async function revenueCatLogIn(openId: string, email?: string | null) {
+  return linkRevenueCatAccount(openId, email);
+}
+
+/** Bind RevenueCat to the Supabase user id and merge any anonymous/test purchases. */
+export async function linkRevenueCatAccount(openId: string, email?: string | null) {
   const mod = await ensureConfigured();
   if (!mod) return null;
-  if (loggedInOpenId === openId) {
-    return mod.default.getCustomerInfo();
+
+  const trimmedOpenId = openId.trim();
+  if (!trimmedOpenId) return null;
+
+  let customerInfo = null;
+  if (loggedInOpenId !== trimmedOpenId) {
+    const loginResult = await mod.default.logIn(trimmedOpenId);
+    loggedInOpenId = trimmedOpenId;
+    customerInfo = loginResult.customerInfo;
   }
-  const result = await mod.default.logIn(openId);
-  loggedInOpenId = openId;
-  return result;
+
+  const trimmedEmail = email?.trim();
+  if (trimmedEmail) {
+    try {
+      await mod.default.setEmail(trimmedEmail);
+    } catch (err) {
+      console.warn(
+        "[RevenueCat] setEmail skipped:",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  try {
+    const restored = await mod.default.restorePurchases();
+    if (restored) customerInfo = restored;
+  } catch (err) {
+    console.warn(
+      "[RevenueCat] restorePurchases skipped:",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  return customerInfo ?? mod.default.getCustomerInfo();
 }
 
 export async function revenueCatLogOut() {

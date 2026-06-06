@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./trpc";
 import * as db from "../db";
 import {
-  fetchActiveSubscriptionFromRevenueCat,
+  fetchActiveSubscriptionFromRevenueCatForUser,
   isRevenueCatApiConfigured,
 } from "./revenuecat";
 import { resolveSubscriptionStatus } from "./subscriptionStatus";
@@ -95,7 +95,10 @@ export const subscriptionRouter = router({
       });
     }
 
-    const active = await fetchActiveSubscriptionFromRevenueCat(openId);
+    const active = await fetchActiveSubscriptionFromRevenueCatForUser({
+      openId,
+      email: ctx.user.email,
+    });
     if (!active) {
       await db.setSubscriptionStatus(ctx.user.id, { plan: "none", expiresAt: null });
       return { active: false, plan: "none" as const, expiresAt: null };
