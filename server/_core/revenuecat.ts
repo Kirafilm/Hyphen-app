@@ -58,6 +58,7 @@ type RevenueCatV2Subscription = {
   gives_access?: boolean;
   status?: string;
   current_period_ends_at?: number | null;
+  product_id?: string | null;
   pending_changes?: { product?: RevenueCatV2Product | null } | null;
   entitlements?: {
     items?: Array<{
@@ -65,6 +66,12 @@ type RevenueCatV2Subscription = {
       products?: { items?: RevenueCatV2Product[] | null } | null;
     }> | null;
   } | null;
+};
+
+type RevenueCatV2ActiveEntitlement = {
+  entitlement_id?: string | null;
+  expires_at?: number | null;
+  lookup_key?: string | null;
 };
 
 type RevenueCatV2ListResponse<T> = {
@@ -75,7 +82,6 @@ function parseSubscriptionRecord(
   subscription: RevenueCatV2Subscription,
 ): RevenueCatActiveSubscription | null {
   if (!subscription.gives_access) return null;
-  if (subscription.status !== "active" && subscription.status !== "trialing") return null;
 
   const storeIdentifiers: string[] = [];
   const pendingStoreId = subscription.pending_changes?.product?.store_identifier;
@@ -87,21 +93,24 @@ function parseSubscriptionRecord(
     }
   }
 
+  if (subscription.product_id) storeIdentifiers.push(subscription.product_id);
+
+  const endsAtMs = subscription.current_period_ends_at;
+  const fallbackExpiresAt =
+    typeof endsAtMs === "number" && Number.isFinite(endsAtMs)
+      ? new Date(endsAtMs)
+      : new Date(Date.now() + planToDurationMs("monthly"));
+
+  if (fallbackExpiresAt.getTime() <= Date.now()) return null;
+
   for (const storeIdentifier of storeIdentifiers) {
     const plan = planFromRevenueCatProductId(storeIdentifier);
     if (!plan) continue;
-
-    const endsAtMs = subscription.current_period_ends_at;
-    const expiresAt =
-      typeof endsAtMs === "number" && Number.isFinite(endsAtMs)
-        ? new Date(endsAtMs)
-        : new Date(Date.now() + planToDurationMs(plan));
-    if (expiresAt.getTime() <= Date.now()) return null;
-
-    return { plan, expiresAt };
+    return { plan, expiresAt: fallbackExpiresAt };
   }
 
-  return null;
+  // Active subscription without a parsed product id — still unlock access.
+  return { plan: "monthly", expiresAt: fallbackExpiresAt };
 }
 
 async function fetchActiveSubscriptionFromRevenueCatV1(
@@ -137,16 +146,21 @@ async function fetchActiveSubscriptionFromRevenueCatV2(
   appUserId: string,
   secret: string,
   projectId: string,
+  environment: "production" | "sandbox",
 ): Promise<RevenueCatActiveSubscription | null> {
   const res = await fetch(
-    `https://api.revenuecat.com/v2/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(appUserId)}/subscriptions`,
+    `https://api.revenuecat.com/v2/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(appUserId)}/subscriptions?environment=${environment}`,
     { headers: revenueCatAuthHeaders(secret) },
   );
 
   if (res.status === 404) return null;
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.warn("[revenuecat] v2 subscriptions lookup failed:", res.status, body.slice(0, 200));
+    console.warn(
+      `[revenuecat] v2 subscriptions lookup failed (${environment}):`,
+      res.status,
+      body.slice(0, 200),
+    );
     return null;
   }
 
@@ -154,6 +168,37 @@ async function fetchActiveSubscriptionFromRevenueCatV2(
   for (const subscription of data.items ?? []) {
     const parsed = parseSubscriptionRecord(subscription);
     if (parsed) return parsed;
+  }
+
+  return null;
+}
+
+async function fetchActiveSubscriptionFromRevenueCatV2Entitlements(
+  appUserId: string,
+  secret: string,
+  projectId: string,
+): Promise<RevenueCatActiveSubscription | null> {
+  const res = await fetch(
+    `https://api.revenuecat.com/v2/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(appUserId)}/active_entitlements`,
+    { headers: revenueCatAuthHeaders(secret) },
+  );
+
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.warn("[revenuecat] v2 active_entitlements lookup failed:", res.status, body.slice(0, 200));
+    return null;
+  }
+
+  const data = (await res.json()) as RevenueCatV2ListResponse<RevenueCatV2ActiveEntitlement>;
+  for (const entitlement of data.items ?? []) {
+    const expiresAt =
+      typeof entitlement.expires_at === "number" && Number.isFinite(entitlement.expires_at)
+        ? new Date(entitlement.expires_at)
+        : new Date(Date.now() + planToDurationMs("monthly"));
+    if (expiresAt.getTime() <= Date.now()) continue;
+
+    return { plan: "monthly", expiresAt };
   }
 
   return null;
@@ -194,8 +239,17 @@ export async function fetchActiveSubscriptionFromRevenueCat(
 
   const projectId = revenueCatProjectId();
   if (projectId) {
-    const v2 = await fetchActiveSubscriptionFromRevenueCatV2(appUserId, secret, projectId);
-    if (v2) return v2;
+    for (const environment of ["production", "sandbox"] as const) {
+      const v2 = await fetchActiveSubscriptionFromRevenueCatV2(appUserId, secret, projectId, environment);
+      if (v2) return v2;
+    }
+
+    const entitlements = await fetchActiveSubscriptionFromRevenueCatV2Entitlements(
+      appUserId,
+      secret,
+      projectId,
+    );
+    if (entitlements) return entitlements;
   }
 
   return fetchActiveSubscriptionFromRevenueCatV1(appUserId, secret);

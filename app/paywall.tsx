@@ -8,6 +8,7 @@ import {
   revenueCatGetCustomerInfo,
   revenueCatGetOfferings,
   revenueCatGetSubscriptionProducts,
+  revenueCatLogIn,
   revenueCatPurchasePackage,
   revenueCatPurchaseStoreProduct,
   revenueCatRestorePurchases,
@@ -67,7 +68,7 @@ export default function PaywallScreen() {
   const router = useRouter();
   const colors = useColors();
   const params = useLocalSearchParams<{ jobId?: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const meQuery = trpc.subscription.me.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -131,6 +132,9 @@ export default function PaywallScreen() {
     if (Platform.OS === "web") return;
     (async () => {
       setRcError(null);
+      if (user?.openId) {
+        await revenueCatLogIn(user.openId);
+      }
       const nextOfferings = await revenueCatGetOfferings();
       if (nextOfferings) setOfferings(nextOfferings);
       const products = await revenueCatGetSubscriptionProducts();
@@ -144,7 +148,7 @@ export default function PaywallScreen() {
         }
       }
     })().catch((e) => setRcError(e instanceof Error ? e.message : String(e)));
-  }, [isAuthenticated, meQuery, syncSubscription]);
+  }, [isAuthenticated, meQuery, syncSubscription, user?.openId]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);

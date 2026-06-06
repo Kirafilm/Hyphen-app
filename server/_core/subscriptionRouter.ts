@@ -6,6 +6,7 @@ import {
   fetchActiveSubscriptionFromRevenueCat,
   isRevenueCatApiConfigured,
 } from "./revenuecat";
+import { resolveSubscriptionStatus } from "./subscriptionStatus";
 import { getStripeClient, isStripeConfigured, stripeCheckoutUrls, stripePortalReturnUrl, stripePriceIdForPlan } from "./stripe";
 
 const planSchema = z.union([z.literal("none"), z.literal("monthly"), z.literal("yearly")]);
@@ -72,12 +73,12 @@ async function resolveStripeCustomerId(
 
 export const subscriptionRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
-    const status = await db.getSubscriptionStatus(ctx.user.id);
+    const status = await resolveSubscriptionStatus(ctx.user);
     return {
       plan: status.plan,
       expiresAt: status.expiresAt,
-      active: status.expiresAt ? status.expiresAt.getTime() > Date.now() && status.plan !== "none" : false,
-      stripeCustomerId: status.stripeCustomerId ?? null,
+      active: status.active,
+      stripeCustomerId: status.stripeCustomerId,
     };
   }),
 

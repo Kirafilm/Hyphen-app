@@ -41,5 +41,16 @@ export function mobileSubscriptionFromCustomerInfo(
     if (parsed) return parsed;
   }
 
+  const first = Object.values(active)[0];
+  if (first) {
+    const expiresAt = first.expirationDate ? new Date(first.expirationDate) : null;
+    if (!expiresAt || expiresAt.getTime() > Date.now()) {
+      return {
+        plan: "monthly",
+        expiresAt: expiresAt ?? new Date(Date.now() + planDurationMs("monthly")),
+      };
+    }
+  }
+
   return null;
 }

@@ -3,14 +3,13 @@ import { z } from "zod";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./trpc";
 import * as db from "../db";
 import { notifyNewJobPosted } from "./pushNotifications";
+import { isResolvedSubscriptionActive, resolveSubscriptionStatus } from "./subscriptionStatus";
 
-function isSubscriptionActive(status: db.SubscriptionStatus) {
-  if (status.plan === "none") return false;
-  if (!status.expiresAt) return false;
-  return status.expiresAt.getTime() > Date.now();
-}
-
-function canViewJobContact(job: db.JobRecord, viewer: { id: number; role: string } | null, activeSub: boolean) {
+function canViewJobContact(
+  job: db.JobRecord,
+  viewer: { id: number; role: string; openId: string } | null,
+  activeSub: boolean,
+) {
   if (!viewer) return false;
   if (viewer.role === "admin") return true;
   if (job.createdByUserId === viewer.id) return true;
@@ -51,9 +50,8 @@ export const jobsRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
     const viewer = ctx.user;
     const jobs = await db.listJobs(viewer);
-    const emptySub: db.SubscriptionStatus = { plan: "none", expiresAt: null };
-    const sub = viewer ? await db.getSubscriptionStatus(viewer.id) : emptySub;
-    const activeSub = viewer ? isSubscriptionActive(sub) : false;
+    const sub = viewer ? await resolveSubscriptionStatus(viewer) : null;
+    const activeSub = sub ? isResolvedSubscriptionActive(sub) : false;
     return jobs.map((job) => toJobPublic(job, canViewJobContact(job, viewer, activeSub)));
   }),
 
@@ -62,17 +60,15 @@ export const jobsRouter = router({
     if (!job) return null;
     const viewer = ctx.user;
     if (job.removedAt && viewer?.role !== "admin") return null;
-    const emptySub: db.SubscriptionStatus = { plan: "none", expiresAt: null };
-    const sub = viewer ? await db.getSubscriptionStatus(viewer.id) : emptySub;
-    const activeSub = viewer ? isSubscriptionActive(sub) : false;
+    const sub = viewer ? await resolveSubscriptionStatus(viewer) : null;
+    const activeSub = sub ? isResolvedSubscriptionActive(sub) : false;
     return toJobPublic(job, canViewJobContact(job, viewer, activeSub));
   }),
 
   listForModeration: adminProcedure.query(async ({ ctx }) => {
     const jobs = await db.listAllJobsForModeration();
-    const emptySub: db.SubscriptionStatus = { plan: "none", expiresAt: null };
-    const sub = await db.getSubscriptionStatus(ctx.user.id);
-    const activeSub = isSubscriptionActive(sub);
+    const sub = await resolveSubscriptionStatus(ctx.user);
+    const activeSub = isResolvedSubscriptionActive(sub);
     return jobs.map((job) => toJobPublic(job, canViewJobContact(job, ctx.user, activeSub)));
   }),
 
