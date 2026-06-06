@@ -23,6 +23,39 @@ import type { CustomerInfo, PurchasesOfferings, PurchasesPackage } from "react-n
 
 const APP_VARIANT = Constants.expoConfig?.extra?.appVariant ?? "production";
 
+const WEB_LAUNCH_PROMO = {
+  badge: "平台新上線特價優惠",
+  monthly: { original: 288, sale: 128 },
+  yearly: { original: 2888, sale: 1328 },
+} as const;
+
+function WebPlanPrice({
+  original,
+  sale,
+  suffix,
+  strikeColor,
+  saleColor,
+}: {
+  original: number;
+  sale: number;
+  suffix: string;
+  strikeColor: string;
+  saleColor: string;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+      <Text style={{ color: strikeColor, fontSize: 14, textDecorationLine: "line-through" }}>
+        HK${original.toLocaleString()}
+        {suffix}
+      </Text>
+      <Text style={{ color: saleColor, fontWeight: "800", fontSize: 16 }}>
+        HK${sale.toLocaleString()}
+        {suffix}
+      </Text>
+    </View>
+  );
+}
+
 /** Shown in dev/preview when StoreKit offerings are unavailable (e.g. ASC Missing Metadata). */
 const PAYWALL_PREVIEW_PLANS = [
   { id: "hyphen_pro_monthly", title: "Hyphen Pro 月費計劃", priceLabel: "HK$288/月" },
@@ -273,6 +306,19 @@ export default function PaywallScreen() {
                     <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
                       網頁版使用 Stripe 付款。同一帳戶在 App 內購買亦可解鎖聯絡資訊。
                     </Text>
+                    {!meQuery.data?.active ? (
+                      <View
+                        style={{
+                          alignSelf: "flex-start",
+                          backgroundColor: `${colors.primary}18`,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 999,
+                        }}
+                      >
+                        <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>{WEB_LAUNCH_PROMO.badge}</Text>
+                      </View>
+                    ) : null}
                     {meQuery.data?.active ? (
                       <View style={{ gap: 12 }}>
                         <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
@@ -302,16 +348,30 @@ export default function PaywallScreen() {
                         <TouchableOpacity
                           onPress={() => handleStripeCheckout("monthly")}
                           disabled={Boolean(purchasingId) || stripeCheckoutMutation.isPending}
-                          style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 16, alignItems: "center" }}
+                          style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 12, alignItems: "center", gap: 6 }}
                         >
-                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 月費計劃（HK$288/月）</Text>
+                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 月費計劃</Text>
+                          <WebPlanPrice
+                            original={WEB_LAUNCH_PROMO.monthly.original}
+                            sale={WEB_LAUNCH_PROMO.monthly.sale}
+                            suffix="/月"
+                            strikeColor="rgba(255,255,255,0.75)"
+                            saleColor="#ffffff"
+                          />
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleStripeCheckout("yearly")}
                           disabled={Boolean(purchasingId) || stripeCheckoutMutation.isPending}
-                          style={{ backgroundColor: colors.background, borderRadius: 12, paddingVertical: 16, alignItems: "center", borderWidth: 1, borderColor: colors.primary }}
+                          style={{ backgroundColor: colors.background, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 12, alignItems: "center", gap: 6, borderWidth: 1, borderColor: colors.primary }}
                         >
-                          <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 16 }}>Hyphen Pro 年費計劃（HK$2,888/年）</Text>
+                          <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 16 }}>Hyphen Pro 年費計劃</Text>
+                          <WebPlanPrice
+                            original={WEB_LAUNCH_PROMO.yearly.original}
+                            sale={WEB_LAUNCH_PROMO.yearly.sale}
+                            suffix="/年"
+                            strikeColor={colors.muted}
+                            saleColor={colors.primary}
+                          />
                         </TouchableOpacity>
                       </>
                     )}
