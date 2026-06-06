@@ -6,6 +6,7 @@ import { useColors } from "@/hooks/use-colors";
 import {
   getActiveProEntitlement,
   linkRevenueCatAccount,
+  planFromProductId,
   revenueCatGetCustomerInfo,
   revenueCatGetOfferings,
   revenueCatGetSubscriptionProducts,
@@ -25,11 +26,73 @@ import type { CustomerInfo, PurchasesOfferings, PurchasesPackage } from "react-n
 
 const APP_VARIANT = Constants.expoConfig?.extra?.appVariant ?? "production";
 
-const WEB_LAUNCH_PROMO = {
+const LAUNCH_PROMO = {
   badge: "平台新上線特價優惠",
   monthly: { original: 288, sale: 128 },
   yearly: { original: 2888, sale: 1328 },
 } as const;
+
+function launchPromoForPlan(plan: "monthly" | "yearly" | null) {
+  if (!plan) return null;
+  return {
+    original: LAUNCH_PROMO[plan].original,
+    sale: LAUNCH_PROMO[plan].sale,
+    suffix: plan === "monthly" ? "/月" : "/年",
+  };
+}
+
+function planDisplayTitle(plan: "monthly" | "yearly" | null, fallback: string) {
+  if (plan === "monthly") return "Hyphen Pro 月費計劃";
+  if (plan === "yearly") return "Hyphen Pro 年費計劃";
+  return fallback;
+}
+
+function LaunchPromoBadge({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return (
+    <View
+      style={{
+        alignSelf: "flex-start",
+        backgroundColor: `${colors.primary}18`,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+      }}
+    >
+      <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>{LAUNCH_PROMO.badge}</Text>
+    </View>
+  );
+}
+
+function PlanPrice({
+  original,
+  sale,
+  suffix,
+  strikeColor,
+  saleColor,
+  strikeSize,
+  saleSize,
+}: {
+  original: number;
+  sale: number;
+  suffix: string;
+  strikeColor: string;
+  saleColor: string;
+  strikeSize: number;
+  saleSize: number;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+      <Text style={{ color: strikeColor, fontSize: strikeSize, textDecorationLine: "line-through" }}>
+        HK${original.toLocaleString()}
+        {suffix}
+      </Text>
+      <Text style={{ color: saleColor, fontWeight: "800", fontSize: saleSize }}>
+        HK${sale.toLocaleString()}
+        {suffix}
+      </Text>
+    </View>
+  );
+}
 
 function WebPlanPrice({
   original,
@@ -45,16 +108,15 @@ function WebPlanPrice({
   saleColor: string;
 }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-      <Text style={{ color: strikeColor, fontSize: 14, textDecorationLine: "line-through" }}>
-        HK${original.toLocaleString()}
-        {suffix}
-      </Text>
-      <Text style={{ color: saleColor, fontWeight: "800", fontSize: 16 }}>
-        HK${sale.toLocaleString()}
-        {suffix}
-      </Text>
-    </View>
+    <PlanPrice
+      original={original}
+      sale={sale}
+      suffix={suffix}
+      strikeColor={strikeColor}
+      saleColor={saleColor}
+      strikeSize={14}
+      saleSize={16}
+    />
   );
 }
 
@@ -64,7 +126,81 @@ const PAYWALL_PREVIEW_PLANS = [
   { id: "hyphen_pro_yearly", title: "Hyphen Pro 年費計劃", priceLabel: "HK$2,888/年" },
 ] as const;
 
-export default function PaywallScreen() {
+function SubscriptionPlanButton({
+  title,
+  priceLabel,
+  promoPrice,
+  variant = "primary",
+  onPress,
+  disabled,
+  loadingLabel,
+  colors,
+}: {
+  title: string;
+  priceLabel?: string;
+  promoPrice?: { original: number; sale: number; suffix: string } | null;
+  variant?: "primary" | "outline";
+  onPress: () => void;
+  disabled?: boolean;
+  loadingLabel?: string | null;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const isOutline = variant === "outline";
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      style={{
+        backgroundColor: isOutline ? colors.background : colors.primary,
+        borderRadius: isOutline ? 12 : 8,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        borderWidth: isOutline ? 1 : 0,
+        borderColor: isOutline ? colors.primary : undefined,
+      }}
+    >
+      <Text
+        style={{
+          color: isOutline ? colors.primary : "white",
+          fontWeight: "700",
+          fontSize: 13,
+          lineHeight: 18,
+          textAlign: "center",
+        }}
+      >
+        {loadingLabel ?? title}
+      </Text>
+      {!loadingLabel && promoPrice ? (
+        <PlanPrice
+          original={promoPrice.original}
+          sale={promoPrice.sale}
+          suffix={promoPrice.suffix}
+          strikeColor={isOutline ? colors.muted : "rgba(255,255,255,0.75)"}
+          saleColor={isOutline ? colors.primary : "#ffffff"}
+          strikeSize={12}
+          saleSize={13}
+        />
+      ) : !loadingLabel && priceLabel ? (
+        <Text
+          style={{
+            color: isOutline ? colors.primary : "rgba(255,255,255,0.92)",
+            fontWeight: "600",
+            fontSize: 13,
+            lineHeight: 18,
+            textAlign: "center",
+          }}
+        >
+          {priceLabel}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+}
+
   const router = useRouter();
   const colors = useColors();
   const params = useLocalSearchParams<{ jobId?: string }>();
@@ -100,6 +236,26 @@ export default function PaywallScreen() {
     !isEntitled &&
     availablePackages.length === 0 &&
     storeProducts.length === 0;
+
+  const showLaunchPromo = !meQuery.data?.active && !isEntitled;
+
+  const sortedStoreProducts = useMemo(() => {
+    const order = { monthly: 0, yearly: 1 } as const;
+    return [...storeProducts].sort((a, b) => {
+      const planA = planFromProductId(a.identifier);
+      const planB = planFromProductId(b.identifier);
+      return (planA ? order[planA] : 2) - (planB ? order[planB] : 2);
+    });
+  }, [storeProducts]);
+
+  const sortedPackages = useMemo(() => {
+    const order = { monthly: 0, yearly: 1 } as const;
+    return [...availablePackages].sort((a, b) => {
+      const planA = planFromProductId(a.product?.identifier ?? a.identifier);
+      const planB = planFromProductId(b.product?.identifier ?? b.identifier);
+      return (planA ? order[planA] : 2) - (planB ? order[planB] : 2);
+    });
+  }, [availablePackages]);
 
   const subscriptionNote = useMemo(() => {
     if (Platform.OS === "web") {
@@ -306,19 +462,7 @@ export default function PaywallScreen() {
                     <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
                       網頁版使用 Stripe 付款。同一帳戶在 App 內購買亦可解鎖聯絡資訊。
                     </Text>
-                    {!meQuery.data?.active ? (
-                      <View
-                        style={{
-                          alignSelf: "flex-start",
-                          backgroundColor: `${colors.primary}18`,
-                          paddingHorizontal: 12,
-                          paddingVertical: 6,
-                          borderRadius: 999,
-                        }}
-                      >
-                        <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>{WEB_LAUNCH_PROMO.badge}</Text>
-                      </View>
-                    ) : null}
+                    {!meQuery.data?.active ? <LaunchPromoBadge colors={colors} /> : null}
                     {meQuery.data?.active ? (
                       <View style={{ gap: 12 }}>
                         <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
@@ -352,8 +496,8 @@ export default function PaywallScreen() {
                         >
                           <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Hyphen Pro 月費計劃</Text>
                           <WebPlanPrice
-                            original={WEB_LAUNCH_PROMO.monthly.original}
-                            sale={WEB_LAUNCH_PROMO.monthly.sale}
+                            original={LAUNCH_PROMO.monthly.original}
+                            sale={LAUNCH_PROMO.monthly.sale}
                             suffix="/月"
                             strikeColor="rgba(255,255,255,0.75)"
                             saleColor="#ffffff"
@@ -366,8 +510,8 @@ export default function PaywallScreen() {
                         >
                           <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 16 }}>Hyphen Pro 年費計劃</Text>
                           <WebPlanPrice
-                            original={WEB_LAUNCH_PROMO.yearly.original}
-                            sale={WEB_LAUNCH_PROMO.yearly.sale}
+                            original={LAUNCH_PROMO.yearly.original}
+                            sale={LAUNCH_PROMO.yearly.sale}
                             suffix="/年"
                             strikeColor={colors.muted}
                             saleColor={colors.primary}
@@ -389,49 +533,66 @@ export default function PaywallScreen() {
                       </View>
                     ) : null}
 
-                    {storeProducts.length > 0 && availablePackages.length === 0
-                      ? storeProducts.map((product) => (
-                          <TouchableOpacity
-                            key={product.identifier}
-                            onPress={() => handlePurchaseProduct(product)}
-                            disabled={Boolean(purchasingId) || restoreLoading}
-                            style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
-                          >
-                            <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
-                              {product.title || product.identifier}（{product.priceString ?? "—"}）
-                            </Text>
-                          </TouchableOpacity>
-                        ))
+                    {showLaunchPromo ? <LaunchPromoBadge colors={colors} /> : null}
+
+                    {sortedStoreProducts.length > 0 && availablePackages.length === 0
+                      ? sortedStoreProducts.map((product) => {
+                          const plan = planFromProductId(product.identifier);
+                          return (
+                            <SubscriptionPlanButton
+                              key={product.identifier}
+                              title={planDisplayTitle(plan, product.title || product.identifier)}
+                              promoPrice={showLaunchPromo ? launchPromoForPlan(plan) : null}
+                              priceLabel={product.priceString ?? "—"}
+                              variant={plan === "yearly" ? "outline" : "primary"}
+                              onPress={() => handlePurchaseProduct(product)}
+                              disabled={Boolean(purchasingId) || restoreLoading}
+                              loadingLabel={
+                                purchasingId === product.identifier ? "處理中…" : null
+                              }
+                              colors={colors}
+                            />
+                          );
+                        })
                       : null}
 
                     {showPreviewPlans ? (
-                      PAYWALL_PREVIEW_PLANS.map((plan) => (
-                        <TouchableOpacity
-                          key={plan.id}
-                          onPress={() => handlePurchaseProductId(plan.id)}
-                          disabled={Boolean(purchasingId) || restoreLoading}
-                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
-                        >
-                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
-                            {plan.title}（{plan.priceLabel}）
-                          </Text>
-                        </TouchableOpacity>
-                      ))
+                      PAYWALL_PREVIEW_PLANS.map((plan) => {
+                        const planType = planFromProductId(plan.id);
+                        return (
+                          <SubscriptionPlanButton
+                            key={plan.id}
+                            title={plan.title}
+                            promoPrice={showLaunchPromo ? launchPromoForPlan(planType) : null}
+                            priceLabel={plan.priceLabel}
+                            variant={planType === "yearly" ? "outline" : "primary"}
+                            onPress={() => handlePurchaseProductId(plan.id)}
+                            disabled={Boolean(purchasingId) || restoreLoading}
+                            loadingLabel={purchasingId === plan.id ? "處理中…" : null}
+                            colors={colors}
+                          />
+                        );
+                      })
                     ) : availablePackages.length === 0 && storeProducts.length === 0 ? (
                       <Text style={{ color: colors.muted, fontSize: 14 }}>載入訂閱方案中…</Text>
                     ) : (
-                      availablePackages.map((pkg) => (
-                        <TouchableOpacity
-                          key={pkg.identifier}
-                          onPress={() => handlePurchase(pkg)}
-                          disabled={Boolean(purchasingId) || restoreLoading}
-                          style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
-                        >
-                          <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
-                            {pkg.product?.title ?? "訂閱"}（{pkg.product?.priceString ?? "—"}）
-                          </Text>
-                        </TouchableOpacity>
-                      ))
+                      sortedPackages.map((pkg) => {
+                        const productId = pkg.product?.identifier ?? pkg.identifier;
+                        const plan = planFromProductId(productId);
+                        return (
+                          <SubscriptionPlanButton
+                            key={pkg.identifier}
+                            title={planDisplayTitle(plan, pkg.product?.title ?? "訂閱")}
+                            promoPrice={showLaunchPromo ? launchPromoForPlan(plan) : null}
+                            priceLabel={pkg.product?.priceString ?? "—"}
+                            variant={plan === "yearly" ? "outline" : "primary"}
+                            onPress={() => handlePurchase(pkg)}
+                            disabled={Boolean(purchasingId) || restoreLoading}
+                            loadingLabel={purchasingId === pkg.identifier ? "處理中…" : null}
+                            colors={colors}
+                          />
+                        );
+                      })
                     )}
 
                     <TouchableOpacity

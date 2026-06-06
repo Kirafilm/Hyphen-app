@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type { CustomerInfo } from "react-native-purchases";
+import Constants from "expo-constants";
 
 import { mobileSubscriptionFromCustomerInfo } from "@/lib/subscription-sync";
 import { trpc } from "@/lib/trpc";
@@ -9,6 +10,9 @@ function trpcErrorMessage(err: unknown): string | null {
   const message = (err as { message?: unknown }).message;
   return typeof message === "string" && message.trim() ? message : null;
 }
+
+const appVariant = Constants.expoConfig?.extra?.appVariant ?? "production";
+const allowDebugSubscriptionFallback = __DEV__ || appVariant !== "production";
 
 export function useMobileSubscriptionSync() {
   const utils = trpc.useUtils();
@@ -44,7 +48,7 @@ export function useMobileSubscriptionSync() {
         }
 
         const payload = mobileSubscriptionFromCustomerInfo(info ?? null);
-        if (!payload) {
+        if (!payload || !allowDebugSubscriptionFallback) {
           const message =
             serverMessage ??
             "無法同步訂閱。Sandbox 月費約 5 分鐘過期一次，請在 RevenueCat 顯示 Renewed 後再試。";

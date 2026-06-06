@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./trpc";
 import * as db from "../db";
+import { ENV } from "./env";
 import {
   fetchActiveSubscriptionFromRevenueCatForUser,
   isRevenueCatApiConfigured,
@@ -12,7 +13,11 @@ import { getStripeClient, isStripeConfigured, stripeCheckoutUrls, stripePortalRe
 const planSchema = z.union([z.literal("none"), z.literal("monthly"), z.literal("yearly")]);
 const paidPlanSchema = z.union([z.literal("monthly"), z.literal("yearly")]);
 
-function planToDurationMs(plan: db.SubscriptionPlan) {
+function isDebugSubscriptionAllowed() {
+  if (!ENV.isProduction) return true;
+  return process.env.ALLOW_DEBUG_SUBSCRIPTION === "true";
+}
+
   if (plan === "monthly") return 1000 * 60 * 60 * 24 * 30;
   if (plan === "yearly") return 1000 * 60 * 60 * 24 * 365;
   return 0;
@@ -204,6 +209,13 @@ export const subscriptionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (!isDebugSubscriptionAllowed()) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "debugActivate 已在正式環境關閉，請使用 App Store / Google Play 訂閱並透過 syncFromStore 同步。",
+        });
+      }
+
       if (input.plan === "none") {
         await db.setSubscriptionStatus(ctx.user.id, { plan: "none", expiresAt: null });
         return { success: true } as const;
