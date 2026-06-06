@@ -10,7 +10,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
-import { linkRevenueCatAccount } from "@/lib/revenuecat";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -84,21 +83,6 @@ export default function LoginScreen() {
     });
   };
 
-  const linkStoreAccountAfterAuth = async (authUser: {
-    id: string;
-    email?: string | null;
-  } | null) => {
-    if (Platform.OS === "web" || !authUser?.id) return;
-    try {
-      await linkRevenueCatAccount(authUser.id, authUser.email ?? null);
-    } catch (err) {
-      console.warn(
-        "[Login] RevenueCat link skipped:",
-        err instanceof Error ? err.message : String(err),
-      );
-    }
-  };
-
   const handleForgotPassword = async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
@@ -143,7 +127,6 @@ export default function LoginScreen() {
 
       await Auth.setSessionToken(token);
       await persistNativeUserInfo(data.session?.user ?? null);
-      await linkStoreAccountAfterAuth(data.session?.user ?? null);
       try {
         await refresh();
       } catch (refreshError) {
@@ -179,7 +162,6 @@ export default function LoginScreen() {
         if (!token) throw new Error("登入失敗：未取得 token");
         await Auth.setSessionToken(token);
         await persistNativeUserInfo(result.data.user);
-        await linkStoreAccountAfterAuth(result.data.user);
         try {
           await refresh();
         } catch (refreshError) {
@@ -198,7 +180,6 @@ export default function LoginScreen() {
       if (token) {
         await Auth.setSessionToken(token);
         await persistNativeUserInfo(result.data.user);
-        await linkStoreAccountAfterAuth(result.data.user);
         try {
           await refresh();
         } catch (refreshError) {

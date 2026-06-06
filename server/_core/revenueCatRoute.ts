@@ -12,8 +12,13 @@ import {
 } from "./revenuecat";
 
 function hasProEntitlement(entitlementIds: string[] | null | undefined) {
-  if (!entitlementIds?.length) return true;
+  if (!entitlementIds?.length) return false;
   return entitlementIds.some((id) => isProEntitlementKey(id));
+}
+
+function isSandboxRevenueCatEvent(event: NonNullable<RevenueCatWebhookBody["event"]>) {
+  const env = (event as { environment?: string }).environment;
+  return typeof env === "string" && env.toUpperCase() === "SANDBOX";
 }
 
 async function syncFromRevenueCatEvent(event: NonNullable<RevenueCatWebhookBody["event"]>) {
@@ -32,6 +37,8 @@ async function syncFromRevenueCatEvent(event: NonNullable<RevenueCatWebhookBody[
     await db.setSubscriptionStatus(user.id, { plan: "none", expiresAt: null });
     return;
   }
+
+  if (type === "TRANSFER") return;
 
   if (!revenueCatEventGrantsAccess(type) && type !== "CANCELLATION") {
     return;
@@ -84,6 +91,11 @@ export function registerRevenueCatRoutes(app: Express) {
 
       if (event.type === "TEST") {
         res.json({ received: true });
+        return;
+      }
+
+      if (process.env.NODE_ENV === "production" && isSandboxRevenueCatEvent(event)) {
+        res.json({ received: true, ignored: "sandbox" });
         return;
       }
 

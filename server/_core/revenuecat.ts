@@ -89,7 +89,8 @@ type RevenueCatV2Subscription = {
 };
 
 type RevenueCatV2ActiveEntitlement = {
-  entitlement_id?: string | null;
+    environment?: string;
+    entitlement_id?: string | null;
   expires_at?: number | null;
   lookup_key?: string | null;
 };
@@ -273,7 +274,9 @@ export async function fetchActiveSubscriptionFromRevenueCat(
 
   const projectId = revenueCatProjectId();
   if (projectId) {
-    for (const environment of ["production", "sandbox"] as const) {
+    const environments: Array<"production" | "sandbox"> =
+      process.env.NODE_ENV === "production" ? ["production"] : ["production", "sandbox"];
+    for (const environment of environments) {
       const v2 = await fetchActiveSubscriptionFromRevenueCatV2(appUserId, secret, projectId, environment);
       if (v2) return v2;
     }
@@ -311,23 +314,9 @@ export async function fetchActiveSubscriptionFromRevenueCatForUser(user: {
   openId: string;
   email?: string | null;
 }): Promise<RevenueCatActiveSubscription | null> {
-  const candidateIds = new Set<string>();
   const openId = user.openId?.trim();
-  if (openId) candidateIds.add(openId);
-
-  const email = user.email?.trim();
-  if (email) {
-    for (const id of await findRevenueCatCustomerIdsByEmail(email)) {
-      candidateIds.add(id);
-    }
-  }
-
-  for (const appUserId of candidateIds) {
-    const active = await fetchActiveSubscriptionFromRevenueCat(appUserId);
-    if (active) return active;
-  }
-
-  return null;
+  if (!openId) return null;
+  return fetchActiveSubscriptionFromRevenueCat(openId);
 }
 
 export type RevenueCatWebhookBody = {

@@ -1,6 +1,6 @@
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
-import { revenueCatLogIn, linkRevenueCatAccount, revenueCatLogOut } from "@/lib/revenuecat";
+import { revenueCatLogOut } from "@/lib/revenuecat";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
@@ -178,27 +178,6 @@ export function useAuth(options?: UseAuthOptions) {
       error: error?.message,
     });
   }, [user, loading, isAuthenticated, error]);
-
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    const openId = user?.openId ?? null;
-
-    // Keep anonymous RevenueCat state on logged-out screens.
-    // Calling logOut() while already anonymous triggers a native console error/LogBox.
-    if (!openId) return;
-
-    (async () => {
-      try {
-        await linkRevenueCatAccount(openId, user?.email ?? null);
-      } catch (err) {
-        // RevenueCat auth sync should never block initial screen render.
-        console.warn(
-          "[useAuth] RevenueCat auth sync skipped:",
-          err instanceof Error ? err.message : String(err),
-        );
-      }
-    })();
-  }, [user?.openId, user?.email]);
 
   return {
     user,

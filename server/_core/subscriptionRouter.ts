@@ -106,7 +106,6 @@ export const subscriptionRouter = router({
       email: ctx.user.email,
     });
     if (!active) {
-      await db.setSubscriptionStatus(ctx.user.id, { plan: "none", expiresAt: null });
       throw new TRPCError({
         code: "NOT_FOUND",
         message:
