@@ -18,6 +18,7 @@ function isDebugSubscriptionAllowed() {
   return process.env.ALLOW_DEBUG_SUBSCRIPTION === "true";
 }
 
+function planToDurationMs(plan: db.SubscriptionPlan) {
   if (plan === "monthly") return 1000 * 60 * 60 * 24 * 30;
   if (plan === "yearly") return 1000 * 60 * 60 * 24 * 365;
   return 0;
