@@ -2,8 +2,8 @@ import type { Express, Request, Response } from "express";
 import express from "express";
 import * as db from "../db";
 import {
-  REVENUECAT_ENTITLEMENT_IDS,
   isProEntitlementKey,
+  isRevenueCatWebhookConfigured,
   planFromRevenueCatProductId,
   revenueCatEventGrantsAccess,
   revenueCatEventRevokesAccess,
