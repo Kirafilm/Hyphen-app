@@ -1,14 +1,11 @@
-import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useState } from "react";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
-import { useMobileSubscriptionSync } from "@/hooks/use-mobile-subscription-sync";
-import { linkRevenueCatAccount } from "@/lib/revenuecat";
 import { trpc } from "@/lib/trpc";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 
@@ -18,26 +15,7 @@ export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuth();
   const meQuery = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const subscriptionQuery = trpc.subscription.me.useQuery(undefined, { enabled: isAuthenticated });
-  const { syncSubscription, isSyncing, lastMessage } = useMobileSubscriptionSync();
-  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
   const role = meQuery.data?.role ?? "user";
-
-  const handleManualSync = useCallback(async () => {
-    if (!user?.openId || isWeb) return;
-    setSyncFeedback(null);
-    try {
-      const info = await linkRevenueCatAccount(user.openId, user.email ?? null);
-      const result = await syncSubscription(info);
-      await subscriptionQuery.refetch();
-      if (result.ok) {
-        setSyncFeedback("訂閱狀態已更新");
-      } else {
-        setSyncFeedback(result.message ?? lastMessage ?? "同步失敗");
-      }
-    } catch (err) {
-      setSyncFeedback(err instanceof Error ? err.message : "同步失敗");
-    }
-  }, [lastMessage, subscriptionQuery, syncSubscription, user?.email, user?.openId]);
 
   const MenuRow = ({ icon, label, onPress, accent, danger = false }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress?: () => void; accent?: string; danger?: boolean }) => (
     <TouchableOpacity
@@ -175,49 +153,6 @@ export default function ProfileScreen() {
               <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center", lineHeight: 20 }}>
                 {isAuthenticated ? (subscriptionQuery.data?.active ? "已訂閱，可查看聯絡資訊" : "未訂閱，只可查看工作內容") : "請先登入"}
               </Text>
-
-              {isAuthenticated && !isWeb && (
-                <View style={{ marginTop: 16, alignItems: "center", gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => void handleManualSync()}
-                    disabled={isSyncing}
-                    activeOpacity={0.85}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 8,
-                      paddingHorizontal: 16,
-                      paddingVertical: 10,
-                      borderRadius: 999,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      backgroundColor: colors.background,
-                    }}
-                  >
-                    {isSyncing ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    ) : (
-                      <Ionicons name="refresh" size={16} color={colors.primary} />
-                    )}
-                    <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "700" }}>
-                      {isSyncing ? "同步中…" : "同步訂閱狀態"}
-                    </Text>
-                  </TouchableOpacity>
-                  {(syncFeedback || lastMessage) && (
-                    <Text
-                      style={{
-                        color: syncFeedback === "訂閱狀態已更新" ? colors.primary : colors.muted,
-                        fontSize: 12,
-                        textAlign: "center",
-                        lineHeight: 18,
-                        paddingHorizontal: 8,
-                      }}
-                    >
-                      {syncFeedback ?? lastMessage}
-                    </Text>
-                  )}
-                </View>
-              )}
             </View>
 
             <PromoBox />
