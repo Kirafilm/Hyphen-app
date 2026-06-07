@@ -108,8 +108,7 @@ export const subscriptionRouter = router({
     if (!active) {
       throw new TRPCError({
         code: "NOT_FOUND",
-        message:
-          "RevenueCat 目前沒有有效訂閱。Sandbox 月費約 5 分鐘過期一次，請在 RevenueCat 出現 Renewed 後 1–2 分鐘內再試。",
+        message: "目前沒有有效訂閱。若剛完成付款，請稍等片刻後再試。",
       });
     }
 

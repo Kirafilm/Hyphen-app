@@ -68,6 +68,9 @@ JWT_SECRET=...
 
 # Supabase（伺服器驗證 JWT）
 SUPABASE_URL=https://你的项目.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # 帳戶刪除必填；見下方 Supabase 取得方式
+# 或使用新版 Secret key（二選一）：
+# SUPABASE_SECRET_KEY=sb_secret_...
 
 # RevenueCat — App 訂閱同步（必填）
 REVENUECAT_SECRET_API_KEY=sk_...
@@ -171,13 +174,24 @@ eas submit --platform ios --profile production
 | 項目 | 說明 |
 |------|------|
 | 截圖 | 6.7"、6.5"、5.5" iPhone（至少各 3 張） |
-| 描述 | 自由職業職位平台簡介 |
+| **副標題** | **不可含價格**（例如勿寫「特價 HK$128」）；可寫「自由職工作平台」 |
+| 描述 | 自由職業職位平台簡介；**文末加** `使用條款：https://hyphenjob.com/terms/` |
 | 關鍵字 | 自由職、freelance、接案… |
 | 私隱政策 URL | `https://hyphenjob.com/privacy/` |
+| **EULA** | App Description 放條款連結，或在 App Store Connect → **App 資訊 → EULA** 貼自訂條款 |
 | 支援 URL | `https://hyphenjob.com/contact` 或聯絡頁 |
 | 年齡分級 | 問卷填寫 |
-| 訂閱說明 | 審核備註：訂閱解鎖聯絡資訊（電話、電郵） |
+| 訂閱說明 | App 內 paywall 已列：方案名稱、週期、價格、解鎖聯絡資訊、私隱＋條款連結 |
+| 帳戶刪除 | **設定 → 刪除帳戶**（審核錄屏：註冊 → 設定 → 刪除 → 確認） |
 | 加密 | 已在 Info.plist 聲明 `ITSAppUsesNonExemptEncryption: false` |
+
+**審核被拒常見修正（2026-06）：**
+
+1. 副標題移除所有價格／優惠字眼  
+2. Paywall 訂閱說明（App 已加 `SubscriptionDisclosure`）  
+3. Description 或 EULA 欄加入 `https://hyphenjob.com/terms/`  
+4. VPS 設定 `SUPABASE_SERVICE_ROLE_KEY` 後 redeploy API（帳戶刪除）  
+5. 已移除 `UIBackgroundModes` audio（刪除未使用的 expo-video / expo-audio plugin）
 
 ---
 

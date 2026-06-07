@@ -606,6 +606,49 @@ export async function deleteJob(id: string): Promise<boolean> {
   }
 }
 
+export async function deleteUserAccount(userId: number): Promise<void> {
+  const db = await getDb();
+
+  const deleteInMemory = () => {
+    _memoryJobs.splice(0, _memoryJobs.length, ..._memoryJobs.filter((job) => job.createdByUserId !== userId));
+    _memorySubscriptions.delete(userId);
+    for (const [token, device] of _memoryPushDevices.entries()) {
+      if (device.userId === userId) {
+        _memoryPushDevices.delete(token);
+      }
+    }
+    for (const [openId, user] of _memoryUsers.entries()) {
+      if (user.id === userId) {
+        _memoryUsers.delete(openId);
+        break;
+      }
+    }
+  };
+
+  if (!db) {
+    deleteInMemory();
+    return;
+  }
+
+  try {
+    const userJobs = await db.select({ id: jobs.id }).from(jobs).where(eq(jobs.createdByUserId, userId));
+    for (const row of userJobs) {
+      await db.delete(jobSkills).where(eq(jobSkills.jobId, row.id));
+    }
+    await db.delete(jobs).where(eq(jobs.createdByUserId, userId));
+    await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+    await db.delete(pushDevices).where(eq(pushDevices.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      deleteInMemory();
+      return;
+    }
+    throw error;
+  }
+}
+
 export type PushDeviceRecord = {
   expoPushToken: string;
   userId: number | null;

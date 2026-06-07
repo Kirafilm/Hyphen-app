@@ -1,9 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Linking, Platform, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  AppState,
+  Linking,
+  Platform,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useRouter } from "expo-router";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
+import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
+import { getSupabase } from "@/lib/supabase";
 import { useThemeContext } from "@/lib/theme-provider";
 import type { ColorScheme } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,20 +34,39 @@ import {
 } from "@/lib/notifications";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const colors = useColors();
+  const { isAuthenticated, logout } = useAuth();
   const { colorScheme, setColorScheme } = useThemeContext();
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [jobAlertsEnabled, setJobAlertsEnabled] = useState(true);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const hasHydratedFromServer = useRef(false);
 
+  const utils = trpc.useUtils();
   const setJobAlertsMutation = trpc.notifications.setJobAlerts.useMutation();
   const registerMutation = trpc.notifications.register.useMutation();
+  const deleteAccountMutation = trpc.auth.deleteAccount.useMutation();
   const settingsQuery = trpc.notifications.getSettings.useQuery(
     { expoPushToken: pushToken ?? "" },
     { enabled: Boolean(pushToken) },
   );
+
+  const refreshPushToken = useCallback(async () => {
+    if (!isNativePushSupported()) return null;
+
+    const granted = await requestNotificationPermissions();
+    setPermissionDenied(!granted);
+
+    const token = (await getStoredPushToken()) ?? (granted ? await obtainExpoPushToken() : null);
+    if (token) {
+      await setStoredPushToken(token);
+      setPushToken(token);
+    }
+    return token;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,14 +81,7 @@ export default function SettingsScreen() {
           return;
         }
 
-        const granted = await requestNotificationPermissions();
-        if (!cancelled) setPermissionDenied(!granted);
-
-        const token = (await getStoredPushToken()) ?? (granted ? await obtainExpoPushToken() : null);
-        if (token) {
-          await setStoredPushToken(token);
-          if (!cancelled) setPushToken(token);
-        }
+        await refreshPushToken();
       } catch (error) {
         console.warn("[Settings] bootstrap failed:", error);
       } finally {
@@ -66,53 +92,78 @@ export default function SettingsScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshPushToken]);
 
   useEffect(() => {
-    if (!settingsQuery.data) return;
+    if (!isNativePushSupported()) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void refreshPushToken();
+      }
+    });
+    return () => sub.remove();
+  }, [refreshPushToken]);
+
+  useEffect(() => {
+    if (!settingsQuery.data || hasHydratedFromServer.current || saving) return;
+    hasHydratedFromServer.current = true;
     setJobAlertsEnabled(settingsQuery.data.jobAlertsEnabled);
     void setJobAlertsEnabledLocal(settingsQuery.data.jobAlertsEnabled);
-  }, [settingsQuery.data]);
+  }, [saving, settingsQuery.data]);
 
   const handleToggleJobAlerts = useCallback(
     async (enabled: boolean) => {
-      if (!isNativePushSupported()) return;
+      if (!isNativePushSupported() || saving) return;
 
+      const previous = jobAlertsEnabled;
+      setJobAlertsEnabled(enabled);
       setSaving(true);
       try {
+        let token = pushToken ?? (await getStoredPushToken());
+
         if (enabled) {
           const granted = await requestNotificationPermissions();
           if (!granted) {
             setPermissionDenied(true);
+            setJobAlertsEnabled(previous);
             return;
           }
           setPermissionDenied(false);
 
-          const token = pushToken ?? (await obtainExpoPushToken());
-          if (!token) return;
+          token = token ?? (await obtainExpoPushToken());
+          if (!token) {
+            setJobAlertsEnabled(previous);
+            return;
+          }
           setPushToken(token);
           await setStoredPushToken(token);
-          await registerMutation.mutateAsync({
-            expoPushToken: token,
-            platform: getNotificationPlatform(),
-            jobAlertsEnabled: true,
-          });
         }
 
-        setJobAlertsEnabled(enabled);
+        if (!token) {
+          setJobAlertsEnabled(previous);
+          return;
+        }
+
         await setJobAlertsEnabledLocal(enabled);
-
-        const token = pushToken ?? (await getStoredPushToken());
-        if (token) {
-          await setJobAlertsMutation.mutateAsync({ expoPushToken: token, enabled });
-        }
+        await registerMutation.mutateAsync({
+          expoPushToken: token,
+          platform: getNotificationPlatform(),
+          jobAlertsEnabled: enabled,
+        });
+        await setJobAlertsMutation.mutateAsync({ expoPushToken: token, enabled });
+        utils.notifications.getSettings.setData(
+          { expoPushToken: token },
+          { jobAlertsEnabled: enabled, registered: true },
+        );
       } catch (error) {
         console.warn("[Settings] toggle failed:", error);
+        setJobAlertsEnabled(previous);
+        await setJobAlertsEnabledLocal(previous);
       } finally {
         setSaving(false);
       }
     },
-    [pushToken, registerMutation, setJobAlertsMutation],
+    [jobAlertsEnabled, pushToken, registerMutation, saving, setJobAlertsMutation, utils.notifications.getSettings],
   );
 
   const openSystemSettings = () => {
@@ -121,6 +172,47 @@ export default function SettingsScreen() {
       return;
     }
     void Linking.openSettings();
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "刪除帳戶",
+      "此操作無法復原。你的帳戶、已發佈工作及訂閱紀錄將被永久刪除。進行中的 App Store / Google Play 訂閱請先在商店設定中取消。",
+      [
+        { text: "取消", style: "cancel" },
+        {
+          text: "刪除帳戶",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert("確認刪除", "確定要永久刪除此帳戶？", [
+              { text: "取消", style: "cancel" },
+              {
+                text: "確定刪除",
+                style: "destructive",
+                onPress: () => {
+                  void (async () => {
+                    try {
+                      await deleteAccountMutation.mutateAsync();
+                      try {
+                        await getSupabase().auth.signOut();
+                      } catch (signOutError) {
+                        console.warn("[Settings] Supabase signOut after delete:", signOutError);
+                      }
+                      await logout();
+                      utils.invalidate();
+                      router.replace("/login");
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "刪除帳戶失敗";
+                      Alert.alert("無法刪除帳戶", message);
+                    }
+                  })();
+                },
+              },
+            ]);
+          },
+        },
+      ],
+    );
   };
 
   const loading = bootstrapping || (Boolean(pushToken) && settingsQuery.isLoading);
@@ -221,6 +313,42 @@ export default function SettingsScreen() {
             </View>
           )}
         </View>
+
+        {isAuthenticated ? (
+          <View
+            style={{
+              marginTop: 16,
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 16,
+              gap: 10,
+            }}
+          >
+            <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>帳戶</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
+              刪除帳戶會永久移除你的個人資料及已發佈工作，此操作無法復原。
+            </Text>
+            <TouchableOpacity
+              onPress={handleDeleteAccount}
+              disabled={deleteAccountMutation.isPending}
+              activeOpacity={0.85}
+              style={{
+                alignSelf: "flex-start",
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.error,
+              }}
+            >
+              <Text style={{ color: colors.error, fontWeight: "700", fontSize: 14 }}>
+                {deleteAccountMutation.isPending ? "刪除中…" : "刪除帳戶"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {!isNativePushSupported() && (
           <Text style={{ color: colors.muted, fontSize: 13, marginTop: 16, lineHeight: 20 }}>

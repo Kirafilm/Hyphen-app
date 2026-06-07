@@ -49,9 +49,7 @@ export function useMobileSubscriptionSync() {
 
         const payload = mobileSubscriptionFromCustomerInfo(info ?? null);
         if (!payload || !allowDebugSubscriptionFallback) {
-          const message =
-            serverMessage ??
-            "無法同步訂閱。Sandbox 月費約 5 分鐘過期一次，請在 RevenueCat 顯示 Renewed 後再試。";
+          const message = serverMessage ?? "無法同步訂閱，請稍後再試。";
           setLastMessage(message);
           return { ok: false, message };
         }

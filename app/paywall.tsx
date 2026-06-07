@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMobileSubscriptionSync } from "@/hooks/use-mobile-subscription-sync";
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
+import { SubscriptionDisclosure } from "@/components/subscription-disclosure";
 import { useColors } from "@/hooks/use-colors";
 import {
   linkRevenueCatAccount,
@@ -406,6 +407,63 @@ export default function PaywallScreen() {
   const canManageStripeOnWeb =
     Platform.OS === "web" && Boolean(meQuery.data?.active || meQuery.data?.stripeCustomerId);
 
+  const disclosurePlans = useMemo(() => {
+    if (Platform.OS === "web") {
+      return [
+        {
+          title: "Hyphen Pro 月費計劃",
+          length: "1 個月",
+          price: `HK$${LAUNCH_PROMO.monthly.sale.toLocaleString()}/月`,
+        },
+        {
+          title: "Hyphen Pro 年費計劃",
+          length: "1 年",
+          price: `HK$${LAUNCH_PROMO.yearly.sale.toLocaleString()}/年`,
+        },
+      ];
+    }
+
+    const rows: Array<{ title: string; length: string; price: string }> = [];
+
+    for (const product of sortedStoreProducts) {
+      const plan = planFromProductId(product.identifier);
+      if (!plan) continue;
+      rows.push({
+        title: planDisplayTitle(plan, product.title || product.identifier),
+        length: plan === "monthly" ? "1 個月" : "1 年",
+        price: product.priceString ?? "—",
+      });
+    }
+
+    for (const pkg of sortedPackages) {
+      const plan = planFromProductId(pkg.product?.identifier ?? pkg.identifier);
+      if (!plan) continue;
+      if (rows.some((row) => row.title === planDisplayTitle(plan, pkg.product?.title ?? "訂閱"))) continue;
+      rows.push({
+        title: planDisplayTitle(plan, pkg.product?.title ?? "訂閱"),
+        length: plan === "monthly" ? "1 個月" : "1 年",
+        price: pkg.product?.priceString ?? "—",
+      });
+    }
+
+    if (rows.length === 0) {
+      return [
+        {
+          title: "Hyphen Pro 月費計劃",
+          length: "1 個月",
+          price: PAYWALL_PREVIEW_PLANS[0].priceLabel,
+        },
+        {
+          title: "Hyphen Pro 年費計劃",
+          length: "1 年",
+          price: PAYWALL_PREVIEW_PLANS[1].priceLabel,
+        },
+      ];
+    }
+
+    return rows;
+  }, [sortedPackages, sortedStoreProducts]);
+
   const goBackToJob = () => {
     if (params.jobId) {
       router.replace(`/job/${params.jobId}`);
@@ -459,6 +517,19 @@ export default function PaywallScreen() {
                       網頁版使用 Stripe 付款。同一帳戶在 App 內購買亦可解鎖聯絡資訊。
                     </Text>
                     {!meQuery.data?.active ? <LaunchPromoBadge colors={colors} /> : null}
+                    {!meQuery.data?.active ? (
+                      <View
+                        style={{
+                          backgroundColor: colors.background,
+                          borderRadius: 12,
+                          padding: 16,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                        }}
+                      >
+                        <SubscriptionDisclosure plans={disclosurePlans} />
+                      </View>
+                    ) : null}
                     {meQuery.data?.active ? (
                       <View style={{ gap: 12 }}>
                         <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33` }}>
@@ -530,6 +601,20 @@ export default function PaywallScreen() {
                     ) : null}
 
                     {showLaunchPromo ? <LaunchPromoBadge colors={colors} /> : null}
+
+                    {!isSubscribed ? (
+                      <View
+                        style={{
+                          backgroundColor: colors.background,
+                          borderRadius: 12,
+                          padding: 16,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                        }}
+                      >
+                        <SubscriptionDisclosure plans={disclosurePlans} />
+                      </View>
+                    ) : null}
 
                     {sortedStoreProducts.length > 0 && availablePackages.length === 0
                       ? sortedStoreProducts.map((product) => {

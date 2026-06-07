@@ -47,7 +47,7 @@ const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
   version: "0.1.1",
-  orientation: "portrait",
+  orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
@@ -73,7 +73,6 @@ const config: ExpoConfig = {
       backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     permissions: ["POST_NOTIFICATIONS"],
@@ -116,19 +115,6 @@ const config: ExpoConfig = {
         // Android status-bar icon (white silhouette). iOS uses AppIcon from `icon` above.
         icon: "./assets/images/android-icon-monochrome.png",
         color: "#0D9488",
-      },
-    ],
-    [
-      "expo-audio",
-      {
-        microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
-      },
-    ],
-    [
-      "expo-video",
-      {
-        supportsBackgroundPlayback: true,
-        supportsPictureInPicture: true,
       },
     ],
     [
