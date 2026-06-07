@@ -5,14 +5,17 @@ import { PageHeader } from "@/components/page-header";
 import { SubscriptionDisclosure } from "@/components/subscription-disclosure";
 import { useColors } from "@/hooks/use-colors";
 import {
+  findStoreProductById,
   linkRevenueCatAccount,
   planFromProductId,
+  productIdsMatch,
   revenueCatGetCustomerInfo,
   revenueCatGetOfferings,
   revenueCatGetSubscriptionProducts,
   revenueCatPurchasePackage,
   revenueCatPurchaseStoreProduct,
   revenueCatRestorePurchases,
+  SUBSCRIPTION_PRODUCT_IDS,
   type PurchasesStoreProduct,
 } from "@/lib/revenuecat";
 import { trpc } from "@/lib/trpc";
@@ -39,6 +42,22 @@ function launchPromoForPlan(plan: "monthly" | "yearly" | null) {
     sale: LAUNCH_PROMO[plan].sale,
     suffix: plan === "monthly" ? "/月" : "/年",
   };
+}
+
+function launchPromoPriceLabel(plan: "monthly" | "yearly") {
+  return `HK$${LAUNCH_PROMO[plan].sale.toLocaleString()}${plan === "monthly" ? "/月" : "/年"}`;
+}
+
+function mobileStoreName() {
+  return Platform.OS === "android" ? "Google Play" : "App Store";
+}
+
+function storeProductLoadError() {
+  const store = mobileStoreName();
+  if (Platform.OS === "android" && APP_VARIANT !== "production") {
+    return `無法從 ${store} 載入訂閱產品。請從 Play Console 內部測試連結安裝 App，並確認已上傳至 Play 測試軌道。`;
+  }
+  return `無法從 ${store} 載入此訂閱產品，請稍後再試。`;
 }
 
 function planDisplayTitle(plan: "monthly" | "yearly" | null, fallback: string) {
@@ -120,10 +139,10 @@ function WebPlanPrice({
   );
 }
 
-/** Shown in dev/preview when StoreKit offerings are unavailable (e.g. ASC Missing Metadata). */
+/** Shown in dev/preview when StoreKit / Play Billing products are unavailable. */
 const PAYWALL_PREVIEW_PLANS = [
-  { id: "hyphen_pro_monthly", title: "Hyphen Pro 月費計劃", priceLabel: "HK$288/月" },
-  { id: "hyphen_pro_yearly", title: "Hyphen Pro 年費計劃", priceLabel: "HK$2,888/年" },
+  { id: "hyphen_pro_monthly", title: "Hyphen Pro 月費計劃", priceLabel: launchPromoPriceLabel("monthly") },
+  { id: "hyphen_pro_yearly", title: "Hyphen Pro 年費計劃", priceLabel: launchPromoPriceLabel("yearly") },
 ] as const;
 
 function SubscriptionPlanButton({
@@ -263,7 +282,7 @@ export default function PaywallScreen() {
       return "付款由 Stripe 安全處理。訂閱會自動續期。如需取消或更改方案，請點擊「管理訂閱」進入 Stripe 安全頁面自行操作。";
     }
     if (showPreviewPlans) {
-      return "付款將由 App Store 處理。訂閱會自動續期，可隨時在 App Store 設定中取消。";
+      return `付款將由 ${mobileStoreName()} 處理。訂閱會自動續期，可隨時在 ${mobileStoreName()} 設定中取消。`;
     }
     if (APP_VARIANT !== "production") {
       return "App 端完成購買後，會先以 RevenueCat entitlement 判斷是否解鎖；目前亦會同步更新測試訂閱狀態，方便你即時驗證「查看聯絡資訊」流程。";
@@ -277,7 +296,13 @@ export default function PaywallScreen() {
   const storeProductById = useMemo(() => {
     const map = new Map<string, PurchasesStoreProduct>();
     for (const product of storeProducts) {
-      if (product.identifier) map.set(product.identifier, product);
+      if (!product.identifier) continue;
+      map.set(product.identifier, product);
+      for (const productId of SUBSCRIPTION_PRODUCT_IDS) {
+        if (productIdsMatch(product.identifier, productId)) {
+          map.set(productId, product);
+        }
+      }
     }
     return map;
   }, [storeProducts]);
@@ -344,9 +369,9 @@ export default function PaywallScreen() {
     try {
       const products = await revenueCatGetSubscriptionProducts();
       setStoreProducts(products);
-      const product = products.find((p) => p.identifier === productId);
+      const product = findStoreProductById(products, productId);
       if (!product) {
-        setRcError("無法從 App Store 載入此訂閱產品，請稍後再試。");
+        setRcError(storeProductLoadError());
         return;
       }
       await handlePurchaseProduct(product);
@@ -451,12 +476,12 @@ export default function PaywallScreen() {
         {
           title: "Hyphen Pro 月費計劃",
           length: "1 個月",
-          price: PAYWALL_PREVIEW_PLANS[0].priceLabel,
+          price: launchPromoPriceLabel("monthly"),
         },
         {
           title: "Hyphen Pro 年費計劃",
           length: "1 年",
-          price: PAYWALL_PREVIEW_PLANS[1].priceLabel,
+          price: launchPromoPriceLabel("yearly"),
         },
       ];
     }

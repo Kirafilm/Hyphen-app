@@ -91,6 +91,20 @@ export function planFromProductId(productId: string): "monthly" | "yearly" | nul
   return null;
 }
 
+export function productIdsMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  const planA = planFromProductId(a);
+  const planB = planFromProductId(b);
+  return planA !== null && planA === planB;
+}
+
+export function findStoreProductById(
+  products: PurchasesStoreProduct[],
+  productId: string,
+): PurchasesStoreProduct | undefined {
+  return products.find((product) => productIdsMatch(product.identifier, productId));
+}
+
 export type PurchasesStoreProduct = import("react-native-purchases").PurchasesStoreProduct;
 
 export async function revenueCatGetSubscriptionProducts(): Promise<PurchasesStoreProduct[]> {
