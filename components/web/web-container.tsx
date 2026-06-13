@@ -5,6 +5,8 @@ import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "./constants";
 type WebContainerProps = ViewProps & {
   children: React.ReactNode;
   scroll?: boolean;
+  /** Let child sections control their own horizontal padding (e.g. full-bleed landing). */
+  contentWide?: boolean;
   refreshControl?: ScrollViewProps["refreshControl"];
   contentContainerStyle?: ScrollViewProps["contentContainerStyle"];
 };
@@ -13,6 +15,7 @@ type WebContainerProps = ViewProps & {
 export function WebContainer({
   children,
   scroll = false,
+  contentWide = false,
   refreshControl,
   contentContainerStyle,
   style,
@@ -22,9 +25,9 @@ export function WebContainer({
     <View
       style={{
         width: "100%",
-        maxWidth: WEB_MAX_WIDTH,
+        maxWidth: contentWide ? undefined : WEB_MAX_WIDTH,
         alignSelf: "center",
-        paddingHorizontal: WEB_HORIZONTAL_PADDING,
+        paddingHorizontal: contentWide ? 0 : WEB_HORIZONTAL_PADDING,
       }}
     >
       {children}

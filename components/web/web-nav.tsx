@@ -1,14 +1,15 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
+import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "./constants";
 
 const NAV_LINKS = [
   { label: "首頁", href: "/(tabs)" as const, key: "home" },
-  { label: "職位", href: "/(tabs)/jobs" as const, key: "jobs" },
-  { label: "發佈", href: "/(tabs)/post" as const, key: "post" },
+  { label: "瀏覽職位", href: "/(tabs)/jobs" as const, key: "jobs" },
+  { label: "發佈工作", href: "/(tabs)/post" as const, key: "post" },
   { label: "個人", href: "/(tabs)/profile" as const, key: "profile" },
 ] as const;
 
@@ -24,6 +25,7 @@ export function WebNav() {
   const router = useRouter();
   const pathname = usePathname();
   const colors = useColors();
+  const { isAuthenticated } = useAuth();
 
   return (
     <View
@@ -31,7 +33,8 @@ export function WebNav() {
         width: "100%",
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
-        backgroundColor: `${colors.background}E6`,
+        backgroundColor: Platform.OS === "web" ? "rgba(255,255,255,0.92)" : `${colors.background}E6`,
+        ...(Platform.OS === "web" ? ({ position: "sticky", top: 0, zIndex: 100 } as object) : {}),
       }}
     >
       <View
@@ -40,8 +43,7 @@ export function WebNav() {
           maxWidth: WEB_MAX_WIDTH,
           alignSelf: "center",
           paddingHorizontal: WEB_HORIZONTAL_PADDING,
-          paddingTop: 20,
-          paddingBottom: 16,
+          height: 64,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
@@ -51,16 +53,15 @@ export function WebNav() {
         <TouchableOpacity
           onPress={() => router.push("/(tabs)")}
           activeOpacity={0.85}
-          style={{ flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1 }}
+          style={{ flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 }}
         >
-          <HyphenLogo height={40} />
-          <View>
-            <Text style={{ fontSize: 22, fontWeight: "800", color: colors.foreground }}>Hyphen 自由職</Text>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginTop: 1 }}>連接自由職業者與工作機會</Text>
-          </View>
+          <HyphenLogo height={32} />
+          <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>
+            Hyphen <Text style={{ color: colors.primary }}>自由職</Text>
+          </Text>
         </TouchableOpacity>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
           {NAV_LINKS.map((link) => {
             const active = isNavActive(pathname, link.key);
             return (
@@ -68,21 +69,42 @@ export function WebNav() {
                 key={link.label}
                 onPress={() => router.push(link.href)}
                 activeOpacity={0.85}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  borderRadius: 999,
-                  backgroundColor: active ? `${colors.primary}18` : colors.surface,
-                  borderWidth: 1,
-                  borderColor: active ? colors.primary : colors.border,
-                }}
+                style={{ paddingHorizontal: 4, paddingVertical: 6 }}
               >
-                <Text style={{ color: active ? colors.primary : colors.foreground, fontWeight: "700", fontSize: 13 }}>
+                <Text style={{ color: active ? colors.primary : colors.muted, fontWeight: "600", fontSize: 14 }}>
                   {link.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
+          <TouchableOpacity
+            onPress={() => router.push(isAuthenticated ? "/(tabs)/profile" : "/login")}
+            activeOpacity={0.85}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+              marginLeft: 4,
+            }}
+          >
+            <Text style={{ color: colors.muted, fontWeight: "600", fontSize: 14 }}>{isAuthenticated ? "帳戶" : "登入"}</Text>
+          </TouchableOpacity>
+          {!isAuthenticated ? (
+            <TouchableOpacity
+              onPress={() => router.push("/login")}
+              activeOpacity={0.85}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 8,
+                backgroundColor: colors.primary,
+              }}
+            >
+              <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>免費註冊</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     </View>

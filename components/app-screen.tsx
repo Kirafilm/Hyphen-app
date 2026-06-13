@@ -13,6 +13,8 @@ type AppScreenProps = ViewProps & {
   children: React.ReactNode;
   /** Full-width page scroll on web (scrollbar at viewport edge). */
   webScroll?: boolean;
+  /** Homepage-style layout: no max-width wrapper on web. */
+  webContentWide?: boolean;
   refreshControl?: ScrollViewProps["refreshControl"];
   contentContainerStyle?: ScrollViewProps["contentContainerStyle"];
 };
@@ -23,6 +25,7 @@ export function AppScreen({
   safeArea = true,
   children,
   webScroll = false,
+  webContentWide = false,
   refreshControl,
   contentContainerStyle,
   style,
@@ -35,7 +38,7 @@ export function AppScreen({
   const content = isWeb ? (
     <>
       <WebNav />
-      <WebContainer scroll={webScroll} refreshControl={refreshControl} contentContainerStyle={contentContainerStyle}>
+      <WebContainer scroll={webScroll} contentWide={webContentWide} refreshControl={refreshControl} contentContainerStyle={contentContainerStyle}>
         {children}
       </WebContainer>
     </>
@@ -45,7 +48,7 @@ export function AppScreen({
 
   return (
     <View style={[{ flex: 1, backgroundColor: colors.background }, style]} {...props}>
-      <EtherealBackground baseColor={colors.background} variant={colorScheme} />
+      {!webContentWide ? <EtherealBackground baseColor={colors.background} variant={colorScheme} /> : null}
       {safeArea ? (
         <SafeAreaView edges={edges} style={{ flex: 1 }}>
           {content}
