@@ -110,11 +110,16 @@ export type PurchasesStoreProduct = import("react-native-purchases").PurchasesSt
 export async function revenueCatGetSubscriptionProducts(): Promise<PurchasesStoreProduct[]> {
   const mod = await ensureConfigured();
   if (!mod) return [];
-  const category = mod.PRODUCT_CATEGORY?.SUBSCRIPTION;
-  const products = category
-    ? await mod.default.getProducts([...SUBSCRIPTION_PRODUCT_IDS], category)
-    : await mod.default.getProducts([...SUBSCRIPTION_PRODUCT_IDS]);
-  return Array.isArray(products) ? products : [];
+  try {
+    const category = mod.PRODUCT_CATEGORY?.SUBSCRIPTION;
+    const products = category
+      ? await mod.default.getProducts([...SUBSCRIPTION_PRODUCT_IDS], category)
+      : await mod.default.getProducts([...SUBSCRIPTION_PRODUCT_IDS]);
+    return Array.isArray(products) ? products : [];
+  } catch (err) {
+    console.warn("[RevenueCat] getProducts failed:", err);
+    return [];
+  }
 }
 
 export async function revenueCatPurchaseStoreProduct(product: PurchasesStoreProduct) {
@@ -174,7 +179,12 @@ export async function revenueCatLogOut() {
 export async function revenueCatGetOfferings() {
   const mod = await ensureConfigured();
   if (!mod) return null;
-  return mod.default.getOfferings();
+  try {
+    return await mod.default.getOfferings();
+  } catch (err) {
+    console.warn("[RevenueCat] getOfferings failed:", err);
+    return null;
+  }
 }
 
 export async function revenueCatPurchasePackage(pkg: import("react-native-purchases").PurchasesPackage) {
@@ -191,5 +201,36 @@ export async function revenueCatGetCustomerInfo() {
   const mod = await ensureConfigured();
   if (!mod) return null;
   return mod.default.getCustomerInfo();
+}
+
+export function isRevenueCatUserCancellation(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    message.includes("Purchase was cancelled") ||
+    message.includes("USER_CANCELED") ||
+    /user cancelled/i.test(message)
+  );
+}
+
+/** Map RevenueCat / store SDK errors to user-facing copy (never show raw SDK text in release). */
+export function formatRevenueCatPaywallError(
+  error: unknown,
+  options?: { storeName?: string },
+): string | null {
+  if (!error || isRevenueCatUserCancellation(error)) return null;
+
+  const message = error instanceof Error ? error.message : String(error);
+  if (__DEV__) return message;
+
+  const store = options?.storeName ?? "App Store";
+  if (
+    /configuration|revenuecat|app store connect|storekit|could not be fetched|offerings|rev\.cat|products registered|problem with your configuration/i.test(
+      message,
+    )
+  ) {
+    return `無法從 ${store} 載入訂閱產品，請稍後再試。`;
+  }
+
+  return "操作未能完成，請稍後再試。";
 }
 

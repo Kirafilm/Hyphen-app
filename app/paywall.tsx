@@ -6,6 +6,7 @@ import { SubscriptionDisclosure } from "@/components/subscription-disclosure";
 import { useColors } from "@/hooks/use-colors";
 import {
   findStoreProductById,
+  formatRevenueCatPaywallError,
   linkRevenueCatAccount,
   planFromProductId,
   productIdsMatch,
@@ -23,7 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Platform, ScrollView, Text, TouchableOpacity, View, Linking } from "react-native";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 import type { CustomerInfo, PurchasesOfferings, PurchasesPackage } from "react-native-purchases";
 
@@ -53,11 +54,16 @@ function mobileStoreName() {
 }
 
 function storeProductLoadError() {
-  const store = mobileStoreName();
-  if (Platform.OS === "android" && APP_VARIANT !== "production") {
-    return `無法從 ${store} 載入訂閱產品。請從 Play Console 內部測試連結安裝 App，並確認已上傳至 Play 測試軌道。`;
-  }
-  return `無法從 ${store} 載入此訂閱產品，請稍後再試。`;
+  return formatRevenueCatPaywallError(new Error("configuration"), {
+    storeName: mobileStoreName(),
+  })!;
+}
+
+function setPaywallError(
+  setter: (value: string | null) => void,
+  error: unknown,
+) {
+  setter(formatRevenueCatPaywallError(error, { storeName: mobileStoreName() }));
 }
 
 function planDisplayTitle(plan: "monthly" | "yearly" | null, fallback: string) {
@@ -310,21 +316,41 @@ export default function PaywallScreen() {
   useEffect(() => {
     if (!isAuthenticated) return;
     if (Platform.OS === "web") return;
+
     (async () => {
       setRcError(null);
-      if (user?.openId) {
-        await linkRevenueCatAccount(user.openId, user.email ?? null);
+      try {
+        if (user?.openId) {
+          await linkRevenueCatAccount(user.openId, user.email ?? null);
+        }
+      } catch (e) {
+        console.warn("[Paywall] RevenueCat login failed:", e);
       }
-      const nextOfferings = await revenueCatGetOfferings();
-      if (nextOfferings) setOfferings(nextOfferings);
-      const products = await revenueCatGetSubscriptionProducts();
-      setStoreProducts(products);
-      const nextCustomerInfo = await revenueCatGetCustomerInfo();
-      if (nextCustomerInfo) {
-        setCustomerInfo(nextCustomerInfo);
+
+      if (isSubscribed) return;
+
+      try {
+        const nextOfferings = await revenueCatGetOfferings();
+        if (nextOfferings) setOfferings(nextOfferings);
+      } catch (e) {
+        console.warn("[Paywall] offerings unavailable:", e);
       }
-    })().catch((e) => setRcError(e instanceof Error ? e.message : String(e)));
-  }, [isAuthenticated, user?.email, user?.openId]);
+
+      try {
+        const products = await revenueCatGetSubscriptionProducts();
+        setStoreProducts(products);
+      } catch (e) {
+        console.warn("[Paywall] store products unavailable:", e);
+      }
+
+      try {
+        const nextCustomerInfo = await revenueCatGetCustomerInfo();
+        if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
+      } catch (e) {
+        console.warn("[Paywall] customer info unavailable:", e);
+      }
+    })();
+  }, [isAuthenticated, isSubscribed, user?.email, user?.openId]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);
@@ -336,7 +362,7 @@ export default function PaywallScreen() {
       await syncSubscription(nextCustomerInfo);
       await meQuery.refetch();
     } catch (e) {
-      setRcError(e instanceof Error ? e.message : String(e));
+      setPaywallError(setRcError, e);
     } finally {
       setPurchasingId(null);
     }
@@ -352,7 +378,7 @@ export default function PaywallScreen() {
       await syncSubscription(nextCustomerInfo);
       await meQuery.refetch();
     } catch (e) {
-      setRcError(e instanceof Error ? e.message : String(e));
+      setPaywallError(setRcError, e);
     } finally {
       setPurchasingId(null);
     }
@@ -376,7 +402,7 @@ export default function PaywallScreen() {
       }
       await handlePurchaseProduct(product);
     } catch (e) {
-      setRcError(e instanceof Error ? e.message : String(e));
+      setPaywallError(setRcError, e);
     } finally {
       setPurchasingId(null);
     }
@@ -393,7 +419,7 @@ export default function PaywallScreen() {
         await meQuery.refetch();
       }
     } catch (e) {
-      setRcError(e instanceof Error ? e.message : String(e));
+      setPaywallError(setRcError, e);
     } finally {
       setRestoreLoading(false);
     }
@@ -614,32 +640,44 @@ export default function PaywallScreen() {
                     {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}
                     </View>
                   </View>
+                ) : isSubscribed ? (
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
+                    <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>訂閱管理</Text>
+                    <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33`, gap: 4 }}>
+                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已解鎖</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>到期：{subscriptionExpiresAt}</Text>
+                    </View>
+                    <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
+                      {Platform.OS === "android"
+                        ? "如需取消或更改方案，請前往 Google Play → 付款與訂閱 管理。"
+                        : "如需取消或更改方案，請前往 設定 → Apple ID → 訂閱 管理。"}
+                    </Text>
+                    {Platform.OS === "ios" ? (
+                      <TouchableOpacity
+                        onPress={() => void Linking.openURL("https://apps.apple.com/account/subscriptions")}
+                        style={{ backgroundColor: colors.background, borderRadius: 8, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.border }}
+                      >
+                        <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 15 }}>前往 App Store 管理訂閱</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
                 ) : (
                   <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
                     <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>選擇訂閱</Text>
 
-                    {isSubscribed ? (
-                      <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33`, gap: 4 }}>
-                        <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>已解鎖</Text>
-                        <Text style={{ color: colors.muted, fontSize: 12 }}>到期：{subscriptionExpiresAt}</Text>
-                      </View>
-                    ) : null}
-
                     {showLaunchPromo ? <LaunchPromoBadge colors={colors} /> : null}
 
-                    {!isSubscribed ? (
-                      <View
-                        style={{
-                          backgroundColor: colors.background,
-                          borderRadius: 12,
-                          padding: 16,
-                          borderWidth: 1,
-                          borderColor: colors.border,
-                        }}
-                      >
-                        <SubscriptionDisclosure plans={disclosurePlans} />
-                      </View>
-                    ) : null}
+                    <View
+                      style={{
+                        backgroundColor: colors.background,
+                        borderRadius: 12,
+                        padding: 16,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <SubscriptionDisclosure plans={disclosurePlans} />
+                    </View>
 
                     {sortedStoreProducts.length > 0 && availablePackages.length === 0
                       ? sortedStoreProducts.map((product) => {
