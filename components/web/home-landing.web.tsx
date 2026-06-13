@@ -10,15 +10,8 @@ import { useColors } from "@/hooks/use-colors";
 import { categories } from "@/lib/mock-data";
 import type { ThemeColorPalette } from "@/lib/_core/theme";
 
-const HERO_BG = require("@/assets/images/hero-front-page.png") as string | { uri: string };
-
-function heroBgUri(source: typeof HERO_BG): string {
-  if (typeof source === "string") return source;
-  if (typeof source === "object" && "uri" in source) return source.uri;
-  return String(source);
-}
-
-const HERO_BG_URI = heroBgUri(HERO_BG);
+// Fixed path copied into dist/images/ by scripts/deploy-web.sh (reliable on static hosting).
+const HERO_BG_URI = "/images/hero-front-page.png";
 
 function heroOverlayGradient(primary: string, primaryDark: string, primaryDeep: string) {
   const toRgba = (hex: string, alpha: number) => {
