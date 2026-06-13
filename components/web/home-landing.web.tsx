@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Platform, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
@@ -11,7 +10,15 @@ import { useColors } from "@/hooks/use-colors";
 import { categories } from "@/lib/mock-data";
 import type { ThemeColorPalette } from "@/lib/_core/theme";
 
-const HERO_BG = require("@/assets/images/hero-front-page.png");
+const HERO_BG = require("@/assets/images/hero-front-page.png") as string | { uri: string };
+
+function heroBgUri(source: typeof HERO_BG): string {
+  if (typeof source === "string") return source;
+  if (typeof source === "object" && "uri" in source) return source.uri;
+  return String(source);
+}
+
+const HERO_BG_URI = heroBgUri(HERO_BG);
 
 function heroOverlayGradient(primary: string, primaryDark: string, primaryDeep: string) {
   const toRgba = (hex: string, alpha: number) => {
@@ -184,11 +191,17 @@ export function HomeLandingWeb() {
     <View style={{ width: "100%" }}>
       {/* Hero */}
       <View style={[fullBleed(), { position: "relative", overflow: "hidden", minHeight: 520 }]}>
-        <Image
-          source={HERO_BG}
-          style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" }}
-          contentFit="cover"
-          contentPosition="center"
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            backgroundImage: `url(${HERO_BG_URI})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          } as ViewStyle}
         />
         <View
           style={{
