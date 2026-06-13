@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Platform, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
@@ -9,6 +10,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
 import { categories } from "@/lib/mock-data";
 import type { ThemeColorPalette } from "@/lib/_core/theme";
+
+const HERO_BG = require("@/assets/images/hero-front-page.png");
+
+function heroOverlayGradient(primary: string, primaryDark: string, primaryDeep: string) {
+  const toRgba = (hex: string, alpha: number) => {
+    const normalized = hex.replace("#", "");
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  return `linear-gradient(135deg, ${toRgba(primary, 0.84)} 0%, ${toRgba(primaryDark, 0.8)} 48%, ${toRgba(primaryDeep, 0.76)} 100%)`;
+}
 
 const CATEGORY_META: Record<string, { emoji: string; desc: string }> = {
   攝影及影片製作: { emoji: "📷", desc: "活動、產品、婚禮、短片" },
@@ -168,21 +183,33 @@ export function HomeLandingWeb() {
   return (
     <View style={{ width: "100%" }}>
       {/* Hero */}
-      <View
-        style={[
-          fullBleed(),
-          {
+      <View style={[fullBleed(), { position: "relative", overflow: "hidden", minHeight: 520 }]}>
+        <Image
+          source={HERO_BG}
+          style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" }}
+          contentFit="cover"
+          contentPosition="center"
+        />
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            backgroundImage: heroOverlayGradient(colors.primary, primaryDark, primaryDeep),
+          } as ViewStyle}
+        />
+
+        <View
+          style={{
             paddingTop: 80,
             paddingBottom: 100,
             alignItems: "center",
-            ...(Platform.OS === "web"
-              ? ({
-                  backgroundImage: `linear-gradient(135deg, ${colors.primary} 0%, ${primaryDark} 50%, ${primaryDeep} 100%)`,
-                } as ViewStyle)
-              : { backgroundColor: colors.primary }),
-          },
-        ]}
-      >
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
         <View style={[sectionInner(), { alignItems: "center", gap: 20 }]}>
           <View
             style={{
@@ -223,9 +250,9 @@ export function HomeLandingWeb() {
                 paddingVertical: 14,
                 paddingHorizontal: 32,
                 borderRadius: 10,
-                backgroundColor: "rgba(255,255,255,0.12)",
+                backgroundColor: colors.primary,
                 borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.35)",
+                borderColor: "rgba(255,255,255,0.25)",
               }}
             >
               <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 16 }}>免費發佈工作</Text>
@@ -236,6 +263,7 @@ export function HomeLandingWeb() {
             <Ionicons name="mail-outline" size={16} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 13 }}>只需一個電郵地址，即可開始</Text>
           </View>
+        </View>
         </View>
       </View>
 
