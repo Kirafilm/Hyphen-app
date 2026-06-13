@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerStripeRoutes } from "./stripeRoute";
 import { registerRevenueCatRoutes } from "./revenueCatRoute";
+import { registerWebAssets } from "./webAssets";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -44,6 +45,7 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerContactRoute(app);
+  registerWebAssets(app);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });

@@ -10,8 +10,8 @@ import { useColors } from "@/hooks/use-colors";
 import { categories } from "@/lib/mock-data";
 import type { ThemeColorPalette } from "@/lib/_core/theme";
 
-// Fixed path copied into dist/images/ by scripts/deploy-web.sh (reliable on static hosting).
-const HERO_BG_URI = "/images/hero-front-page.png";
+const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://api.hyphenjob.com").replace(/\/$/, "");
+const HERO_BG_URI = `${API_BASE}/web-assets/hero-front-page.png`;
 
 function heroOverlayGradient(primary: string, primaryDark: string, primaryDeep: string) {
   const toRgba = (hex: string, alpha: number) => {

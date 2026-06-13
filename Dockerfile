@@ -23,6 +23,7 @@ RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/dist ./dist
 COPY drizzle ./drizzle
+COPY assets/images/hero-front-page.png ./web-assets/hero-front-page.png
 
 EXPOSE 3000
 
