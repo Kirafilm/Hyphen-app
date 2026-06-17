@@ -63,8 +63,13 @@ export default function JobsScreen() {
 
   return (
     <AppScreen>
-      <PageHeader title="職位" subtitle={isWeb ? "按分類、地區或關鍵字搜尋自由工作" : undefined} />
-      <View style={{ paddingHorizontal: pad, paddingBottom: 12, gap: 12 }}>
+      <ScrollView
+        style={isWeb ? { flex: 1, width: "100%" } : undefined}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
+      >
+        <PageHeader title="職位" subtitle={isWeb ? "按分類、地區或關鍵字搜尋自由工作" : undefined} />
+        <View style={{ paddingHorizontal: pad, paddingBottom: 12, gap: 12 }}>
         <View
           style={{
             flexDirection: "row",
@@ -135,12 +140,9 @@ export default function JobsScreen() {
             );
           })}
         </ScrollView>
-      </View>
+        </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: pad, paddingTop: 4, paddingBottom: 32 }}
-        refreshControl={<RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />}
-      >
+        <View style={{ paddingHorizontal: pad, paddingTop: 4 }}>
           {jobsQuery.isError ? (
             <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 8 }}>
               <Ionicons name="cloud-offline" size={48} color={colors.muted} />
@@ -225,6 +227,7 @@ export default function JobsScreen() {
               ))}
             </View>
           )}
+        </View>
       </ScrollView>
     </AppScreen>
   );
