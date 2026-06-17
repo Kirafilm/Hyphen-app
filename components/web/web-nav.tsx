@@ -1,10 +1,11 @@
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { usePathname, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
-import { useWebLayout } from "@/lib/web-layout";
+import { WEB_DESKTOP_BREAKPOINT } from "@/lib/web-layout";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "./constants";
 
 const NAV_LINKS = [
@@ -27,7 +28,13 @@ export function WebNav() {
   const pathname = usePathname();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
-  const { isDesktopWeb } = useWebLayout();
+  const { width } = useWindowDimensions();
+  // Avoid SSR/client mismatch: keep desktop nav until after mount.
+  const [layoutReady, setLayoutReady] = useState(Platform.OS !== "web");
+  useEffect(() => {
+    if (Platform.OS === "web") setLayoutReady(true);
+  }, []);
+  const isDesktopWeb = !layoutReady || width >= WEB_DESKTOP_BREAKPOINT;
 
   const shellStyle = {
     borderBottomColor: colors.border,

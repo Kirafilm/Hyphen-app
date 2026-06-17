@@ -19,12 +19,6 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         headerShown: false,
         tabBarButton: isWeb ? () => null : HapticTab,
-        ...(isWeb
-          ? {
-              sceneStyle: { overflow: "visible", backgroundColor: "transparent" },
-              sceneContainerStyle: { overflow: "visible" },
-            }
-          : {}),
         tabBarStyle: isWeb
           ? { display: "none", height: 0 }
           : {

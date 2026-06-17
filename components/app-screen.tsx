@@ -36,12 +36,13 @@ export function AppScreen({
 
   const isWeb = Platform.OS === "web";
   const content = isWeb ? (
-    <View style={{ width: "100%" }}>
+    <View style={{ flex: 1, width: "100%" }}>
       <WebNav />
       <WebContainer
-        scroll={false}
+        scroll={webScroll}
         contentWide={webContentWide}
         contentContainerStyle={contentContainerStyle}
+        refreshControl={refreshControl}
       >
         {children}
       </WebContainer>
@@ -50,12 +51,8 @@ export function AppScreen({
     children
   );
 
-  const rootStyle = isWeb
-    ? { width: "100%" as const, minHeight: "100%" as const, backgroundColor: colors.background }
-    : { flex: 1 as const, backgroundColor: colors.background };
-
   return (
-    <View style={[rootStyle, style]} {...props}>
+    <View style={[{ flex: 1, backgroundColor: colors.background }, style]} {...props}>
       {!webContentWide ? <EtherealBackground baseColor={colors.background} variant={colorScheme} /> : null}
       {safeArea ? (
         <SafeAreaView edges={edges} style={{ flex: 1 }}>

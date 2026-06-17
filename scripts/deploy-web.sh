@@ -40,8 +40,8 @@ rm -f /tmp/hyphen-web-dist.tgz
 ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs/index.html'
 EOF
   echo "→ Verifying deploy..."
-  ssh "$VPS_HOST" "grep -q 'overflow-y: auto' '$VPS_WEB_ROOT/jobs/index.html' && grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html'"
-  echo "✓ jobs route has scroll fix + jobs content"
+  ssh "$VPS_HOST" "grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html' && grep -q 'Hyphen' '$VPS_WEB_ROOT/index.html'"
+  echo "✓ jobs route + homepage content present"
   echo "Done. Open https://hyphenjob.com/jobs"
 else
   echo ""
