@@ -2,13 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Web: keep the vertical scrollbar at the viewport edge, not over centered content. */
-@media (min-width: 768px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
+/* Web: document scroll + mobile nav breakpoints are in app/+html.tsx and web-nav StyleSheet. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: hidden;
 }

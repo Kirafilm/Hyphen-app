@@ -22,7 +22,7 @@ type AppScreenProps = ViewProps & {
 /** Full-screen wrapper with the shared ethereal background. */
 export function AppScreen({
   edges = ["top", "left", "right"],
-  safeArea = true,
+  safeArea = Platform.OS !== "web",
   children,
   webScroll = Platform.OS === "web",
   webContentWide = false,
@@ -36,14 +36,12 @@ export function AppScreen({
 
   const isWeb = Platform.OS === "web";
   const content = isWeb ? (
-    <View style={{ flex: 1, width: "100%" }}>
+    <View style={{ width: "100%" }}>
       <WebNav />
       <WebContainer
-        scroll={webScroll}
+        scroll={false}
         contentWide={webContentWide}
-        refreshControl={refreshControl}
         contentContainerStyle={contentContainerStyle}
-        style={{ flex: 1 }}
       >
         {children}
       </WebContainer>

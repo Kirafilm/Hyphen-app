@@ -34,7 +34,15 @@ export function WebContainer({
     </View>
   );
 
-  if (Platform.OS === "web" && scroll) {
+  if (Platform.OS === "web") {
+    return (
+      <View style={[{ width: "100%" }, style]} {...props}>
+        {inner}
+      </View>
+    );
+  }
+
+  if (scroll) {
     return (
       <ScrollView
         style={[{ flex: 1, width: "100%" }, style]}
