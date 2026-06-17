@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
@@ -85,7 +86,7 @@ export default function JobDetailScreen() {
 
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScreenScroll contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1 }}>
           <PageHeader
             title={job.title}
@@ -253,7 +254,7 @@ export default function JobDetailScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

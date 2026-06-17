@@ -5,16 +5,18 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories, jobLocations } from "@/lib/mock-data";
 import { formatJobSchedule } from "@/lib/job-schedule";
 import { formatPublishedDate } from "@/lib/utils";
-import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
+import { screenPaddingHorizontal, useWebLayout } from "@/lib/web-layout";
 
 export default function JobsScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { isDesktopWeb } = useWebLayout();
   const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
@@ -111,7 +113,7 @@ export default function JobsScreen() {
 
   const pageContent = (
     <>
-      <PageHeader title="職位" subtitle={isWeb ? "按分類、地區或關鍵字搜尋自由工作" : undefined} />
+      <PageHeader title="職位" subtitle={isDesktopWeb ? "按分類、地區或關鍵字搜尋自由工作" : undefined} />
       <View style={{ paddingHorizontal: pad, paddingBottom: 12, gap: 12 }}>
         <View
           style={{
@@ -135,14 +137,14 @@ export default function JobsScreen() {
             style={{ flex: 1, color: colors.foreground, fontSize: 14 }}
           />
         </View>
-        {isWeb ? (
+        {isDesktopWeb ? (
           <View style={chipRowStyle}>{categoryChips}</View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {categoryChips}
           </ScrollView>
         )}
-        {isWeb ? (
+        {isDesktopWeb ? (
           <View style={chipRowStyle}>{locationChips}</View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -169,17 +171,17 @@ export default function JobsScreen() {
             <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>試試其他搜尋條件</Text>
           </View>
         ) : (
-          <View style={{ flexDirection: isWeb ? "row" : "column", flexWrap: isWeb ? "wrap" : "nowrap", gap: 16 }}>
+          <View style={{ flexDirection: isDesktopWeb ? "row" : "column", flexWrap: isDesktopWeb ? "wrap" : "nowrap", gap: 16 }}>
             {filteredJobs.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 onPress={() => router.push(`/job/${item.id}`)}
                 activeOpacity={0.85}
                 style={{
-                  flexGrow: isWeb ? 1 : 0,
-                  flexBasis: isWeb ? "48%" : "auto",
-                  minWidth: isWeb ? 320 : undefined,
-                  maxWidth: isWeb ? "100%" : undefined,
+                  flexGrow: isDesktopWeb ? 1 : 0,
+                  flexBasis: isDesktopWeb ? "48%" : "auto",
+                  minWidth: isDesktopWeb ? 320 : undefined,
+                  maxWidth: isDesktopWeb ? "100%" : undefined,
                   backgroundColor: colors.surface,
                   borderRadius: 16,
                   borderWidth: 1,
@@ -241,18 +243,10 @@ export default function JobsScreen() {
   );
 
   return (
-    <AppScreen
-      webScroll={isWeb}
-      refreshControl={isWeb ? refreshControl : undefined}
-      contentContainerStyle={isWeb ? { paddingBottom: 32 } : undefined}
-    >
-      {isWeb ? (
-        pageContent
-      ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }} refreshControl={refreshControl}>
-          {pageContent}
-        </ScrollView>
-      )}
+    <AppScreen refreshControl={refreshControl} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }} refreshControl={refreshControl}>
+        {pageContent}
+      </ScreenScroll>
     </AppScreen>
   );
 }

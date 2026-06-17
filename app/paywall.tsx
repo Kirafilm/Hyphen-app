@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useMobileSubscriptionSync } from "@/hooks/use-mobile-subscription-sync";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { SubscriptionDisclosure } from "@/components/subscription-disclosure";
 import { useColors } from "@/hooks/use-colors";
@@ -527,7 +528,7 @@ export default function PaywallScreen() {
 
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
+      <ScreenScroll contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
         <View style={{ flex: 1, maxWidth: isWeb ? 720 : undefined, alignSelf: isWeb ? "center" : "stretch", width: isWeb ? "100%" : undefined }}>
           <PageHeader
             title="解鎖聯絡資訊"
@@ -779,7 +780,7 @@ export default function PaywallScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

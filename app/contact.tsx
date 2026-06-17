@@ -1,5 +1,6 @@
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { isEmailJsConfigured, sendContactEmail } from "@/lib/emailjs";
 import { Ionicons } from "@expo/vector-icons";
@@ -128,7 +129,7 @@ export default function ContactScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
-        <ScrollView
+        <ScreenScroll
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 24, paddingBottom: 40 }}
         >
@@ -256,7 +257,7 @@ export default function ContactScreen() {
           <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center", marginTop: 24 }}>
             © Hyphen - All Rights Reserved
           </Text>
-        </ScrollView>
+        </ScreenScroll>
       </KeyboardAvoidingView>
     </AppScreen>
   );

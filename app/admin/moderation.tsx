@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
@@ -123,7 +124,7 @@ export default function ModerationScreen() {
 
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScreenScroll contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1 }}>
           <PageHeader title="內容管理" subtitle="下架隱藏工作，刪除則永久移除" showBack />
 
@@ -167,7 +168,7 @@ export default function ModerationScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

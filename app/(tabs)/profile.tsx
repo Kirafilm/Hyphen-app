@@ -1,17 +1,19 @@
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
-import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
+import { screenPaddingHorizontal, useWebLayout } from "@/lib/web-layout";
 
 export default function ProfileScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { isDesktopWeb } = useWebLayout();
   const { user, isAuthenticated, logout } = useAuth();
   const meQuery = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const subscriptionQuery = trpc.subscription.me.useQuery(undefined, { enabled: isAuthenticated });
@@ -30,9 +32,9 @@ export default function ProfileScreen() {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        flexBasis: isWeb ? "48%" : "auto",
-        minWidth: isWeb ? 280 : undefined,
-        flexGrow: isWeb ? 1 : 0,
+        flexBasis: isDesktopWeb ? "48%" : "auto",
+        minWidth: isDesktopWeb ? 280 : undefined,
+        flexGrow: isDesktopWeb ? 1 : 0,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -54,16 +56,16 @@ export default function ProfileScreen() {
   const PromoBox = () => (
     <View
       style={{
-        flex: isWeb ? 1 : undefined,
+        flex: isDesktopWeb ? 1 : undefined,
         backgroundColor: colors.surface,
-        borderRadius: isWeb ? 24 : 18,
+        borderRadius: isDesktopWeb ? 24 : 18,
         borderWidth: 1,
         borderColor: colors.border,
-        padding: isWeb ? 28 : 20,
+        padding: isDesktopWeb ? 28 : 20,
         gap: 16,
-        maxWidth: isWeb ? undefined : 560,
-        alignSelf: isWeb ? "stretch" : "center",
-        width: isWeb ? undefined : "100%",
+        maxWidth: isDesktopWeb ? undefined : 560,
+        alignSelf: isDesktopWeb ? "stretch" : "center",
+        width: isDesktopWeb ? undefined : "100%",
       }}
     >
       <View
@@ -77,7 +79,7 @@ export default function ProfileScreen() {
       >
         <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>平台承諾</Text>
       </View>
-      <Text style={{ color: colors.foreground, fontSize: isWeb ? 22 : 18, fontWeight: "800", lineHeight: isWeb ? 30 : 26 }}>
+      <Text style={{ color: colors.foreground, fontSize: isDesktopWeb ? 22 : 18, fontWeight: "800", lineHeight: isDesktopWeb ? 30 : 26 }}>
         簡單、安全、可信賴
       </Text>
       <View style={{ gap: 14 }}>
@@ -103,33 +105,33 @@ export default function ProfileScreen() {
   );
 
   return (
-    <AppScreen>
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-          <PageHeader title="個人" subtitle={isWeb ? "管理帳戶、訂閱與設定" : undefined} />
+    <AppScreen contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
+          <PageHeader title="個人" subtitle={isDesktopWeb ? "管理帳戶、訂閱與設定" : undefined} />
 
           <View
             style={{
               paddingHorizontal: pad,
               paddingBottom: 16,
-              flexDirection: isWeb ? "row" : "column",
-              gap: isWeb ? 24 : 16,
-              maxWidth: isWeb ? 960 : undefined,
-              alignSelf: isWeb ? "center" : "stretch",
-              width: isWeb ? "100%" : undefined,
+              flexDirection: isDesktopWeb ? "row" : "column",
+              gap: isDesktopWeb ? 24 : 16,
+              maxWidth: isDesktopWeb ? 960 : undefined,
+              alignSelf: isDesktopWeb ? "center" : "stretch",
+              width: isDesktopWeb ? "100%" : undefined,
               alignItems: "stretch",
             }}
           >
             <View
               style={{
-                flex: isWeb ? 1.2 : undefined,
+                flex: isDesktopWeb ? 1.2 : undefined,
                 backgroundColor: colors.surface,
-                borderRadius: isWeb ? 24 : 18,
+                borderRadius: isDesktopWeb ? 24 : 18,
                 borderWidth: 1,
                 borderColor: colors.border,
                 padding: 24,
-                maxWidth: isWeb ? undefined : 560,
-                alignSelf: isWeb ? "stretch" : "center",
-                width: isWeb ? undefined : "100%",
+                maxWidth: isDesktopWeb ? undefined : 560,
+                alignSelf: isDesktopWeb ? "stretch" : "center",
+                width: isDesktopWeb ? undefined : "100%",
               }}
             >
               <View style={{ alignItems: "center", marginBottom: 16 }}>
@@ -162,11 +164,11 @@ export default function ProfileScreen() {
             style={{
               paddingHorizontal: pad,
               gap: 10,
-              flexDirection: isWeb ? "row" : "column",
-              flexWrap: isWeb ? "wrap" : "nowrap",
-              maxWidth: isWeb ? 720 : undefined,
-              alignSelf: isWeb ? "center" : "stretch",
-              width: isWeb ? "100%" : undefined,
+              flexDirection: isDesktopWeb ? "row" : "column",
+              flexWrap: isDesktopWeb ? "wrap" : "nowrap",
+              maxWidth: isDesktopWeb ? 720 : undefined,
+              alignSelf: isDesktopWeb ? "center" : "stretch",
+              width: isDesktopWeb ? "100%" : undefined,
             }}
           >
             {!isAuthenticated ? (
@@ -180,7 +182,7 @@ export default function ProfileScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  flexBasis: isWeb ? "100%" : "auto",
+                  flexBasis: isDesktopWeb ? "100%" : "auto",
                 }}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -205,7 +207,7 @@ export default function ProfileScreen() {
           <View style={{ paddingHorizontal: pad, paddingTop: 24 }}>
             <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>© Hyphen - All Rights Reserved</Text>
           </View>
-        </ScrollView>
+        </ScreenScroll>
     </AppScreen>
   );
 }

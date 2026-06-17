@@ -1,5 +1,6 @@
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { ScrollView, Text } from "react-native";
 
@@ -12,12 +13,12 @@ export default function TermsScreen() {
     <AppScreen>
       <PageHeader title="使用條款" showBack />
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
+      <ScreenScroll contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
         <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>{TERMS_TEXT}</Text>
         <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center", marginTop: 24 }}>
           © Hyphen - All Rights Reserved
         </Text>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

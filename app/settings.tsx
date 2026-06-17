@@ -14,6 +14,7 @@ import {
 import { useRouter } from "expo-router";
 
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
@@ -226,7 +227,7 @@ export default function SettingsScreen() {
     <AppScreen>
       <PageHeader title="設定" showBack />
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
+      <ScreenScroll contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
         <View style={{ gap: 16 }}>
           <View
             style={{
@@ -376,7 +377,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

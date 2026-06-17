@@ -1,9 +1,10 @@
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
+import { WEB_DESKTOP_BREAKPOINT } from "@/lib/web-layout";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "./constants";
 
 const NAV_LINKS = [
@@ -26,6 +27,8 @@ export function WebNav() {
   const pathname = usePathname();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
+  const { width } = useWindowDimensions();
+  const compactNav = width < WEB_DESKTOP_BREAKPOINT;
 
   return (
     <View
@@ -43,25 +46,40 @@ export function WebNav() {
           maxWidth: WEB_MAX_WIDTH,
           alignSelf: "center",
           paddingHorizontal: WEB_HORIZONTAL_PADDING,
-          height: 64,
-          flexDirection: "row",
-          alignItems: "center",
+          paddingVertical: compactNav ? 10 : 0,
+          minHeight: compactNav ? undefined : 64,
+          flexDirection: compactNav ? "column" : "row",
+          alignItems: compactNav ? "stretch" : "center",
           justifyContent: "space-between",
-          gap: 16,
+          gap: compactNav ? 10 : 16,
         }}
       >
         <TouchableOpacity
           onPress={() => router.push("/(tabs)")}
           activeOpacity={0.85}
-          style={{ flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            flexShrink: 1,
+            alignSelf: compactNav ? "center" : undefined,
+          }}
         >
-          <HyphenLogo height={32} />
-          <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>
+          <HyphenLogo height={compactNav ? 28 : 32} />
+          <Text style={{ fontSize: compactNav ? 16 : 18, fontWeight: "800", color: colors.foreground }}>
             Hyphen <Text style={{ color: colors.primary }}>自由職</Text>
           </Text>
         </TouchableOpacity>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: compactNav ? "center" : "flex-end",
+            gap: 8,
+          }}
+        >
           {NAV_LINKS.map((link) => {
             const active = isNavActive(pathname, link.key);
             return (

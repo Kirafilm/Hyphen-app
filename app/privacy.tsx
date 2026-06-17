@@ -1,5 +1,6 @@
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { ScrollView, Text, View } from "react-native";
 
@@ -64,7 +65,7 @@ export default function PrivacyScreen() {
     <AppScreen>
       <PageHeader title="私隱條款" subtitle="私隱政策聲明 / 個人資料收集聲明" showBack />
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
+      <ScreenScroll contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
         {SECTIONS.map((section) => (
           <View key={section.title} style={{ marginBottom: 24, gap: 8 }}>
             <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>{section.title}</Text>
@@ -75,7 +76,7 @@ export default function PrivacyScreen() {
         <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center", marginTop: 8 }}>
           © Hyphen - All Rights Reserved
         </Text>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { categories, jobLocations } from "@/lib/mock-data";
 import { workDateWindows } from "@/lib/job-schedule";
@@ -166,7 +167,7 @@ export default function PostJobScreen() {
 
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScreenScroll contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1 }}>
           <PageHeader
             title="發佈新工作"
@@ -240,7 +241,7 @@ export default function PostJobScreen() {
                     maxHeight: 192,
                   }}
                 >
-                  <ScrollView nestedScrollEnabled>
+                  <ScreenScroll nestedScrollEnabled>
                     {categories.map((cat, index) => (
                       <TouchableOpacity
                         key={cat}
@@ -268,7 +269,7 @@ export default function PostJobScreen() {
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </ScrollView>
+                  </ScreenScroll>
                 </View>
               )}
               {errors.category && <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.category}</Text>}
@@ -658,7 +659,7 @@ export default function PostJobScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }

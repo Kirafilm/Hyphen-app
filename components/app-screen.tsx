@@ -24,7 +24,7 @@ export function AppScreen({
   edges = ["top", "left", "right"],
   safeArea = true,
   children,
-  webScroll = false,
+  webScroll = Platform.OS === "web",
   webContentWide = false,
   refreshControl,
   contentContainerStyle,
@@ -36,12 +36,18 @@ export function AppScreen({
 
   const isWeb = Platform.OS === "web";
   const content = isWeb ? (
-    <>
+    <View style={{ flex: 1, width: "100%" }}>
       <WebNav />
-      <WebContainer scroll={webScroll} contentWide={webContentWide} refreshControl={refreshControl} contentContainerStyle={contentContainerStyle}>
+      <WebContainer
+        scroll={webScroll}
+        contentWide={webContentWide}
+        refreshControl={refreshControl}
+        contentContainerStyle={contentContainerStyle}
+        style={{ flex: 1 }}
+      >
         {children}
       </WebContainer>
-    </>
+    </View>
   ) : (
     children
   );

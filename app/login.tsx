@@ -1,5 +1,6 @@
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
 import { useAuth } from "@/hooks/use-auth";
 import * as Auth from "@/lib/_core/auth";
@@ -204,7 +205,7 @@ export default function LoginScreen() {
 
   return (
     <AppScreen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
+      <ScreenScroll contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
         <View style={{ flex: 1, maxWidth: isWeb ? 520 : undefined, alignSelf: isWeb ? "center" : "stretch", width: isWeb ? "100%" : undefined }}>
           <PageHeader
             title="登入 / 註冊"
@@ -372,7 +373,7 @@ export default function LoginScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </ScreenScroll>
     </AppScreen>
   );
 }
