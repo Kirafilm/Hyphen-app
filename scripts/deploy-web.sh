@@ -25,13 +25,22 @@ if [[ "${1:-}" == "--upload" ]]; then
   echo "→ Uploading to $VPS_HOST:/tmp/"
   scp "$TARBALL" "$VPS_HOST:/tmp/hyphen-web-dist.tgz"
   echo "→ Extracting on VPS..."
-  ssh "$VPS_HOST" "sudo mkdir -p '$VPS_WEB_ROOT' && sudo tar --warning=no-unknown-keyword xzf /tmp/hyphen-web-dist.tgz -C '$VPS_WEB_ROOT' && sudo chown -R ubuntu:ubuntu '$VPS_WEB_ROOT' 2>/dev/null || true && rm /tmp/hyphen-web-dist.tgz"
+  ssh "$VPS_HOST" "bash -s" <<EOF
+set -euo pipefail
+sudo mkdir -p '$VPS_WEB_ROOT'
+# NOTE: must be -xzf (with dash). "tar ... xzf" treats xzf as a filename on GNU tar.
+sudo tar -xzf /tmp/hyphen-web-dist.tgz -C '$VPS_WEB_ROOT'
+sudo chown -R ubuntu:ubuntu '$VPS_WEB_ROOT' 2>/dev/null || true
+rm -f /tmp/hyphen-web-dist.tgz
+ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs.html'
+EOF
   echo "→ Verifying deploy..."
-  ssh "$VPS_HOST" "test -f '$VPS_WEB_ROOT/index.html' && ls -lh '$VPS_WEB_ROOT/index.html'"
-  echo "Done. Open https://hyphenjob.com"
+  ssh "$VPS_HOST" "grep -q 'overflow-y: auto' '$VPS_WEB_ROOT/jobs.html'"
+  echo "✓ jobs.html contains scroll fix"
+  echo "Done. Open https://hyphenjob.com/jobs"
 else
   echo ""
   echo "Upload manually:"
   echo "  scp $TARBALL $VPS_HOST:/tmp/"
-  echo "  ssh $VPS_HOST \"sudo mkdir -p $VPS_WEB_ROOT && sudo tar xzf /tmp/hyphen-web-dist.tgz -C $VPS_WEB_ROOT && rm /tmp/hyphen-web-dist.tgz\""
+  echo "  ssh $VPS_HOST \"sudo mkdir -p $VPS_WEB_ROOT && sudo tar -xzf /tmp/hyphen-web-dist.tgz -C $VPS_WEB_ROOT && rm -f /tmp/hyphen-web-dist.tgz\""
 fi
