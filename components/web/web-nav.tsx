@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "expo-router";
 import { HyphenLogo } from "@/components/hyphen-logo";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
+import { useWebLayout } from "@/lib/web-layout";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "./constants";
 
 const NAV_LINKS = [
@@ -26,6 +27,7 @@ export function WebNav() {
   const pathname = usePathname();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
+  const { isDesktopWeb } = useWebLayout();
 
   const shellStyle = {
     borderBottomColor: colors.border,
@@ -73,37 +75,37 @@ export function WebNav() {
 
   return (
     <View style={[styles.shell, shellStyle]}>
-      {/* Desktop */}
-      <View style={styles.desktopBar}>
-        <TouchableOpacity
-          onPress={() => router.push("/(tabs)")}
-          activeOpacity={0.85}
-          style={styles.logoRow}
-        >
-          <HyphenLogo height={32} />
-          <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>
-            Hyphen <Text style={{ color: colors.primary }}>自由職</Text>
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.desktopRight}>
-          {NAV_LINKS.map(link)}
-          {authButtons(false)}
-        </View>
-      </View>
-
-      {/* Mobile: logo + auth on row 1, nav links on row 2 */}
-      <View style={styles.mobileBar}>
-        <View style={styles.mobileTop}>
-          <TouchableOpacity onPress={() => router.push("/(tabs)")} activeOpacity={0.85} style={styles.logoRow}>
-            <HyphenLogo height={28} />
-            <Text style={{ fontSize: 16, fontWeight: "800", color: colors.foreground }}>
+      {isDesktopWeb ? (
+        <View style={styles.desktopBar}>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)")}
+            activeOpacity={0.85}
+            style={styles.logoRow}
+          >
+            <HyphenLogo height={32} />
+            <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>
               Hyphen <Text style={{ color: colors.primary }}>自由職</Text>
             </Text>
           </TouchableOpacity>
-          {authButtons(true)}
+          <View style={styles.desktopRight}>
+            {NAV_LINKS.map(link)}
+            {authButtons(false)}
+          </View>
         </View>
-        <View style={styles.mobileLinks}>{NAV_LINKS.map(link)}</View>
-      </View>
+      ) : (
+        <View style={styles.mobileBar}>
+          <View style={styles.mobileTop}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)")} activeOpacity={0.85} style={styles.logoRow}>
+              <HyphenLogo height={28} />
+              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.foreground }}>
+                Hyphen <Text style={{ color: colors.primary }}>自由職</Text>
+              </Text>
+            </TouchableOpacity>
+            {authButtons(true)}
+          </View>
+          <View style={styles.mobileLinks}>{NAV_LINKS.map(link)}</View>
+        </View>
+      )}
     </View>
   );
 }
@@ -126,10 +128,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 16,
-    display: "flex",
-    "@media (max-width: 767px)": {
-      display: "none",
-    },
   },
   mobileBar: {
     width: "100%",
@@ -138,11 +136,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: WEB_HORIZONTAL_PADDING,
     paddingVertical: 10,
     gap: 10,
-    display: "none",
-    "@media (max-width: 767px)": {
-      display: "flex",
-      flexDirection: "column",
-    },
   },
   mobileTop: {
     width: "100%",

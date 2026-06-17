@@ -50,8 +50,12 @@ export function AppScreen({
     children
   );
 
+  const rootStyle = isWeb
+    ? { width: "100%" as const, minHeight: "100%" as const, backgroundColor: colors.background }
+    : { flex: 1 as const, backgroundColor: colors.background };
+
   return (
-    <View style={[{ flex: 1, backgroundColor: colors.background }, style]} {...props}>
+    <View style={[rootStyle, style]} {...props}>
       {!webContentWide ? <EtherealBackground baseColor={colors.background} variant={colorScheme} /> : null}
       {safeArea ? (
         <SafeAreaView edges={edges} style={{ flex: 1 }}>

@@ -11,10 +11,15 @@ echo "→ Exporting web (API: https://api.hyphenjob.com)..."
 mkdir -p node_modules/react-native-css-interop/.cache
 EXPO_PUBLIC_API_BASE_URL=https://api.hyphenjob.com npx expo export -p web --clear
 
-echo "→ App Store URLs: /privacy/ and /terms/"
-mkdir -p dist/privacy dist/terms
-cp dist/privacy.html dist/privacy/index.html
-cp dist/terms.html dist/terms/index.html
+echo "→ Clean URLs (/jobs, /post, …) + App Store /privacy/ /terms/"
+for html in dist/*.html; do
+  base="$(basename "$html" .html)"
+  case "$base" in
+    index|+not-found|_sitemap) continue ;;
+  esac
+  mkdir -p "dist/$base"
+  cp "$html" "dist/$base/index.html"
+done
 
 TARBALL="$ROOT/hyphen-web-dist.tgz"
 # macOS adds com.apple.provenance xattrs that Linux tar warns about on extract
@@ -32,11 +37,11 @@ sudo mkdir -p '$VPS_WEB_ROOT'
 sudo tar -xzf /tmp/hyphen-web-dist.tgz -C '$VPS_WEB_ROOT'
 sudo chown -R ubuntu:ubuntu '$VPS_WEB_ROOT' 2>/dev/null || true
 rm -f /tmp/hyphen-web-dist.tgz
-ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs.html'
+ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs/index.html'
 EOF
   echo "→ Verifying deploy..."
-  ssh "$VPS_HOST" "grep -q 'overflow-y: auto' '$VPS_WEB_ROOT/jobs.html'"
-  echo "✓ jobs.html contains scroll fix"
+  ssh "$VPS_HOST" "grep -q 'overflow-y: auto' '$VPS_WEB_ROOT/jobs/index.html' && grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html'"
+  echo "✓ jobs route has scroll fix + jobs content"
   echo "Done. Open https://hyphenjob.com/jobs"
 else
   echo ""

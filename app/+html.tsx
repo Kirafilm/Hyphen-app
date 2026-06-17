@@ -40,6 +40,7 @@ export default function Root({ children }: PropsWithChildren) {
                 flex: 1;
               }
               #root > div {
+                width: 100%;
                 height: auto !important;
                 min-height: 100%;
                 flex: 1 1 auto;

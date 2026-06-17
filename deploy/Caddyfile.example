@@ -16,5 +16,5 @@ your-domain.com, www.your-domain.com {
 	encode gzip
 	root * /var/www/hyphen/web
 	file_server
-	try_files {path} {path}/ /index.html
+	try_files {path} {path}/ {path}.html /index.html
 }
