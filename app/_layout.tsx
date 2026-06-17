@@ -26,6 +26,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { NotificationBootstrap } from "@/components/notification-bootstrap";
+import { AuthSessionBootstrap } from "@/components/auth-session-bootstrap";
 import { SubscriptionSyncBootstrap } from "@/components/subscription-sync-bootstrap";
 import { ThemeStatusBar } from "@/components/theme-status-bar";
 
@@ -104,6 +105,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings" />
           </Stack>
           <NotificationBootstrap />
+          <AuthSessionBootstrap />
           <SubscriptionSyncBootstrap />
           <ThemeStatusBar />
         </QueryClientProvider>

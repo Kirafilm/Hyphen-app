@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 import { API_BASE_URL } from "@/constants/oauth";
+import { supabaseAuthStorage } from "@/lib/supabase-auth-storage";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -18,9 +19,10 @@ function createSupabaseClient(): SupabaseClient {
 
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+      persistSession: true,
+      autoRefreshToken: true,
       detectSessionInUrl: Platform.OS === "web",
+      ...(Platform.OS !== "web" ? { storage: supabaseAuthStorage } : {}),
     },
     global: {
       headers: API_BASE_URL ? { "x-client-info": "hyphen-app" } : {},

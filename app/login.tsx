@@ -3,6 +3,7 @@ import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { useAuth } from "@/hooks/use-auth";
 import * as Auth from "@/lib/_core/auth";
+import { persistAuthSession } from "@/lib/auth-session";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { getAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Ionicons } from "@expo/vector-icons";
@@ -125,7 +126,7 @@ export default function LoginScreen() {
       const token = data.session?.access_token;
       if (!token) throw new Error("密碼已更新，但未能建立登入狀態，請用新密碼重新登入。");
 
-      await Auth.setSessionToken(token);
+      await persistAuthSession(data.session);
       await persistNativeUserInfo(data.session?.user ?? null);
       try {
         await refresh();
@@ -160,7 +161,7 @@ export default function LoginScreen() {
         if (result.error) throw result.error;
         const token = result.data.session?.access_token;
         if (!token) throw new Error("登入失敗：未取得 token");
-        await Auth.setSessionToken(token);
+        await persistAuthSession(result.data.session);
         await persistNativeUserInfo(result.data.user);
         try {
           await refresh();
@@ -178,7 +179,7 @@ export default function LoginScreen() {
       if (result.error) throw result.error;
       const token = result.data.session?.access_token;
       if (token) {
-        await Auth.setSessionToken(token);
+        await persistAuthSession(result.data.session);
         await persistNativeUserInfo(result.data.user);
         try {
           await refresh();

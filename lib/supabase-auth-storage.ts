@@ -1,0 +1,8 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+/** Supabase session JSON can exceed SecureStore size limits; AsyncStorage is the standard RN approach. */
+export const supabaseAuthStorage = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
+};

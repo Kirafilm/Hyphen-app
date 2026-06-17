@@ -1,5 +1,6 @@
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
+import { clearSupabaseSession, persistAuthSession, syncSessionFromSupabase } from "@/lib/auth-session";
 import { revenueCatLogOut } from "@/lib/revenuecat";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
@@ -22,6 +23,7 @@ export function useAuth(options?: UseAuthOptions) {
 
       // Web platform: use cookie-based auth, fetch user from API
       if (Platform.OS === "web") {
+        await syncSessionFromSupabase();
         console.log("[useAuth] Web platform: fetching user from API...");
         const apiUser = await Api.getMe();
         console.log("[useAuth] API user response:", apiUser);
@@ -56,9 +58,9 @@ export function useAuth(options?: UseAuthOptions) {
         return;
       }
 
-      // Native platform: use token-based auth, but still validate with API to avoid stale sessions.
-      console.log("[useAuth] Native platform: checking for session token...");
-      const sessionToken = await Auth.getSessionToken();
+      // Native platform: restore/refresh Supabase session, then validate with API.
+      console.log("[useAuth] Native platform: syncing session...");
+      const sessionToken = await syncSessionFromSupabase();
       console.log(
         "[useAuth] Session token:",
         sessionToken ? `present (${sessionToken.substring(0, 20)}...)` : "missing",
@@ -132,6 +134,7 @@ export function useAuth(options?: UseAuthOptions) {
       console.error("[Auth] Logout API call failed:", err);
       // Continue with logout even if API call fails
     } finally {
+      await clearSupabaseSession();
       await Auth.removeSessionToken();
       await Auth.clearUserInfo();
       setUser(null);

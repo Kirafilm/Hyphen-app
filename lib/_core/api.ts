@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { syncSessionFromSupabase } from "@/lib/auth-session";
 import * as Auth from "./auth";
 
 type ApiResponse<T> = {
@@ -140,9 +141,13 @@ export async function getMe(): Promise<{
   loginMethod: string | null;
   lastSignedIn: string;
 } | null> {
-  try {
+  const fetchMe = async () => {
     const result = await apiCall<{ user: any }>("/api/auth/me");
     return result.user || null;
+  };
+
+  try {
+    return await fetchMe();
   } catch (error) {
     if (isNetworkError(error)) {
       throw error;
@@ -152,8 +157,20 @@ export async function getMe(): Promise<{
       message.includes("Not authenticated") ||
       message.includes("Please login") ||
       message.includes("UNAUTHORIZED") ||
-      message.includes("Unauthorized");
+      message.includes("Unauthorized") ||
+      message.includes("Invalid token") ||
+      message.includes("Invalid session");
     if (looksLikeAuthError) {
+      const refreshedToken = await syncSessionFromSupabase();
+      if (refreshedToken) {
+        try {
+          return await fetchMe();
+        } catch (retryError) {
+          if (isNetworkError(retryError)) {
+            throw retryError;
+          }
+        }
+      }
       await Auth.removeSessionToken();
       await Auth.clearUserInfo();
     }
