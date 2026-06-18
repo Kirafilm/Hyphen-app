@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocale } from "@/lib/i18n/locale-provider";
 import { trpc } from "@/lib/trpc";
 import { screenPaddingHorizontal, useWebLayout } from "@/lib/web-layout";
 
@@ -14,6 +15,7 @@ export default function ProfileScreen() {
   const colors = useColors();
   const router = useRouter();
   const { isDesktopWeb } = useWebLayout();
+  const { t, messages } = useLocale();
   const { user, isAuthenticated, logout } = useAuth();
   const meQuery = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const subscriptionQuery = trpc.subscription.me.useQuery(undefined, { enabled: isAuthenticated });
@@ -47,11 +49,11 @@ export default function ProfileScreen() {
 
   const pad = screenPaddingHorizontal();
 
-  const promoPoints = [
-    { icon: "mail-outline" as const, text: "沒有繁複的認證，經電郵註冊即可使用。" },
-    { icon: "shield-checkmark-outline" as const, text: "不收集任何私隱資料。" },
-    { icon: "eye-outline" as const, text: "有專人監督所有發佈，防止垃圾內容。" },
-  ];
+  const promoIcons = ["mail-outline", "shield-checkmark-outline", "eye-outline"] as const;
+  const promoPoints = messages.profile.promoPoints.map((text, index) => ({
+    icon: promoIcons[index] ?? ("mail-outline" as const),
+    text,
+  }));
 
   const PromoBox = () => (
     <View
@@ -77,10 +79,10 @@ export default function ProfileScreen() {
           borderRadius: 999,
         }}
       >
-        <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>平台承諾</Text>
+        <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 12 }}>{t("profile.promoBadge")}</Text>
       </View>
       <Text style={{ color: colors.foreground, fontSize: isDesktopWeb ? 22 : 18, fontWeight: "800", lineHeight: isDesktopWeb ? 30 : 26 }}>
-        簡單、安全、可信賴
+        {t("profile.promoTitle")}
       </Text>
       <View style={{ gap: 14 }}>
         {promoPoints.map((point) => (
@@ -107,7 +109,7 @@ export default function ProfileScreen() {
   return (
     <AppScreen contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
-          <PageHeader title="個人" subtitle={isDesktopWeb ? "管理帳戶、訂閱與設定" : undefined} />
+          <PageHeader title={t("profile.title")} subtitle={isDesktopWeb ? t("profile.subtitle") : undefined} />
 
           <View
             style={{
@@ -148,12 +150,16 @@ export default function ProfileScreen() {
                 >
                   <Text style={{ color: "#ffffff", fontSize: 30, fontWeight: "800" }}>{(user?.name?.charAt(0) || "U").toUpperCase()}</Text>
                 </View>
-                <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "800" }}>{isAuthenticated ? user?.name || "未命名用戶" : "未登入"}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>{isAuthenticated ? user?.email || "" : "登入後可管理訂閱與內容"}</Text>
+                <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "800" }}>{isAuthenticated ? user?.name || t("profile.title") : t("profile.guestTitle")}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>{isAuthenticated ? user?.email || "" : t("profile.guestBody")}</Text>
               </View>
 
               <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center", lineHeight: 20 }}>
-                {isAuthenticated ? (subscriptionQuery.data?.active ? "已訂閱，可查看聯絡資訊" : "未訂閱，只可查看工作內容") : "請先登入"}
+                {isAuthenticated
+                  ? subscriptionQuery.data?.active
+                    ? t("profile.subscriptionActive")
+                    : t("profile.subscriptionInactive")
+                  : t("profile.pleaseLogin")}
               </Text>
             </View>
 
@@ -187,21 +193,21 @@ export default function ProfileScreen() {
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                   <Ionicons name="log-in" size={20} color="#ffffff" />
-                  <Text style={{ color: "#ffffff", fontSize: 15, fontWeight: "700" }}>登入 / 註冊</Text>
+                  <Text style={{ color: "#ffffff", fontSize: 15, fontWeight: "700" }}>{t("profile.guestCta")}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#ffffff" />
               </TouchableOpacity>
             ) : (
-              <MenuRow icon="card" label="訂閱與付款" onPress={() => router.push("/paywall")} />
+              <MenuRow icon="card" label={t("profile.menuSubscription")} onPress={() => router.push("/paywall")} />
             )}
 
-            <MenuRow icon="settings" label="設定" onPress={() => router.push("/settings")} />
-            <MenuRow icon="document-text" label="私隱條款" onPress={() => router.push("/privacy")} />
-            <MenuRow icon="document-text" label="使用條款" onPress={() => router.push("/terms")} />
-            <MenuRow icon="chatbubbles" label="聯絡我們" onPress={() => router.push("/contact")} />
+            <MenuRow icon="settings" label={t("profile.menuSettings")} onPress={() => router.push("/settings")} />
+            <MenuRow icon="document-text" label={t("profile.menuPrivacy")} onPress={() => router.push("/privacy")} />
+            <MenuRow icon="document-text" label={t("profile.menuTerms")} onPress={() => router.push("/terms")} />
+            <MenuRow icon="chatbubbles" label={t("profile.menuContact")} onPress={() => router.push("/contact")} />
 
-            {role === "admin" && <MenuRow icon="shield-checkmark" label="管理：清理垃圾內容" onPress={() => router.push("/admin/moderation")} />}
-            {isAuthenticated && <MenuRow icon="log-out" label="登出" onPress={() => logout()} danger />}
+            {role === "admin" && <MenuRow icon="shield-checkmark" label={t("profile.menuAdmin")} onPress={() => router.push("/admin/moderation")} />}
+            {isAuthenticated && <MenuRow icon="log-out" label={t("profile.menuLogout")} onPress={() => logout()} danger />}
           </View>
 
           <View style={{ paddingHorizontal: pad, paddingTop: 24 }}>

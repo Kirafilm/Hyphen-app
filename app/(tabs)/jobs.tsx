@@ -8,6 +8,9 @@ import { PageHeader } from "@/components/page-header";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories, jobLocations } from "@/lib/mock-data";
+import { isJobLocation } from "@/lib/job-locations";
+import { translateCategory, translateLocation } from "@/lib/i18n/helpers";
+import { useLocale } from "@/lib/i18n/locale-provider";
 import { formatJobSchedule } from "@/lib/job-schedule";
 import { formatPublishedDate } from "@/lib/utils";
 import { screenPaddingHorizontal, useWebLayout } from "@/lib/web-layout";
@@ -16,30 +19,38 @@ export default function JobsScreen() {
   const router = useRouter();
   const colors = useColors();
   const { isDesktopWeb } = useWebLayout();
+  const { t, messages, locale } = useLocale();
+  const allLabel = t("common.all");
+  const isAll = (value: string) => value === allLabel || value === "全部" || value === "All";
   const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
   const [searchText, setSearchText] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("全部");
-  const [selectedLocation, setSelectedLocation] = useState<string>("全部");
+  const [selectedCategory, setSelectedCategory] = useState<string>(allLabel);
+  const [selectedLocation, setSelectedLocation] = useState<string>(allLabel);
 
   useEffect(() => {
     if (typeof categoryParam !== "string" || !categoryParam) return;
-    if (categoryParam === "全部" || categories.includes(categoryParam)) {
-      setSelectedCategory(categoryParam);
+    if (categoryParam === allLabel || categories.includes(categoryParam)) {
+      setSelectedCategory(categoryParam === allLabel ? allLabel : categoryParam);
     }
-  }, [categoryParam]);
+  }, [categoryParam, allLabel]);
+
+  useEffect(() => {
+    setSelectedCategory((prev) => (isAll(prev) ? allLabel : prev));
+    setSelectedLocation((prev) => (isAll(prev) ? allLabel : prev));
+  }, [locale, allLabel]);
 
   const jobsQuery = useJobsList();
   const jobs = jobsQuery.data ?? [];
   const locationOptions = useMemo(() => {
     const extra = jobs
       .map((job) => job.location)
-      .filter((loc) => loc && !jobLocations.includes(loc));
-    return ["全部", ...jobLocations, ...Array.from(new Set(extra)).sort()];
-  }, [jobs]);
+      .filter((loc) => loc && !isJobLocation(loc));
+    return [allLabel, ...jobLocations, ...Array.from(new Set(extra)).sort()];
+  }, [jobs, allLabel]);
   const normalizedQuery = searchText.trim().toLowerCase();
   const filteredJobs = jobs.filter((job) => {
-    const categoryMatch = selectedCategory === "全部" ? true : job.category === selectedCategory;
-    const locationMatch = selectedLocation === "全部" ? true : job.location === selectedLocation;
+    const categoryMatch = isAll(selectedCategory) ? true : job.category === selectedCategory;
+    const locationMatch = isAll(selectedLocation) ? true : job.location === selectedLocation;
     if (!categoryMatch || !locationMatch) return false;
     if (!normalizedQuery) return true;
     return (
@@ -56,7 +67,7 @@ export default function JobsScreen() {
       budget.min <= 0 ||
       budget.max <= 0 ||
       budget.max < budget.min;
-    if (invalid) return `${budget.currency} $待確認`;
+    if (invalid) return `${budget.currency} $${t("jobDetail.budgetPending")}`;
     return `${budget.currency} $${budget.min.toLocaleString()}-${budget.max.toLocaleString()}`;
   };
 
@@ -65,8 +76,9 @@ export default function JobsScreen() {
     <RefreshControl refreshing={jobsQuery.isFetching} onRefresh={() => void jobsQuery.refetch()} />
   );
   const chipRowStyle = { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 };
-  const categoryChips = ["全部", ...categories].map((cat) => {
-    const active = cat === selectedCategory;
+  const categoryChips = [allLabel, ...categories].map((cat) => {
+    const active = cat === selectedCategory || (isAll(cat) && isAll(selectedCategory));
+    const label = isAll(cat) ? allLabel : translateCategory(messages, cat);
     return (
       <TouchableOpacity
         key={cat}
@@ -81,12 +93,13 @@ export default function JobsScreen() {
           borderColor: active ? colors.primary : colors.border,
         }}
       >
-        <Text style={{ color: active ? "#ffffff" : colors.foreground, fontSize: 12, fontWeight: "700" }}>{cat}</Text>
+        <Text style={{ color: active ? "#ffffff" : colors.foreground, fontSize: 12, fontWeight: "700" }}>{label}</Text>
       </TouchableOpacity>
     );
   });
   const locationChips = locationOptions.map((loc) => {
-    const active = loc === selectedLocation;
+    const active = loc === selectedLocation || (isAll(loc) && isAll(selectedLocation));
+    const label = isAll(loc) ? allLabel : translateLocation(messages, loc);
     return (
       <TouchableOpacity
         key={loc}
@@ -104,15 +117,15 @@ export default function JobsScreen() {
           gap: 4,
         }}
       >
-        {loc !== "全部" ? <Ionicons name="location-outline" size={12} color={active ? "#ffffff" : colors.muted} /> : null}
-        <Text style={{ color: active ? "#ffffff" : colors.foreground, fontSize: 12, fontWeight: "700" }}>{loc}</Text>
+        {isAll(loc) ? null : <Ionicons name="location-outline" size={12} color={active ? "#ffffff" : colors.muted} />}
+        <Text style={{ color: active ? "#ffffff" : colors.foreground, fontSize: 12, fontWeight: "700" }}>{label}</Text>
       </TouchableOpacity>
     );
   });
 
   const pageContent = (
     <>
-      <PageHeader title="職位" subtitle={isDesktopWeb ? "按分類、地區或關鍵字搜尋自由工作" : undefined} />
+      <PageHeader title={t("jobs.title")} subtitle={isDesktopWeb ? t("jobs.subtitle") : undefined} />
       <View style={{ paddingHorizontal: pad, paddingBottom: 12, gap: 12 }}>
         <View
           style={{
@@ -129,7 +142,7 @@ export default function JobsScreen() {
         >
           <Ionicons name="search" size={20} color={colors.muted} />
           <TextInput
-            placeholder="搜尋職位..."
+            placeholder={t("jobs.searchPlaceholder")}
             placeholderTextColor={colors.muted}
             value={searchText}
             onChangeText={setSearchText}
@@ -156,18 +169,18 @@ export default function JobsScreen() {
         {jobsQuery.isError ? (
           <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 8 }}>
             <Ionicons name="cloud-offline" size={48} color={colors.muted} />
-            <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700" }}>無法載入職位</Text>
+            <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700" }}>{t("jobs.loadError")}</Text>
             <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center", paddingHorizontal: 24 }}>
               {jobsQuery.error.message.includes("timed out") || jobsQuery.error.message.includes("Network")
-                ? "API 連線失敗，請下拉重新整理"
+                ? t("jobs.loadErrorNetwork")
                 : jobsQuery.error.message}
             </Text>
           </View>
         ) : filteredJobs.length === 0 ? (
           <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 48 }}>
             <Ionicons name="search" size={48} color={colors.muted} />
-            <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700", marginTop: 16 }}>找不到相關職位</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>試試其他搜尋條件</Text>
+            <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700", marginTop: 16 }}>{t("jobs.emptyTitle")}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>{t("jobs.emptyHint")}</Text>
           </View>
         ) : (
           <View style={{ flexDirection: isDesktopWeb ? "row" : "column", flexWrap: isDesktopWeb ? "wrap" : "nowrap", gap: 16 }}>
@@ -201,8 +214,10 @@ export default function JobsScreen() {
                         <Text style={{ color: colors.muted, fontSize: 12 }}>•</Text>
                         <Text style={{ color: colors.muted, fontSize: 12 }}>{item.location}</Text>
                       </View>
-                      <Text style={{ color: colors.muted, fontSize: 12 }}>{formatJobSchedule(item)}</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12 }}>發佈日期：{formatPublishedDate(item.createdAt)}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>
+                        {item.timeline && item.timeline !== "未指定" ? item.timeline : formatJobSchedule(item)}
+                      </Text>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>{t("jobs.publishedAt")}{formatPublishedDate(item.createdAt)}</Text>
                     </View>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                       {item.skills.slice(0, 2).map((skill, index) => (

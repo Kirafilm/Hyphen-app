@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { useColors } from "@/hooks/use-colors";
+import { useLocale } from "@/lib/i18n/locale-provider";
 
 type PageHeaderProps = {
   title: string;
@@ -16,6 +17,7 @@ type PageHeaderProps = {
 export function PageHeader({ title, subtitle, showBack = false, onBack, large = true }: PageHeaderProps) {
   const router = useRouter();
   const colors = useColors();
+  const { t } = useLocale();
   const isWeb = Platform.OS === "web";
   const horizontalPadding = isWeb ? 0 : 24;
 
@@ -25,7 +27,7 @@ export function PageHeader({ title, subtitle, showBack = false, onBack, large = 
         <TouchableOpacity
           accessible
           accessibilityRole="button"
-          accessibilityLabel="返回"
+          accessibilityLabel={t("common.back")}
           onPress={onBack ?? (() => router.back())}
           style={{ width: 32, height: 32 }}
         >

@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLocale } from "@/lib/i18n/locale-provider";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -53,6 +54,7 @@ function FormRow({
 
 export default function ContactScreen() {
   const colors = useColors();
+  const { t } = useLocale();
 
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
@@ -85,17 +87,17 @@ export default function ContactScreen() {
     const trimmedMessage = message.trim();
 
     if (!trimmedName || !trimmedEmail || !trimmedMessage) {
-      setError("請填寫所有欄位");
+      setError(t("contact.errors.allRequired"));
       setSuccess(null);
       return;
     }
     if (!EMAIL_PATTERN.test(trimmedEmail)) {
-      setError("請輸入有效的 Email 地址");
+      setError(t("contact.errors.invalidEmail"));
       setSuccess(null);
       return;
     }
     if (!emailJsReady) {
-      setError("EmailJS 尚未設定，請稍後再試或聯絡管理員。");
+      setError(t("contact.errors.notReady"));
       setSuccess(null);
       return;
     }
@@ -109,12 +111,12 @@ export default function ContactScreen() {
         email: trimmedEmail,
         message: trimmedMessage,
       });
-      setSuccess("已送出，我們會盡快回覆你。");
+      setSuccess(t("contact.success"));
       setContactName("");
       setEmail("");
       setMessage("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "傳送失敗，請稍後再試");
+      setError(e instanceof Error ? e.message : t("contact.errors.sendFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +124,7 @@ export default function ContactScreen() {
 
   return (
     <AppScreen>
-      <PageHeader title="聯絡我們" subtitle="填寫表格後按 Send，我們會以電郵收到你的訊息。" showBack />
+      <PageHeader title={t("contact.title")} subtitle={t("contact.subtitle")} showBack />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -151,12 +153,12 @@ export default function ContactScreen() {
                 borderBottomColor: colors.border,
               }}
             >
-              <Text style={{ color: colors.foreground, fontWeight: "800", fontSize: 16 }}>聯絡表格</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "800", fontSize: 16 }}>{t("contact.formTitle")}</Text>
             </View>
 
             <View style={{ paddingHorizontal: 16 }}>
               <FormRow
-                label="聯絡人名稱"
+                label={t("contact.nameLabel")}
                 required
                 borderColor={colors.border}
                 labelColor={colors.foreground}
@@ -165,7 +167,7 @@ export default function ContactScreen() {
                 <TextInput
                   value={contactName}
                   onChangeText={setContactName}
-                  placeholder="你的名字"
+                  placeholder={t("contact.namePlaceholder")}
                   placeholderTextColor={colors.muted}
                   autoCapitalize="words"
                   style={inputStyle}
@@ -173,7 +175,7 @@ export default function ContactScreen() {
               </FormRow>
 
               <FormRow
-                label="Email"
+                label={t("contact.emailLabel")}
                 required
                 borderColor={colors.border}
                 labelColor={colors.foreground}
@@ -192,7 +194,7 @@ export default function ContactScreen() {
               </FormRow>
 
               <FormRow
-                label="內容"
+                label={t("contact.messageLabel")}
                 required
                 borderColor={colors.border}
                 labelColor={colors.foreground}
@@ -201,7 +203,7 @@ export default function ContactScreen() {
                 <TextInput
                   value={message}
                   onChangeText={setMessage}
-                  placeholder="請描述你的查詢或意見…"
+                  placeholder={t("contact.messagePlaceholder")}
                   placeholderTextColor={colors.muted}
                   multiline
                   textAlignVertical="top"
@@ -226,7 +228,7 @@ export default function ContactScreen() {
               }}
             >
               <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>
-                聯絡表單尚未就緒。請確認 API（port 3000）已啟動，且 .env 已設定 EMAILJS_PRIVATE_KEY。
+                {t("contact.notReadyHint")}
               </Text>
             </View>
           )}
@@ -234,7 +236,7 @@ export default function ContactScreen() {
           <TouchableOpacity
             accessible
             accessibilityRole="button"
-            accessibilityLabel="Send"
+            accessibilityLabel={t("contact.send")}
             onPress={handleSend}
             disabled={!canSubmit || submitting || !emailJsReady}
             style={{
@@ -250,7 +252,7 @@ export default function ContactScreen() {
             {submitting ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>Send</Text>
+              <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>{t("contact.send")}</Text>
             )}
           </TouchableOpacity>
 

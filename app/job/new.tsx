@@ -7,13 +7,22 @@ import {
   Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
-import { categories, jobLocations } from "@/lib/mock-data";
+import { useLocale } from "@/lib/i18n/locale-provider";
+import { defaultJobLocationForLocale } from "@/lib/i18n/locale-routing";
+import { translateCategory, translateLocation, translateScheduleWindow } from "@/lib/i18n/helpers";
+import { categories } from "@/lib/mock-data";
+import {
+  getBudgetRangesForLocation,
+  isBudgetRangeValidForLocation,
+  jobLocations,
+  parseBudgetForLocation,
+} from "@/lib/job-locations";
 import { workDateWindows } from "@/lib/job-schedule";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
@@ -22,6 +31,7 @@ import { TRPCClientError } from "@trpc/client";
 export default function PostJobScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { t, messages, locale, ready } = useLocale();
   const { user, isAuthenticated, loading } = useAuth();
   const utils = trpc.useUtils();
   const createMutation = trpc.jobs.create.useMutation({
@@ -37,13 +47,14 @@ export default function PostJobScreen() {
     workDateWindow: "",
     description: "",
     budgetRange: "",
-    location: "香港",
+    location: "",
     skills: "",
     isNegotiable: false,
     contactPerson: "",
     contactEmail: "",
     contactPhone: "",
   });
+  const [defaultLocationSet, setDefaultLocationSet] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -52,7 +63,23 @@ export default function PostJobScreen() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showWorkDatePicker, setShowWorkDatePicker] = useState(false);
 
-  const budgetRanges = ["HKD $500 - $2,000", "HKD $2,000 - $5,000", "HKD $5,000 - $10,000", "HKD $10,000 - $50,000", "HKD $50,000+"];
+  const budgetRanges = useMemo(
+    () => getBudgetRangesForLocation(formData.location),
+    [formData.location],
+  );
+
+  useEffect(() => {
+    if (!ready || defaultLocationSet) return;
+    setFormData((prev) => ({ ...prev, location: defaultJobLocationForLocale(locale) }));
+    setDefaultLocationSet(true);
+  }, [ready, locale, defaultLocationSet]);
+
+  useEffect(() => {
+    if (!formData.budgetRange) return;
+    if (!isBudgetRangeValidForLocation(formData.location, formData.budgetRange)) {
+      setFormData((prev) => ({ ...prev, budgetRange: "" }));
+    }
+  }, [formData.location, formData.budgetRange]);
 
   useEffect(() => {
     if (loading) return;
@@ -63,34 +90,18 @@ export default function PostJobScreen() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.title.trim()) newErrors.title = "請輸入工作標題";
-    if (!formData.category) newErrors.category = "請選擇行業類別";
-    if (!formData.workDateWindow) newErrors.workDateWindow = "請選擇工作日期";
-    if (!formData.description.trim()) newErrors.description = "請輸入工作描述";
-    if (!formData.budgetRange) newErrors.budgetRange = "請選擇預算範圍";
-    if (!formData.contactEmail.trim()) newErrors.contactEmail = "請輸入聯絡電郵";
+    if (!formData.title.trim()) newErrors.title = t("jobNew.errors.titleRequired");
+    if (!formData.category) newErrors.category = t("jobNew.errors.categoryRequired");
+    if (!formData.workDateWindow) newErrors.workDateWindow = t("jobNew.errors.workDateRequired");
+    if (!formData.description.trim()) newErrors.description = t("jobNew.errors.descriptionRequired");
+    if (!formData.budgetRange) newErrors.budgetRange = t("jobNew.errors.budgetRequired");
+    if (!formData.contactEmail.trim()) newErrors.contactEmail = t("jobNew.errors.contactEmailRequired");
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const parseBudget = (value: string) => {
-    const currency = value.startsWith("HKD") ? "HKD" : "HKD";
-    const normalized = value.replace(/,/g, "");
-    const nums = (normalized.match(/\d+/g) ?? [])
-      .map((s) => parseInt(s, 10))
-      .filter((n) => Number.isFinite(n));
-    if (value.includes("+")) {
-      const min = nums[0] ?? 0;
-      return { currency, min, max: min };
-    }
-    let min = nums[0] ?? 0;
-    let max = nums[1] ?? min;
-    if (min > max) {
-      [min, max] = [max, min];
-    }
-    return { currency, min, max };
-  };
+  const parseBudget = (value: string) => parseBudgetForLocation(formData.location, value);
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
@@ -112,7 +123,7 @@ export default function PostJobScreen() {
       budgetMin: budget.min,
       budgetMax: budget.max,
       currency: budget.currency,
-      location: formData.location || "香港",
+      location: formData.location || defaultJobLocationForLocale(locale),
       skills,
       clientName: user?.name?.trim() || "匿名",
       ...(contactPerson ? { contactPerson } : {}),
@@ -133,12 +144,12 @@ export default function PostJobScreen() {
               const mapped: Record<string, string> = {};
               for (const it of issues) {
                 const key = Array.isArray(it?.path) ? String(it.path[0] ?? "") : "";
-                if (key === "timeline" || key === "workDateWindow") mapped.workDateWindow = "請選擇工作日期";
-                if (key === "contactEmail") mapped.contactEmail = "請輸入有效電郵（例如 name@example.com）";
+                if (key === "timeline" || key === "workDateWindow") mapped.workDateWindow = t("jobNew.errors.workDateRequired");
+                if (key === "contactEmail") mapped.contactEmail = t("jobNew.errors.contactEmailInvalid");
               }
               if (Object.keys(mapped).length > 0) {
                 setErrors((prev) => ({ ...prev, ...mapped }));
-                setSubmitError("請完成必填項目");
+                setSubmitError(t("jobNew.errors.requiredFields"));
                 return;
               }
             }
@@ -146,13 +157,13 @@ export default function PostJobScreen() {
         }
 
         if (message.includes("contactEmail")) {
-          setErrors((prev) => ({ ...prev, contactEmail: "請輸入有效電郵（例如 name@example.com）" }));
-          setSubmitError("請完成必填項目");
+          setErrors((prev) => ({ ...prev, contactEmail: t("jobNew.errors.contactEmailInvalid") }));
+          setSubmitError(t("jobNew.errors.requiredFields"));
           return;
         }
       }
 
-      const err = e instanceof Error ? e : new Error("發佈失敗");
+      const err = e instanceof Error ? e : new Error(t("jobNew.errors.submitFailed"));
       setSubmitError(err.message);
     }
   };
@@ -169,22 +180,18 @@ export default function PostJobScreen() {
     <AppScreen>
       <ScreenScroll contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1 }}>
-          <PageHeader
-            title="發佈新工作"
-            subtitle="填寫工作詳情，吸引合適的 Freelancer"
-            showBack
-          />
+          <PageHeader title={t("jobNew.title")} subtitle={t("jobNew.subtitle")} showBack />
 
           <View style={{ paddingHorizontal: 24, paddingBottom: 24, gap: 20 }}>
             {/* Title */}
             <View>
               <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                工作標題 <Text style={{ color: colors.error }}>*</Text>
+                {t("jobNew.titleLabel")} <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TextInput
                 value={formData.title}
                 onChangeText={(text) => updateField("title", text)}
-                placeholder="例如：網站設計、活動攝影..."
+                placeholder={t("jobNew.titlePlaceholder")}
                 placeholderTextColor={colors.muted}
                 style={{
                   backgroundColor: colors.surface,
@@ -202,12 +209,12 @@ export default function PostJobScreen() {
             {/* Category */}
             <View>
               <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                行業類別 <Text style={{ color: colors.error }}>*</Text>
+                {t("jobNew.categoryLabel")} <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
-                accessibilityLabel="選擇行業類別"
+                accessibilityLabel={t("jobNew.selectCategoryA11y")}
                 onPress={() => setShowCategoryPicker(!showCategoryPicker)}
                 style={{
                   backgroundColor: colors.surface,
@@ -222,7 +229,7 @@ export default function PostJobScreen() {
                 }}
               >
                 <Text style={{ color: formData.category ? colors.foreground : colors.muted }}>
-                  {formData.category || "選擇行業類別"}
+                  {formData.category ? translateCategory(messages, formData.category) : t("jobNew.selectCategory")}
                 </Text>
                 <Ionicons
                   name={showCategoryPicker ? "chevron-up" : "chevron-down"}
@@ -265,7 +272,7 @@ export default function PostJobScreen() {
                             fontWeight: formData.category === cat ? "600" : "400",
                           }}
                         >
-                          {cat}
+                          {translateCategory(messages, cat)}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -277,12 +284,12 @@ export default function PostJobScreen() {
 
             <View>
               <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                工作日期 <Text style={{ color: colors.error }}>*</Text>
+                {t("jobNew.workDateLabel")} <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
-                accessibilityLabel="選擇工作日期"
+                accessibilityLabel={t("jobNew.selectWorkDateA11y")}
                 onPress={() => setShowWorkDatePicker(!showWorkDatePicker)}
                 style={{
                   backgroundColor: colors.surface,
@@ -297,7 +304,9 @@ export default function PostJobScreen() {
                 }}
               >
                 <Text style={{ color: formData.workDateWindow ? colors.foreground : colors.muted }}>
-                  {formData.workDateWindow || "選擇工作日期"}
+                  {formData.workDateWindow
+                    ? translateScheduleWindow(messages, formData.workDateWindow)
+                    : t("jobNew.selectWorkDate")}
                 </Text>
                 <Ionicons
                   name={showWorkDatePicker ? "chevron-up" : "chevron-down"}
@@ -332,14 +341,14 @@ export default function PostJobScreen() {
                         borderBottomColor: colors.border,
                       }}
                     >
-                      <Text
-                        style={{
-                          color: formData.workDateWindow === window ? colors.primary : colors.foreground,
-                          fontWeight: formData.workDateWindow === window ? "600" : "400",
-                        }}
-                      >
-                        {window}
-                      </Text>
+                        <Text
+                          style={{
+                            color: formData.workDateWindow === window ? colors.primary : colors.foreground,
+                            fontWeight: formData.workDateWindow === window ? "600" : "400",
+                          }}
+                        >
+                          {translateScheduleWindow(messages, window)}
+                        </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -352,15 +361,15 @@ export default function PostJobScreen() {
             {/* Description */}
             <View>
               <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                工作描述 <Text style={{ color: colors.error }}>*</Text>
+                {t("jobNew.descriptionLabel")} <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8, lineHeight: 18 }}>
-                禁止工作描述內容內填寫聯絡資訊
+                {t("jobNew.descriptionHint")}
               </Text>
               <TextInput
                 value={formData.description}
                 onChangeText={(text) => updateField("description", text)}
-                placeholder="詳細描述工作需求、期望成果、時間安排等..."
+                placeholder={t("jobNew.descriptionPlaceholder")}
                 placeholderTextColor={colors.muted}
                 multiline
                 numberOfLines={6}
@@ -379,10 +388,79 @@ export default function PostJobScreen() {
               {errors.description && <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.description}</Text>}
             </View>
 
+            {/* Location */}
+            <View>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("jobNew.location")}</Text>
+              <TouchableOpacity
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="選擇工作地點"
+                onPress={() => setShowLocationPicker((v) => !v)}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: formData.location ? colors.foreground : colors.muted }}>
+                  {formData.location ? translateLocation(messages, formData.location) : t("jobNew.selectLocation")}
+                </Text>
+                <Ionicons name={showLocationPicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+              </TouchableOpacity>
+              {showLocationPicker && (
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  {jobLocations.map((loc, index) => (
+                    <TouchableOpacity
+                      key={loc}
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={`選擇 ${loc}`}
+                      onPress={() => {
+                        updateField("location", loc);
+                        setShowLocationPicker(false);
+                      }}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        borderBottomWidth: index === jobLocations.length - 1 ? 0 : 1,
+                        borderBottomColor: colors.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: formData.location === loc ? colors.primary : colors.foreground,
+                          fontWeight: formData.location === loc ? "600" : "400",
+                        }}
+                      >
+                        {translateLocation(messages, loc)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
             {/* Budget */}
             <View>
               <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                預算範圍 <Text style={{ color: colors.error }}>*</Text>
+                {t("jobNew.budget")} <Text style={{ color: colors.error }}>*</Text>
+              </Text>
+              <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8 }}>
+                {t("jobNew.budgetHint")}（{translateLocation(messages, formData.location)}）
               </Text>
               <TouchableOpacity
                 accessible
@@ -402,7 +480,7 @@ export default function PostJobScreen() {
                 }}
               >
                 <Text style={{ color: formData.budgetRange ? colors.foreground : colors.muted }}>
-                  {formData.budgetRange || "選擇預算範圍"}
+                  {formData.budgetRange || t("jobNew.selectBudget")}
                 </Text>
                 <Ionicons
                   name={showBudgetPicker ? "chevron-up" : "chevron-down"}
@@ -456,83 +534,17 @@ export default function PostJobScreen() {
                   onValueChange={(value) => updateField("isNegotiable", value)}
                   trackColor={{ false: colors.border, true: colors.primary }}
                 />
-                <Text style={{ color: colors.foreground, fontSize: 14, marginLeft: 8 }}>預算可商議</Text>
+                <Text style={{ color: colors.foreground, fontSize: 14, marginLeft: 8 }}>{t("jobNew.budgetNegotiable")}</Text>
               </View>
-            </View>
-
-            {/* Location */}
-            <View>
-              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>工作地點</Text>
-              <TouchableOpacity
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel="選擇工作地點"
-                onPress={() => setShowLocationPicker((v) => !v)}
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 8,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: formData.location ? colors.foreground : colors.muted }}>
-                  {formData.location || "選擇工作地點"}
-                </Text>
-                <Ionicons name={showLocationPicker ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
-              </TouchableOpacity>
-              {showLocationPicker && (
-                <View
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 8,
-                    marginTop: 8,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                >
-                  {jobLocations.map((loc, index) => (
-                    <TouchableOpacity
-                      key={loc}
-                      accessible
-                      accessibilityRole="button"
-                      accessibilityLabel={`選擇 ${loc}`}
-                      onPress={() => {
-                        updateField("location", loc);
-                        setShowLocationPicker(false);
-                      }}
-                      style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 12,
-                        borderBottomWidth: index === jobLocations.length - 1 ? 0 : 1,
-                        borderBottomColor: colors.border,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: formData.location === loc ? colors.primary : colors.foreground,
-                          fontWeight: formData.location === loc ? "600" : "400",
-                        }}
-                      >
-                        {loc}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
             </View>
 
             {/* Skills */}
             <View>
-              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>所需技能</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("jobNew.skillsLabel")}</Text>
               <TextInput
                 value={formData.skills}
                 onChangeText={(text) => updateField("skills", text)}
-                placeholder="例如：UI設計、React、攝影（用逗號分隔）"
+                placeholder={t("jobNew.skillsPlaceholder")}
                 placeholderTextColor={colors.muted}
                 style={{
                   backgroundColor: colors.surface,
@@ -544,17 +556,17 @@ export default function PostJobScreen() {
                   borderColor: colors.border,
                 }}
               />
-              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>選填，有助於配對更精準的 Freelancer</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>{t("jobNew.skillsHint")}</Text>
             </View>
 
             {/* Contact */}
             <View style={{ gap: 16 }}>
               <View>
-                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>聯絡人</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("jobNew.contactPersonLabel")}</Text>
                 <TextInput
                   value={formData.contactPerson}
                   onChangeText={(text) => updateField("contactPerson", text)}
-                  placeholder="例如：陳小姐"
+                  placeholder={t("jobNew.contactPersonPlaceholder")}
                   placeholderTextColor={colors.muted}
                   style={{
                     backgroundColor: colors.surface,
@@ -569,7 +581,7 @@ export default function PostJobScreen() {
               </View>
               <View>
                 <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                  聯絡電郵 <Text style={{ color: colors.error }}>*</Text>
+                  {t("jobNew.contactEmailLabel")} <Text style={{ color: colors.error }}>*</Text>
                 </Text>
                 <TextInput
                   value={formData.contactEmail}
@@ -594,12 +606,12 @@ export default function PostJobScreen() {
               </View>
               <View>
                 <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>
-                  聯絡電話
+                  {t("jobNew.contactPhoneLabel")}
                 </Text>
                 <TextInput
                   value={formData.contactPhone}
                   onChangeText={(text) => updateField("contactPhone", text)}
-                  placeholder="例如：+852 9123 4567"
+                  placeholder={t("jobNew.contactPhonePlaceholder")}
                   placeholderTextColor={colors.muted}
                   keyboardType="phone-pad"
                   style={{
@@ -621,7 +633,7 @@ export default function PostJobScreen() {
             <TouchableOpacity
               accessible
               accessibilityRole="button"
-              accessibilityLabel="發佈工作"
+              accessibilityLabel={t("jobNew.submit")}
               onPress={handleSubmit}
               disabled={createMutation.isPending}
               style={{
@@ -635,7 +647,7 @@ export default function PostJobScreen() {
               }}
             >
               <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
-                {createMutation.isPending ? "發佈中..." : "發佈工作"}
+                {createMutation.isPending ? t("jobNew.submitting") : t("jobNew.submit")}
               </Text>
             </TouchableOpacity>
 
@@ -643,7 +655,7 @@ export default function PostJobScreen() {
             <TouchableOpacity
               accessible
               accessibilityRole="button"
-              accessibilityLabel="取消"
+              accessibilityLabel={t("jobNew.cancel")}
               onPress={() => router.back()}
               style={{
                 backgroundColor: colors.surface,
@@ -655,7 +667,7 @@ export default function PostJobScreen() {
                 borderColor: colors.border,
               }}
             >
-              <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 16 }}>取消</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 16 }}>{t("jobNew.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -12,10 +12,12 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
+import { useLocale } from "@/lib/i18n/locale-provider";
 
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { t } = useLocale();
   const { refresh } = useAuth({ autoFetch: false });
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -45,14 +47,14 @@ export default function LoginScreen() {
       if (event === "PASSWORD_RECOVERY") {
         setRecoveryMode(true);
         setMode("login");
-        setInfo("請設定新密碼。");
+        setInfo(t("login.errors.setNewPassword"));
         setError(null);
       }
     });
 
     if (isWeb && typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
       setRecoveryMode(true);
-      setInfo("請設定新密碼。");
+      setInfo(t("login.errors.setNewPassword"));
     }
 
     return () => {
@@ -88,7 +90,7 @@ export default function LoginScreen() {
   const handleForgotPassword = async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError("請先輸入電郵地址");
+      setError(t("login.errors.emailRequired"));
       setInfo(null);
       return;
     }
@@ -98,15 +100,15 @@ export default function LoginScreen() {
     setInfo(null);
     try {
       if (!isSupabaseConfigured) {
-        setError("此版本未設定 Supabase，無法重設密碼。請更新 App 或聯絡開發者。");
+        setError(t("login.errors.supabaseNotConfigured"));
         return;
       }
       const redirectTo = getAuthRedirectUrl("/login");
       const result = await getSupabase().auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
       if (result.error) throw result.error;
-      setInfo("重設密碼連結已寄到你的電郵，請查收並依照指示設定新密碼。");
+      setInfo(t("login.errors.resetSent"));
     } catch (e) {
-      const message = e instanceof Error ? e.message : "無法寄出重設密碼郵件";
+      const message = e instanceof Error ? e.message : t("login.errors.resetFailed");
       setError(message);
     } finally {
       setResettingPassword(false);
@@ -125,7 +127,7 @@ export default function LoginScreen() {
       const { data, error: sessionError } = await getSupabase().auth.getSession();
       if (sessionError) throw sessionError;
       const token = data.session?.access_token;
-      if (!token) throw new Error("密碼已更新，但未能建立登入狀態，請用新密碼重新登入。");
+      if (!token) throw new Error(t("login.errors.passwordUpdatedNoSession"));
 
       await persistAuthSession(data.session);
       await persistNativeUserInfo(data.session?.user ?? null);
@@ -137,7 +139,7 @@ export default function LoginScreen() {
       setRecoveryMode(false);
       router.replace("/(tabs)");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "無法更新密碼");
+      setError(e instanceof Error ? e.message : t("login.errors.updateFailed"));
     } finally {
       setUpdatingPassword(false);
     }
@@ -146,7 +148,7 @@ export default function LoginScreen() {
   const submit = async () => {
     if (!canSubmit || submitting) return;
     if (!isSupabaseConfigured) {
-      setError("此版本未設定 Supabase，無法登入。請更新 App 或聯絡開發者。");
+      setError(t("login.errors.supabaseNotConfigured"));
       return;
     }
     setSubmitting(true);
@@ -161,7 +163,7 @@ export default function LoginScreen() {
         });
         if (result.error) throw result.error;
         const token = result.data.session?.access_token;
-        if (!token) throw new Error("登入失敗：未取得 token");
+        if (!token) throw new Error(t("login.errors.loginFailed"));
         await persistAuthSession(result.data.session);
         await persistNativeUserInfo(result.data.user);
         try {
@@ -190,9 +192,9 @@ export default function LoginScreen() {
         router.replace("/(tabs)");
         return;
       }
-      setInfo("已送出註冊，請到電郵確認後再回來登入。");
+      setInfo(t("login.errors.signupCheckEmail"));
     } catch (e) {
-      const message = e instanceof Error ? e.message : "登入失敗";
+      const message = e instanceof Error ? e.message : t("login.errors.loginFailed");
       setError(message);
       await Auth.removeSessionToken();
       await Auth.clearUserInfo();
@@ -208,8 +210,8 @@ export default function LoginScreen() {
       <ScreenScroll contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
         <View style={{ flex: 1, maxWidth: isWeb ? 520 : undefined, alignSelf: isWeb ? "center" : "stretch", width: isWeb ? "100%" : undefined }}>
           <PageHeader
-            title="登入 / 註冊"
-            subtitle="先使用電郵登入；之後可再加入 Google / Apple。"
+            title={t("login.title")}
+            subtitle={t("login.subtitle")}
             showBack
           />
 
@@ -219,9 +221,9 @@ export default function LoginScreen() {
                 <View style={{ width: 64, height: 64, backgroundColor: colors.primary, borderRadius: 32, alignItems: "center", justifyContent: "center" }}>
                   <Ionicons name="log-in" size={32} color="white" />
                 </View>
-                <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, textAlign: "center" }}>開始使用</Text>
+                <Text style={{ fontSize: 18, fontWeight: "bold", color: colors.foreground, textAlign: "center" }}>{t("login.cardTitle")}</Text>
                 <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 22 }}>
-                  登入後可免費發佈工作；如需查看發佈者電話與電郵，需訂閱月費或年費。
+                  {t("login.cardBody")}
                 </Text>
               </View>
             </View>
@@ -229,25 +231,25 @@ export default function LoginScreen() {
             <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 16 }}>
               {recoveryMode ? (
                 <>
-                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 18 }}>重設密碼</Text>
-                  <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>請輸入新密碼並確認。</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 18 }}>{t("login.resetTitle")}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>{t("login.resetHint")}</Text>
                   <View>
-                    <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>新密碼</Text>
+                    <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("login.newPassword")}</Text>
                     <TextInput
                       value={newPassword}
                       onChangeText={setNewPassword}
-                      placeholder="最少 6 個字元"
+                      placeholder={t("login.passwordPlaceholder")}
                       placeholderTextColor={colors.muted}
                       secureTextEntry
                       style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
                     />
                   </View>
                   <View>
-                    <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>確認新密碼</Text>
+                    <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("login.confirmPassword")}</Text>
                     <TextInput
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
-                      placeholder="再次輸入新密碼"
+                      placeholder={t("login.confirmPasswordPlaceholder")}
                       placeholderTextColor={colors.muted}
                       secureTextEntry
                       style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
@@ -260,7 +262,7 @@ export default function LoginScreen() {
                     disabled={!canUpdatePassword || updatingPassword}
                     style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: !canUpdatePassword || updatingPassword ? 0.8 : 1 }}
                   >
-                    {updatingPassword ? <ActivityIndicator color="white" /> : <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>更新密碼</Text>}
+                    {updatingPassword ? <ActivityIndicator color="white" /> : <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>{t("login.updatePassword")}</Text>}
                   </TouchableOpacity>
                 </>
               ) : (
@@ -269,7 +271,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   accessible
                   accessibilityRole="button"
-                  accessibilityLabel="切換到登入"
+                  accessibilityLabel={t("login.switchToLogin")}
                   onPress={() => setMode("login")}
                   style={
                     mode === "login"
@@ -278,13 +280,13 @@ export default function LoginScreen() {
                   }
                 >
                   <Text style={mode === "login" ? { color: "white", fontWeight: "600" } : { color: colors.foreground, fontWeight: "600" }}>
-                    登入
+                    {t("login.loginTab")}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   accessible
                   accessibilityRole="button"
-                  accessibilityLabel="切換到註冊"
+                  accessibilityLabel={t("login.switchToSignup")}
                   onPress={() => setMode("signup")}
                   style={
                     mode === "signup"
@@ -293,13 +295,13 @@ export default function LoginScreen() {
                   }
                 >
                   <Text style={mode === "signup" ? { color: "white", fontWeight: "600" } : { color: colors.foreground, fontWeight: "600" }}>
-                    註冊
+                    {t("login.signupTab")}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View>
-                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>電郵</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("login.email")}</Text>
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
@@ -312,11 +314,11 @@ export default function LoginScreen() {
               </View>
 
               <View>
-                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>密碼</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", marginBottom: 8 }}>{t("login.password")}</Text>
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="最少 6 個字元"
+                  placeholder={t("login.passwordPlaceholder")}
                   placeholderTextColor={colors.muted}
                   secureTextEntry
                   style={{ backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.foreground, borderWidth: 1, borderColor: colors.border }}
@@ -329,7 +331,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 accessible
                 accessibilityRole="button"
-                accessibilityLabel={mode === "login" ? "登入" : "建立帳號"}
+                accessibilityLabel={mode === "login" ? t("login.submitLogin") : t("login.submitSignup")}
                 onPress={submit}
                 disabled={!canSubmit || submitting || resettingPassword}
                 style={{ backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: (!canSubmit || submitting || resettingPassword) ? 0.8 : 1 }}
@@ -338,7 +340,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color="white" />
                 ) : (
                   <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
-                    {mode === "login" ? "登入" : "建立帳號"}
+                    {mode === "login" ? t("login.submitLogin") : t("login.submitSignup")}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -347,7 +349,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   accessible
                   accessibilityRole="button"
-                  accessibilityLabel="忘記密碼"
+                  accessibilityLabel={t("login.forgotPassword")}
                   onPress={handleForgotPassword}
                   disabled={submitting || resettingPassword}
                   style={{
@@ -364,7 +366,7 @@ export default function LoginScreen() {
                   {resettingPassword ? (
                     <ActivityIndicator color={colors.primary} />
                   ) : (
-                    <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 15 }}>忘記密碼</Text>
+                    <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 15 }}>{t("login.forgotPassword")}</Text>
                   )}
                 </TouchableOpacity>
               )}

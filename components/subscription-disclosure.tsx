@@ -2,6 +2,8 @@ import { Linking, Platform, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 
 import { useColors } from "@/hooks/use-colors";
+import { formatMessage } from "@/lib/i18n/helpers";
+import { useLocale } from "@/lib/i18n/locale-provider";
 import { getPrivacyPolicyUrl, getTermsOfUseUrl } from "@/lib/legal-urls";
 
 type PlanRow = {
@@ -35,6 +37,7 @@ function LegalLink({
 export function SubscriptionDisclosure({ plans }: SubscriptionDisclosureProps) {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLocale();
 
   const openPrivacy = () => {
     if (Platform.OS === "web") {
@@ -55,10 +58,8 @@ export function SubscriptionDisclosure({ plans }: SubscriptionDisclosureProps) {
   return (
     <View style={{ gap: 12 }}>
       <View style={{ gap: 6 }}>
-        <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>Hyphen Pro 訂閱內容</Text>
-        <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-          訂閱後可解鎖查看自由工作聯絡資訊（電話、電郵），並持續使用完整瀏覽功能。未訂閱用戶只可查看工作描述，無法查看聯絡方式。
-        </Text>
+        <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>{t("subscriptionDisclosure.title")}</Text>
+        <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>{t("subscriptionDisclosure.body")}</Text>
       </View>
 
       {plans.map((plan) => (
@@ -74,19 +75,21 @@ export function SubscriptionDisclosure({ plans }: SubscriptionDisclosureProps) {
           }}
         >
           <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 13 }}>{plan.title}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12 }}>訂閱週期：{plan.length}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12 }}>價格：{plan.price}（自動續期，直至取消）</Text>
+          <Text style={{ color: colors.muted, fontSize: 12 }}>
+            {t("subscriptionDisclosure.cycleLabel")}
+            {plan.length}
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: 12 }}>
+            {formatMessage(t("subscriptionDisclosure.priceLabel"), { price: plan.price })}
+          </Text>
         </View>
       ))}
 
-      <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>
-        付款會從你的 Apple ID 或 Google Play 帳戶扣款。訂閱會自動續期，除非在當期結束前至少 24 小時關閉自動續期。你可於 App Store /
-        Google Play 的訂閱設定中管理或取消。
-      </Text>
+      <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{t("subscriptionDisclosure.paymentNote")}</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
-        <LegalLink label="私隱政策" onPress={openPrivacy} colors={colors} />
-        <LegalLink label="使用條款（EULA）" onPress={openTerms} colors={colors} />
+        <LegalLink label={t("subscriptionDisclosure.privacyLink")} onPress={openPrivacy} colors={colors} />
+        <LegalLink label={t("subscriptionDisclosure.termsLink")} onPress={openTerms} colors={colors} />
       </View>
     </View>
   );

@@ -1,0 +1,166 @@
+import type { HomeMessages } from "../types";
+
+/** Taiwan marketing homepage copy for hyphenjob.com/tw */
+export const homeTw = {
+  badge: "台灣接案發案，零門檻開始",
+  heroTitle: "重新定義自由工作平台。",
+  heroHighlight: "免身分證、拒絕點數制。",
+  heroBody:
+    "專為現代 Freelancer 與企業打造的接發案平台。\n30秒極速註冊，保護個人資料。發案方 100% 免費，\n接案方透明月費，直接聯繫零抽成！",
+  heroTags: "",
+  browseJobs: "🚀 我是 Freelancer：探索最新專案",
+  postJob: "💼 我是發案方：免費發佈工作",
+  heroEmailHint: "只要一個電子郵件地址就能開始",
+  usp: [
+    { icon: "mail-outline", title: "電子郵件即用", sub: "30 秒完成註冊" },
+    { icon: "lock-closed-outline", title: "最少個資收集", sub: "不強制手機與身分證" },
+    { icon: "flash-outline", title: "立即上架", sub: "不需等待人工審核" },
+    { icon: "star-outline", title: "刊登免費", sub: "案主刊登案件零費用" },
+  ],
+  advantagesLabel: "核心優勢",
+  advantagesTitle: "為什麼選擇 Hyphen？",
+  advantagesSubtitle: "告別傳統平台的繁瑣與不公。",
+  cards: [
+    {
+      icon: "shield-checkmark-outline",
+      title: "🛡️ 保護個資，免身分證",
+      body: "厭倦了上傳身分證和住址證明？在 Hyphen，只需一個 Email 即可完成註冊。我們把你的個人資料安全放在第一位，真正做到零門檻、極速開通。",
+      bullets: [],
+      link: "",
+    },
+    {
+      icon: "wallet-outline",
+      title: "💸 零抽成，利潤 100% 歸你",
+      body: "我們相信你的專業價值不該被打折。Hyphen 採用簡單透明的固定月費制，不按件抽成，也沒有隱藏費用。你可以自由地與發案方溝通報價，將所有接案收入完整放進自己的口袋。",
+      bullets: [],
+      link: "",
+    },
+    {
+      icon: "people-outline",
+      title: "🤝 發案方 100% 完全免費",
+      body: "無論是中小企業、新創公司還是個人需求，發佈工作專案完全免費！無上架費、無隱藏收費，讓你直接與專業的自由工作者聯繫，大幅提升外包效率。",
+      bullets: [],
+      link: "",
+    },
+  ],
+  categoriesLabel: "案件分類",
+  categoriesTitle: "熱門接案類型",
+  categoriesSubtitle: "從設計、程式到活動拍攝，依你的專長找到合適案件。",
+  categoriesFallback: "瀏覽相關職缺",
+  categoriesAll: "查看全部 {count} 個分類 →",
+  howLabel: "運作流程",
+  howTitle: "只需 30 秒，開啟你的接發案之旅",
+  howSubtitle: "簡單三步，降低用戶心理門檻。",
+  steps: [
+    {
+      n: "1",
+      title: "極速註冊",
+      body: "輸入 Email 設定密碼，無需等待人工審核，立即啟用帳號。",
+    },
+    {
+      n: "2",
+      title: "發佈或尋找專案",
+      body: "企業免費發佈工作需求；Freelancer 隨時瀏覽最新上架的優質專案。",
+    },
+    {
+      n: "3",
+      title: "訂閱解鎖聯繫",
+      body: "雙方直接溝通細節與報價，平台不干涉、不抽成，利潤 100% 歸你所有。",
+    },
+  ],
+  signupCta: "免費註冊",
+  compareLabel: "平台比較",
+  compareTitle: "和其他平台有什麼不同？",
+  compareSubtitle: "以下整理 Hyphen 與台灣常見接案／外包平台的差異，方便你快速比較。",
+  compareTableTitle: "Hyphen vs 台灣常見接案平台",
+  compareTableDate: "依各平台公開資訊整理，截至 2026 年 6 月",
+  compareHeaders: ["比較項目", "Hyphen", "Tasker", "PRO360", "518熊班"],
+  comparisonRows: [
+    {
+      label: "註冊門檻",
+      hyphen: "電子郵件即可",
+      others: ["需手機驗證", "需填寫較多資料", "需完整個人資料"],
+      highlight: true,
+    },
+    {
+      label: "身分證／證件上傳",
+      hyphen: "不強制",
+      others: ["部分功能需驗證", "視服務類型", "通常需要"],
+      highlight: true,
+    },
+    {
+      label: "案主刊登費用",
+      hyphen: "免費刊登",
+      others: ["免費／點數制", "免費報價為主", "刊登方案收費"],
+      highlight: false,
+    },
+    {
+      label: "接案者月費",
+      hyphen: "訂閱解鎖聯絡",
+      others: ["點數或媒合費", "報價方案", "會員／刊登費"],
+      highlight: false,
+    },
+    {
+      label: "個資收集程度",
+      hyphen: "低（以電子郵件為主）",
+      others: ["中", "中至高", "高"],
+      highlight: false,
+    },
+    {
+      label: "適合新手接案",
+      hyphen: "★★★★★",
+      others: ["★★★★", "★★★", "★★★"],
+      highlight: false,
+    },
+  ],
+  faqLabel: "常見問題",
+  faqTitle: "台灣使用者常見疑問",
+  faq: [
+    {
+      q: "Hyphen 和 Tasker 有什麼不同？",
+      a: "Tasker 以任務媒合與點數制度為主，流程偏在地生活服務；Hyphen 專注 Freelance 與外包案件，註冊門檻更低，案主可免費刊登，接案者以訂閱方式解鎖聯絡資訊。",
+    },
+    {
+      q: "在台灣接案需要綁定手機或上傳身分證嗎？",
+      a: "註冊 Hyphen 只需要電子郵件與密碼。我們不強制手機驗證或身分證上傳；若你要與案主聯繫，可透過訂閱解鎖對方留下的聯絡方式。",
+    },
+    {
+      q: "案主刊登案件要付費嗎？",
+      a: "刊登案件免費。案主可免費發布需求內容；接案者若要查看電話與電子郵件，需訂閱月費或年費方案。",
+    },
+    {
+      q: "付款、發票和合約要怎麼處理？",
+      a: "Hyphen 提供媒合與聯絡資訊，不代收代付。報價、付款方式、發票與合約由雙方自行協商，彈性較高，也更符合台灣常見的接案習慣。",
+    },
+    {
+      q: "沒有身份驗證會不會不安全？",
+      a: "身份驗證只是其中一種信任機制。建議雙方在合作前先看案件描述、溝通細節，並保留對話紀錄；對於高金額案件，可分期付款或簽署簡易合約。",
+    },
+    {
+      q: "我是學生或斜槓族，適合在 Hyphen 接案嗎？",
+      a: "適合。平台沒有作品集審核或年資門檻，適合想累積實戰經驗的學生、轉職者與兼職接案者。",
+    },
+    {
+      q: "可以只找台灣本地的案件嗎？",
+      a: "可以。瀏覽職缺時可依地區篩選「台灣」，也可查看其他地區的遠端合作案件。",
+    },
+  ],
+  ctaTitle: "準備好開始了嗎？",
+  ctaBody: "30 秒完成註冊。\n你的電子郵件，就是開始接案或發案所需的全部。",
+  ctaSignup: "用電子郵件免費註冊",
+  ctaBrowse: "或先瀏覽職缺列表",
+  footerAbout:
+    "Hyphen 是專為 Freelance 與外包案件設計的媒合平台。台灣使用者可透過電子郵件快速註冊，案主免費刊登，接案者訂閱後解鎖聯絡資訊。",
+  footerPlatform: "平台",
+  footerCategories: "熱門分類",
+  footerAboutCol: "關於",
+  footerLinks: {
+    browse: "瀏覽職缺",
+    post: "刊登案件",
+    categories: "案件分類",
+    why: "為什麼選 Hyphen",
+    contact: "聯繫我們",
+    privacy: "隱私權政策",
+    terms: "服務條款",
+  },
+} satisfies HomeMessages;

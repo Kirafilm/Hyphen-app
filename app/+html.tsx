@@ -5,7 +5,7 @@ const GOOGLE_AW_ID = "AW-18199669116";
 
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang="zh-Hant">
+    <html lang="zh-HK">
       <head>
         {/* Google tag (gtag.js) — required on every page */}
         <script async src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_AW_ID}`} />

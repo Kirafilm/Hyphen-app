@@ -260,7 +260,7 @@ export const categories = [
   "其他",
 ];
 
-export const jobLocations = ["香港", "澳門", "台灣", "英國"];
+export { jobLocations } from "./job-locations";
 
 // Sample User Data
 export const mockUser: User = {

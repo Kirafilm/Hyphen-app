@@ -33,10 +33,12 @@ import {
   setJobAlertsEnabledLocal,
   setStoredPushToken,
 } from "@/lib/notifications";
+import { useLocale } from "@/lib/i18n/locale-provider";
 
 export default function SettingsScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { t } = useLocale();
   const { isAuthenticated, logout } = useAuth();
   const { colorScheme, setColorScheme } = useThemeContext();
   const [pushToken, setPushToken] = useState<string | null>(null);
@@ -177,18 +179,18 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "刪除帳戶",
-      "此操作無法復原。你的帳戶、已發佈工作及訂閱紀錄將被永久刪除。進行中的 App Store / Google Play 訂閱請先在商店設定中取消。",
+      t("settings.deleteAlertTitle"),
+      t("settings.deleteAlertBody"),
       [
-        { text: "取消", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "刪除帳戶",
+          text: t("settings.deleteAccount"),
           style: "destructive",
           onPress: () => {
-            Alert.alert("確認刪除", "確定要永久刪除此帳戶？", [
-              { text: "取消", style: "cancel" },
+            Alert.alert(t("settings.deleteConfirmTitle"), t("settings.deleteConfirmBody"), [
+              { text: t("common.cancel"), style: "cancel" },
               {
-                text: "確定刪除",
+                text: t("settings.deleteConfirmAction"),
                 style: "destructive",
                 onPress: () => {
                   void (async () => {
@@ -203,8 +205,8 @@ export default function SettingsScreen() {
                       utils.invalidate();
                       router.replace("/login");
                     } catch (error) {
-                      const message = error instanceof Error ? error.message : "刪除帳戶失敗";
-                      Alert.alert("無法刪除帳戶", message);
+                      const message = error instanceof Error ? error.message : t("settings.deleteFailedTitle");
+                      Alert.alert(t("settings.deleteFailedTitle"), message);
                     }
                   })();
                 },
@@ -219,13 +221,13 @@ export default function SettingsScreen() {
   const loading = bootstrapping || (Boolean(pushToken) && settingsQuery.isLoading);
 
   const themeOptions: Array<{ id: ColorScheme; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
-    { id: "light", label: "淺色", icon: "sunny" },
-    { id: "dark", label: "深色", icon: "moon" },
+    { id: "light", label: t("settings.themeLight"), icon: "sunny" },
+    { id: "dark", label: t("settings.themeDark"), icon: "moon" },
   ];
 
   return (
     <AppScreen>
-      <PageHeader title="設定" showBack />
+      <PageHeader title={t("settings.title")} showBack />
 
       <ScreenScroll contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>
         <View style={{ gap: 16 }}>
@@ -240,8 +242,8 @@ export default function SettingsScreen() {
             }}
           >
             <View style={{ gap: 4 }}>
-              <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>外觀主題</Text>
-              <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>選擇 App 的淺色或深色介面。</Text>
+              <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>{t("settings.appearanceTitle")}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>{t("settings.appearanceHint")}</Text>
             </View>
             <View style={{ flexDirection: "row", gap: 10 }}>
               {themeOptions.map((option) => {
@@ -299,9 +301,9 @@ export default function SettingsScreen() {
                 }}
               >
                 <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>新工作通知</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>{t("settings.jobAlertsTitle")}</Text>
                   <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-                    有人發佈新工作時，以推送通知提醒你。
+                    {t("settings.jobAlertsHint")}
                   </Text>
                 </View>
                 <Switch
@@ -327,9 +329,9 @@ export default function SettingsScreen() {
               gap: 10,
             }}
           >
-            <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>帳戶</Text>
+            <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>{t("settings.accountTitle")}</Text>
             <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-              刪除帳戶會永久移除你的個人資料及已發佈工作，此操作無法復原。
+              {t("settings.accountDeleteHint")}
             </Text>
             <TouchableOpacity
               onPress={handleDeleteAccount}
@@ -345,7 +347,7 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={{ color: colors.error, fontWeight: "700", fontSize: 14 }}>
-                {deleteAccountMutation.isPending ? "刪除中…" : "刪除帳戶"}
+                {deleteAccountMutation.isPending ? t("settings.deleting") : t("settings.deleteAccount")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -353,7 +355,7 @@ export default function SettingsScreen() {
 
         {!isNativePushSupported() && (
           <Text style={{ color: colors.muted, fontSize: 13, marginTop: 16, lineHeight: 20 }}>
-            推送通知只適用於 iOS / Android App。
+            {t("settings.pushNativeOnly")}
           </Text>
         )}
 
@@ -370,10 +372,10 @@ export default function SettingsScreen() {
             }}
           >
             <Text style={{ color: colors.foreground, fontSize: 14, lineHeight: 20 }}>
-              請在系統設定中允許 Hyphen 發送通知，才能接收新工作提醒。
+              {t("settings.permissionHint")}
             </Text>
             <TouchableOpacity onPress={openSystemSettings} activeOpacity={0.85}>
-              <Text style={{ color: colors.primary, fontWeight: "700" }}>前往系統設定</Text>
+              <Text style={{ color: colors.primary, fontWeight: "700" }}>{t("settings.openSystemSettings")}</Text>
             </TouchableOpacity>
           </View>
         )}

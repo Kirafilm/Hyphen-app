@@ -7,7 +7,10 @@ import { HyphenLogo } from "@/components/hyphen-logo";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "@/components/web/constants";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
+import { useLocale } from "@/lib/i18n/locale-provider";
+import { translateCategory } from "@/lib/i18n/helpers";
 import { categories } from "@/lib/mock-data";
+import type { HomeMessages } from "@/lib/i18n/types";
 import type { ThemeColorPalette } from "@/lib/_core/theme";
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://api.hyphenjob.com").replace(/\/$/, "");
@@ -25,52 +28,16 @@ function heroOverlayGradient(primary: string, primaryDark: string, primaryDeep: 
   return `linear-gradient(135deg, ${toRgba(primary, 0.84)} 0%, ${toRgba(primaryDark, 0.8)} 48%, ${toRgba(primaryDeep, 0.76)} 100%)`;
 }
 
-const CATEGORY_META: Record<string, { emoji: string; desc: string }> = {
-  攝影及影片製作: { emoji: "📷", desc: "活動、產品、婚禮、短片" },
-  音樂製作: { emoji: "🎵", desc: "作曲、編曲、混音、配樂" },
-  網頁及程式開發: { emoji: "💻", desc: "網站、App、UI/UX" },
-  數碼營銷: { emoji: "📣", desc: "SEO、廣告、社交媒體" },
-  翻譯服務: { emoji: "📝", desc: "中英、日韓、多語言" },
-  平面設計: { emoji: "🎨", desc: "Logo、海報、品牌、包裝" },
-  繪畫及插圖: { emoji: "🖌️", desc: "插畫、漫畫、角色設計" },
-  室內設計: { emoji: "🏠", desc: "家居、商鋪、空間規劃" },
+const CATEGORY_EMOJI: Record<string, string> = {
+  攝影及影片製作: "📷",
+  音樂製作: "🎵",
+  網頁及程式開發: "💻",
+  數碼營銷: "📣",
+  翻譯服務: "📝",
+  平面設計: "🎨",
+  繪畫及插圖: "🖌️",
+  室內設計: "🏠",
 };
-
-const FAQ_ITEMS = [
-  {
-    q: "在 Hyphen 註冊真的只需要電郵地址嗎？",
-    a: "是的。Hyphen 只需要一個有效的電子郵件地址即可完成註冊，全程不需提供身分證、地址、電話或其他個人資料。",
-  },
-  {
-    q: "不收集私隱資料，那交易怎麼進行？",
-    a: "Freelancer 和僱主通過平台建立聯繫後，可自行協商付款方式和合作細節。Hyphen 不介入金錢交易，因此不需要收集銀行資料。",
-  },
-  {
-    q: "Hyphen 和 Freehunter 有什麼分別？",
-    a: "最大分別在於註冊門檻和私隱政策。Freehunter 需要完整個人資料和身份驗證；Hyphen 只需電郵即可。",
-  },
-  {
-    q: "沒有身份驗證是否意味著不可靠？",
-    a: "身份驗證只是一種信任機制，並非唯一的可靠性指標。優質的 Freelancer 靠作品和口碑累積評價。",
-  },
-  {
-    q: "Hyphen 收費嗎？有沒有抽成？",
-    a: "核心功能完全免費。Freelancer 可以免費瀏覽工作和申請職位，僱主可以免費發佈工作。我們不從交易中抽取佣金。",
-  },
-  {
-    q: "我是新手，可以在 Hyphen 上接案嗎？",
-    a: "當然可以！沒有門檻，沒有作品集審核。只要你有技能和熱誠，就可以開始。",
-  },
-] as const;
-
-const COMPARISON_ROWS = [
-  { label: "註冊方式", hyphen: "電郵即可", others: ["電郵+手機+資料", "電郵+資料填寫", "電郵+資料填寫"], highlight: true },
-  { label: "身份驗證", hyphen: "不需要", others: ["需要上傳身分證", "部分需要", "需要"], highlight: true },
-  { label: "審核時間", hyphen: "即時生效", others: ["1-3 個工作日", "1-7 個工作日", "1-3 個工作日"], highlight: false },
-  { label: "私隱收集", hyphen: "極低（僅電郵）", others: ["高", "中至高", "中至高"], highlight: false },
-  { label: "新手友好", hyphen: "★★★★★", others: ["★★★", "★★★", "★★★★"], highlight: false },
-  { label: "基本費用", hyphen: "免費", others: ["免費 / 會員制", "免費報價 / 佣金", "免費發佈 / 佣金"], highlight: false },
-] as const;
 
 function fullBleed(style?: ViewStyle): ViewStyle {
   if (Platform.OS !== "web") return { width: "100%", ...(style ?? {}) };
@@ -160,10 +127,18 @@ function PrimaryButton({
   );
 }
 
-export function HomeLandingWeb() {
+export function HomeLandingWeb({
+  home: homeOverride,
+  heroLayout = "default",
+}: {
+  home?: HomeMessages;
+  heroLayout?: "default" | "tw";
+} = {}) {
   const router = useRouter();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
+  const { messages, t } = useLocale();
+  const home = homeOverride ?? messages.home;
   const [openFaq, setOpenFaq] = useState(0);
 
   const primaryDark = "#5B45E8";
@@ -231,43 +206,91 @@ export function HomeLandingWeb() {
             }}
           >
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success }} />
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>香港首個零摩擦 Freelance 平台</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>{home.badge}</Text>
           </View>
 
-          <Text style={{ fontSize: 48, fontWeight: "800", color: "#FFFFFF", textAlign: "center", lineHeight: 56, letterSpacing: -0.5 }}>
-            {"電郵即用。\n"}
-            <Text style={{ color: heroHighlight }}>零認證。零私隱收集。</Text>
+          <Text style={{ fontSize: heroLayout === "tw" ? 42 : 48, fontWeight: "800", color: "#FFFFFF", textAlign: "center", lineHeight: heroLayout === "tw" ? 52 : 56, letterSpacing: -0.5 }}>
+            {home.heroTitle}
+            {"\n"}
+            <Text style={{ color: heroHighlight }}>{home.heroHighlight}</Text>
           </Text>
 
-          <Text style={{ fontSize: 18, color: "rgba(255,255,255,0.85)", textAlign: "center", maxWidth: 560, lineHeight: 28 }}>
-            30 秒完成註冊，今天就能接到第一份 Freelance 工作。不需要身分證，不需要住家地址，你的私隱屬於你自己。
+          <Text style={{ fontSize: heroLayout === "tw" ? 17 : 18, color: "rgba(255,255,255,0.85)", textAlign: "center", maxWidth: heroLayout === "tw" ? 640 : 560, lineHeight: 28 }}>
+            {home.heroBody}
           </Text>
 
-          <Text style={{ fontSize: 14, fontWeight: "700", letterSpacing: 0.5, color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>
-            Freelance 工作 · 攝影 · 設計 · 程式開發 · 翻譯 · 音樂 · 更多
-          </Text>
+          {home.heroTags ? (
+            <Text style={{ fontSize: 14, fontWeight: "700", letterSpacing: 0.5, color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>
+              {home.heroTags}
+            </Text>
+          ) : null}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginTop: 8 }}>
-            <PrimaryButton label="立即瀏覽工作" onPress={goJobs} colors={colors} variant="white" large />
-            <TouchableOpacity
-              onPress={goPost}
-              activeOpacity={0.85}
-              style={{
-                paddingVertical: 14,
-                paddingHorizontal: 32,
-                borderRadius: 10,
-                backgroundColor: colors.primary,
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.25)",
-              }}
-            >
-              <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 16 }}>免費發佈工作</Text>
-            </TouchableOpacity>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginTop: 8, width: "100%", maxWidth: heroLayout === "tw" ? 560 : undefined }}>
+            {heroLayout === "tw" ? (
+              <>
+                <TouchableOpacity
+                  onPress={goPost}
+                  activeOpacity={0.85}
+                  style={{
+                    paddingVertical: 14,
+                    paddingHorizontal: 24,
+                    borderRadius: 10,
+                    backgroundColor: "#FFFFFF",
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.9)",
+                    minWidth: 240,
+                    flexGrow: 1,
+                    maxWidth: 360,
+                  }}
+                >
+                  <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 15, textAlign: "center", lineHeight: 22 }}>
+                    {home.postJob}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={goJobs}
+                  activeOpacity={0.85}
+                  style={{
+                    paddingVertical: 14,
+                    paddingHorizontal: 24,
+                    borderRadius: 10,
+                    backgroundColor: "transparent",
+                    borderWidth: 1.5,
+                    borderColor: "rgba(255,255,255,0.75)",
+                    minWidth: 240,
+                    flexGrow: 1,
+                    maxWidth: 360,
+                  }}
+                >
+                  <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15, textAlign: "center", lineHeight: 22 }}>
+                    {home.browseJobs}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <PrimaryButton label={home.browseJobs} onPress={goJobs} colors={colors} variant="white" large />
+                <TouchableOpacity
+                  onPress={goPost}
+                  activeOpacity={0.85}
+                  style={{
+                    paddingVertical: 14,
+                    paddingHorizontal: 32,
+                    borderRadius: 10,
+                    backgroundColor: colors.primary,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.25)",
+                  }}
+                >
+                  <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 16 }}>{home.postJob}</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 24, opacity: 0.7 }}>
             <Ionicons name="mail-outline" size={16} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 13 }}>只需一個電郵地址，即可開始</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13 }}>{home.heroEmailHint}</Text>
           </View>
         </View>
         </View>
@@ -276,12 +299,7 @@ export function HomeLandingWeb() {
       {/* USP bar */}
       <View style={[fullBleed(), { backgroundColor: bgAlt, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 20 }]}>
         <View style={[sectionInner(), { flexDirection: "row", flexWrap: "wrap", gap: 16 }]}>
-          {[
-            { icon: "mail-outline" as const, tint: `${colors.primary}18`, color: colors.primary, title: "電郵即用", sub: "30 秒完成註冊" },
-            { icon: "lock-closed-outline" as const, tint: `${colors.success}18`, color: colors.success, title: "零私隱收集", sub: "不收集任何個人資料" },
-            { icon: "flash-outline" as const, tint: `${colors.warning}18`, color: colors.warning, title: "即時生效", sub: "無需等待審核" },
-            { icon: "star-outline" as const, tint: "#F3E8FF", color: colors.primary, title: "完全免費", sub: "基礎功能零費用" },
-          ].map((item) => (
+          {home.usp.map((item) => (
             <View
               key={item.title}
               style={{
@@ -297,8 +315,34 @@ export function HomeLandingWeb() {
                 padding: 12,
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: item.tint, alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name={item.icon} size={20} color={item.color} />
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor:
+                    item.icon === "mail-outline"
+                      ? `${colors.primary}18`
+                      : item.icon === "lock-closed-outline"
+                        ? `${colors.success}18`
+                        : item.icon === "flash-outline"
+                          ? `${colors.warning}18`
+                          : "#F3E8FF",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={20}
+                  color={
+                    item.icon === "lock-closed-outline"
+                      ? colors.success
+                      : item.icon === "flash-outline"
+                        ? colors.warning
+                        : colors.primary
+                  }
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>{item.title}</Text>
@@ -313,41 +357,15 @@ export function HomeLandingWeb() {
       <View style={[fullBleed(), { backgroundColor: colors.background, paddingVertical: 80 }]}>
         <View style={sectionInner()}>
           <SectionHeader
-            label="核心優勢"
-            title="為什麼選擇 Hyphen？"
-            subtitle="和其他 Freelance 平台不一樣，我們把你的時間和私隱放在第一位。"
+            label={home.advantagesLabel}
+            title={home.advantagesTitle}
+            subtitle={home.advantagesSubtitle}
             colors={colors}
           />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 24 }}>
-            {[
-              {
-                icon: "mail-outline" as const,
-                bg: `${colors.primary}14`,
-                title: "電郵註冊，30 秒開始",
-                body: "不上傳身分證。不填寫住家地址。不綁定電話。一個電郵地址就是全部你需要的。",
-                bullets: ["輸入電郵 → 設密碼 → 完成", "不需要人工審核等待", "註冊完立刻能瀏覽工作"],
-                link: "了解更多",
-                onPress: goLogin,
-              },
-              {
-                icon: "shield-checkmark-outline" as const,
-                bg: `${colors.success}14`,
-                title: "不收集任何私隱資料",
-                body: "身分證？不需要。住家地址？不需要。銀行帳號？不需要。你的私隱屬於你自己。",
-                bullets: ["符合香港《個人資料（私隱）條例》", "永不出售或共享用戶資料", "資料外洩風險為零"],
-                link: "查看私隱條款",
-                onPress: goPrivacy,
-              },
-              {
-                icon: "rocket-outline" as const,
-                bg: `${colors.warning}14`,
-                title: "零門檻，任何人都能開始",
-                body: "沒有作品集審核。沒有經驗要求。學生、新手、轉職者——只要你有技能和熱誠。",
-                bullets: ["適合學生、轉職者、全職媽媽", "新來港人士的快速起步方式", "兼職副業的最佳選擇"],
-                link: "立即開始",
-                onPress: goJobs,
-              },
-            ].map((card) => (
+            {home.cards.map((card, index) => {
+              const onPress = index === 0 ? goLogin : index === 1 ? goPrivacy : goJobs;
+              return (
               <View
                 key={card.title}
                 style={{
@@ -361,7 +379,25 @@ export function HomeLandingWeb() {
                   gap: 12,
                 }}
               >
-                <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: card.bg, alignItems: "center", justifyContent: "center" }}>
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 14,
+                    backgroundColor:
+                      card.icon === "shield-checkmark-outline"
+                        ? `${colors.success}14`
+                        : card.icon === "rocket-outline"
+                          ? `${colors.warning}14`
+                          : card.icon === "wallet-outline"
+                            ? `${colors.warning}14`
+                            : card.icon === "people-outline"
+                              ? `${colors.success}14`
+                              : `${colors.primary}14`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <Ionicons name={card.icon} size={28} color={colors.primary} />
                 </View>
                 <Text style={{ fontSize: 20, fontWeight: "800", color: colors.foreground }}>{card.title}</Text>
@@ -372,13 +408,16 @@ export function HomeLandingWeb() {
                     <Text style={{ fontSize: 13, color: colors.muted, flex: 1 }}>{b}</Text>
                   </View>
                 ))}
-                <TouchableOpacity onPress={card.onPress} activeOpacity={0.7}>
+                {card.link ? (
+                <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
                   <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 13, marginTop: 4 }}>
                     {card.link} →
                   </Text>
                 </TouchableOpacity>
+                ) : null}
               </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       </View>
@@ -387,14 +426,17 @@ export function HomeLandingWeb() {
       <View style={[fullBleed(), { backgroundColor: bgAlt, paddingVertical: 80 }]}>
         <View style={sectionInner()}>
           <SectionHeader
-            label="工作分類"
-            title="熱門 Freelance 工作類型"
-            subtitle="瀏覽你感興趣的工作分類，找到適合你的項目。"
+            label={home.categoriesLabel}
+            title={home.categoriesTitle}
+            subtitle={home.categoriesSubtitle}
             colors={colors}
           />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
             {featuredCategories.map((cat) => {
-              const meta = CATEGORY_META[cat] ?? { emoji: "✨", desc: "瀏覽相關工作" };
+              const meta = messages.categories[cat];
+              const emoji = CATEGORY_EMOJI[cat] ?? "✨";
+              const name = meta ? meta.name : translateCategory(messages, cat);
+              const desc = meta?.desc ?? home.categoriesFallback;
               return (
                 <TouchableOpacity
                   key={cat}
@@ -412,15 +454,15 @@ export function HomeLandingWeb() {
                     gap: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 28 }}>{meta.emoji}</Text>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{cat}</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>{meta.desc}</Text>
+                  <Text style={{ fontSize: 28 }}>{emoji}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{name}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>{desc}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
           <View style={{ alignItems: "center", marginTop: 24 }}>
-            <PrimaryButton label={`查看全部 ${categories.length} 個分類 →`} onPress={goJobs} colors={colors} variant="ghost" />
+            <PrimaryButton label={home.categoriesAll.replace("{count}", String(categories.length))} onPress={goJobs} colors={colors} variant="ghost" />
           </View>
         </View>
       </View>
@@ -428,18 +470,9 @@ export function HomeLandingWeb() {
       {/* How it works */}
       <View style={[fullBleed(), { backgroundColor: colors.background, paddingVertical: 80 }]}>
         <View style={sectionInner()}>
-          <SectionHeader
-            label="使用方法"
-            title="三步開始你的 Freelance 之旅"
-            subtitle="從註冊到接到第一份工作，比你想像中更簡單。"
-            colors={colors}
-          />
+          <SectionHeader label={home.howLabel} title={home.howTitle} subtitle={home.howSubtitle} colors={colors} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 32 }}>
-            {[
-              { n: "1", title: "電郵註冊", body: "輸入你的電郵地址，設定一組密碼。不需要上傳任何證件，全程不到 30 秒。" },
-              { n: "2", title: "建立你的檔案", body: "簡單描述你能做什麼——攝影？設計？翻譯？寫 Code？幾句話就夠。" },
-              { n: "3", title: "開始接案 / 發案", body: "Freelancer：瀏覽工作列表，找到合適的應徵。僱主：發佈需求，等 Freelancer 聯繫你。" },
-            ].map((step) => (
+            {home.steps.map((step) => (
               <View key={step.n} style={{ flex: 1, minWidth: 240, alignItems: "center", gap: 12 }}>
                 <View
                   style={{
@@ -459,7 +492,7 @@ export function HomeLandingWeb() {
             ))}
           </View>
           <View style={{ alignItems: "center", marginTop: 48 }}>
-            <PrimaryButton label="立即免費註冊" onPress={goLogin} colors={colors} large />
+            <PrimaryButton label={home.signupCta} onPress={goLogin} colors={colors} large />
           </View>
         </View>
       </View>
@@ -468,18 +501,18 @@ export function HomeLandingWeb() {
       <View style={[fullBleed(), { backgroundColor: bgAlt, paddingVertical: 80 }]}>
         <View style={sectionInner()}>
           <SectionHeader
-            label="平台比較"
-            title="和其他平台有什麼分別？"
-            subtitle="用數據說話。以下是 Hyphen 與香港主要 Freelance 平台的客觀比較。"
+            label={home.compareLabel}
+            title={home.compareTitle}
+            subtitle={home.compareSubtitle}
             colors={colors}
           />
           <View style={{ maxWidth: 800, alignSelf: "center", width: "100%", borderRadius: 24, borderWidth: 1, borderColor: colors.border, overflow: "hidden", backgroundColor: colors.background }}>
             <View style={{ backgroundColor: colors.primary, paddingVertical: 24, paddingHorizontal: 32, alignItems: "center" }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "800" }}>Hyphen vs 香港主要 Freelance 平台</Text>
-              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, marginTop: 4 }}>基於各平台公開資訊，截至 2026 年 6 月</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "800" }}>{home.compareTableTitle}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, marginTop: 4 }}>{home.compareTableDate}</Text>
             </View>
             <View style={{ flexDirection: "row", backgroundColor: bgAlt, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              {["比較項目", "Hyphen", "Freehunter", "PRO360", "HelloToby"].map((h, i) => (
+              {home.compareHeaders.map((h, i) => (
                 <Text
                   key={h}
                   style={{
@@ -495,7 +528,7 @@ export function HomeLandingWeb() {
                 </Text>
               ))}
             </View>
-            {COMPARISON_ROWS.map((row) => (
+            {home.comparisonRows.map((row) => (
               <View
                 key={row.label}
                 style={{
@@ -521,9 +554,9 @@ export function HomeLandingWeb() {
       {/* FAQ */}
       <View style={[fullBleed(), { backgroundColor: colors.background, paddingVertical: 80 }]}>
         <View style={sectionInner()}>
-          <SectionHeader label="常見問題" title="你可能想知道的" colors={colors} />
+          <SectionHeader label={home.faqLabel} title={home.faqTitle} colors={colors} />
           <View style={{ maxWidth: 720, alignSelf: "center", width: "100%", gap: 8 }}>
-            {FAQ_ITEMS.map((item, index) => {
+            {home.faq.map((item, index) => {
               const active = openFaq === index;
               return (
                 <View
@@ -569,14 +602,14 @@ export function HomeLandingWeb() {
         ]}
       >
         <View style={[sectionInner(), { alignItems: "center", gap: 16 }]}>
-          <Text style={{ fontSize: 36, fontWeight: "800", color: "#FFFFFF", textAlign: "center" }}>準備好了嗎？</Text>
+          <Text style={{ fontSize: 36, fontWeight: "800", color: "#FFFFFF", textAlign: "center" }}>{home.ctaTitle}</Text>
           <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", textAlign: "center", maxWidth: 480, lineHeight: 24 }}>
-            {"30 秒後你就是 Hyphen 的一份子。\n你的電郵地址，就是全部需要的東西。"}
+            {home.ctaBody}
           </Text>
-          <PrimaryButton label="用電郵免費註冊" onPress={goLogin} colors={colors} variant="white" large />
+          <PrimaryButton label={home.ctaSignup} onPress={goLogin} colors={colors} variant="white" large />
           <TouchableOpacity onPress={goJobs} activeOpacity={0.7}>
             <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, marginTop: 8, textDecorationLine: "underline" }}>
-              或是先看看有什麼工作：瀏覽 Freelance 工作列表
+              {home.ctaBrowse}
             </Text>
           </TouchableOpacity>
         </View>
@@ -589,16 +622,32 @@ export function HomeLandingWeb() {
             <View style={{ flex: 2, minWidth: 240, gap: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <HyphenLogo height={32} />
-                <Text style={{ fontSize: 16, fontWeight: "800", color: "#FFFFFF" }}>Hyphen 自由職</Text>
+                <Text style={{ fontSize: 16, fontWeight: "800", color: "#FFFFFF" }}>{t("nav.brand")}</Text>
               </View>
-              <Text style={{ fontSize: 13, color: "#94A3B8", lineHeight: 22 }}>
-                香港首個零摩擦 Freelance 平台。電郵即用，不收集私隱，讓你的專注力留在工作上，而不是填表上。
-              </Text>
+              <Text style={{ fontSize: 13, color: "#94A3B8", lineHeight: 22 }}>{home.footerAbout}</Text>
             </View>
             {[
-              { title: "平台", links: [["瀏覽工作", goJobs], ["發佈工作", goPost], ["工作分類", goJobs], ["為什麼選 Hyphen", goJobs]] as const },
-              { title: "熱門分類", links: featuredCategories.slice(0, 5).map((c) => [c, () => router.push({ pathname: "/(tabs)/jobs", params: { category: c } })] as const) },
-              { title: "關於", links: [["聯絡我們", goContact], ["私隱條款", goPrivacy], ["使用條款", goTerms]] as const },
+              {
+                title: home.footerPlatform,
+                links: [
+                  [home.footerLinks.browse, goJobs],
+                  [home.footerLinks.post, goPost],
+                  [home.footerLinks.categories, goJobs],
+                  [home.footerLinks.why, goJobs],
+                ] as const,
+              },
+              {
+                title: home.footerCategories,
+                links: featuredCategories.slice(0, 5).map((c) => [translateCategory(messages, c), () => router.push({ pathname: "/(tabs)/jobs", params: { category: c } })] as const),
+              },
+              {
+                title: home.footerAboutCol,
+                links: [
+                  [home.footerLinks.contact, goContact],
+                  [home.footerLinks.privacy, goPrivacy],
+                  [home.footerLinks.terms, goTerms],
+                ] as const,
+              },
             ].map((col) => (
               <View key={col.title} style={{ flex: 1, minWidth: 140, gap: 8 }}>
                 <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5, textTransform: "uppercase" }}>{col.title}</Text>
@@ -611,11 +660,11 @@ export function HomeLandingWeb() {
             ))}
           </View>
           <View style={{ borderTopWidth: 1, borderTopColor: "#1E293B", paddingTop: 20, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 12 }}>
-            <Text style={{ fontSize: 12, color: "#94A3B8" }}>© {new Date().getFullYear()} Hyphen 自由職. All rights reserved.</Text>
+            <Text style={{ fontSize: 12, color: "#94A3B8" }}>© {new Date().getFullYear()} {t("common.copyright")}</Text>
             <View style={{ flexDirection: "row", gap: 16 }}>
-              <TouchableOpacity onPress={goPrivacy}><Text style={{ fontSize: 12, color: "#94A3B8" }}>私隱條款</Text></TouchableOpacity>
-              <TouchableOpacity onPress={goTerms}><Text style={{ fontSize: 12, color: "#94A3B8" }}>使用條款</Text></TouchableOpacity>
-              <TouchableOpacity onPress={goContact}><Text style={{ fontSize: 12, color: "#94A3B8" }}>聯絡我們</Text></TouchableOpacity>
+              <TouchableOpacity onPress={goPrivacy}><Text style={{ fontSize: 12, color: "#94A3B8" }}>{home.footerLinks.privacy}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={goTerms}><Text style={{ fontSize: 12, color: "#94A3B8" }}>{home.footerLinks.terms}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={goContact}><Text style={{ fontSize: 12, color: "#94A3B8" }}>{home.footerLinks.contact}</Text></TouchableOpacity>
             </View>
           </View>
         </View>

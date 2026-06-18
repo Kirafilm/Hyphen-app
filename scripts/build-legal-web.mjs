@@ -35,7 +35,7 @@ function header(active) {
   const privacyClass = active === "privacy" ? ' aria-current="page"' : "";
   const termsClass = active === "terms" ? ' aria-current="page"' : "";
   return `<!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
 ${GOOGLE_TAG_SNIPPET}
   <meta charset="utf-8" />

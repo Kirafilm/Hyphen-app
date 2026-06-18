@@ -7,12 +7,14 @@ import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocale } from "@/lib/i18n/locale-provider";
 import { screenPaddingHorizontal, useWebLayout } from "@/lib/web-layout";
 
 export default function PostScreen() {
   const router = useRouter();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
+  const { t } = useLocale();
   const { isDesktopWeb } = useWebLayout();
 
   const pad = screenPaddingHorizontal();
@@ -20,7 +22,7 @@ export default function PostScreen() {
   return (
     <AppScreen contentContainerStyle={{ paddingBottom: 32 }}>
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
-        <PageHeader title="發佈工作" subtitle="快速找到最合適的 Freelancer" />
+        <PageHeader title={t("post.title")} subtitle={t("post.subtitle")} />
 
           <View style={{ paddingHorizontal: pad, paddingTop: 8, gap: 16, width: "100%" }}>
             <View
@@ -49,18 +51,18 @@ export default function PostScreen() {
                 >
                   <Ionicons name="create" size={32} color="#ffffff" />
                 </View>
-                <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: "800", textAlign: "center" }}>發佈您的工作需求</Text>
+                <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: "800", textAlign: "center" }}>{t("post.cardTitle")}</Text>
                 <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22, textAlign: "center", marginTop: 10 }}>
-                  詳細描述您的工作需求，我們的 Freelancer 將快速回應並提供報價。
+                  {t("post.cardBody")}
                 </Text>
               </View>
             </View>
 
             <View style={{ flexDirection: isDesktopWeb ? "row" : "column", gap: 12, alignItems: "stretch" }}>
             {[
-              ["1", "選擇行業類別", "從設計、開發、營銷等多個行業中選擇"],
-              ["2", "填寫工作詳情", "描述您的需求、預算和期限"],
-              ["3", "收到報價", "在幾分鐘內收到合適的 Freelancer 報價"],
+              ["1", t("post.step1Title"), t("post.step1Body")],
+              ["2", t("post.step2Title"), t("post.step2Body")],
+              ["3", t("post.step3Title"), t("post.step3Body")],
             ].map(([step, title, body]) => (
               <View
                 key={step}
@@ -113,7 +115,7 @@ export default function PostScreen() {
                 width: isDesktopWeb ? "100%" : undefined,
               }}
             >
-              <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "800" }}>開始發佈工作</Text>
+              <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "800" }}>{t("post.cta")}</Text>
             </TouchableOpacity>
 
             <View
@@ -132,9 +134,9 @@ export default function PostScreen() {
             >
               <Ionicons name="information-circle" size={20} color={colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>提示</Text>
+                <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>{t("post.tipTitle")}</Text>
                 <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
-                  發佈工作完全免費。
+                  {t("post.tipBody")}
                 </Text>
               </View>
             </View>

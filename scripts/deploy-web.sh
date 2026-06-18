@@ -40,9 +40,9 @@ rm -f /tmp/hyphen-web-dist.tgz
 ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs/index.html'
 EOF
   echo "→ Verifying deploy..."
-  ssh "$VPS_HOST" "grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html' && grep -q 'Hyphen' '$VPS_WEB_ROOT/index.html'"
-  echo "✓ jobs route + homepage content present"
-  echo "Done. Open https://hyphenjob.com/jobs"
+  ssh "$VPS_HOST" "grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html' && grep -q 'Hyphen' '$VPS_WEB_ROOT/index.html' && grep -q '台灣接案' '$VPS_WEB_ROOT/tw/index.html'"
+  echo "✓ jobs route + homepage + /tw Taiwan landing present"
+  echo "Done. Open https://hyphenjob.com/jobs or https://hyphenjob.com/tw"
 else
   echo ""
   echo "Upload manually:"
