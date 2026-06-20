@@ -128,6 +128,10 @@ export const messages = {
     deleteAlertTitle: "刪除帳戶",
     deleteAlertBody:
       "此操作無法復原。你的帳戶、已發佈工作及訂閱紀錄將被永久刪除。進行中的 App Store / Google Play 訂閱請先在商店設定中取消。",
+    deleteAlertBodyIos:
+      "此操作無法復原。你的帳戶、已發佈工作及訂閱紀錄將被永久刪除。進行中的 App Store 訂閱請先在 設定 → Apple ID → 訂閱 中取消。",
+    deleteAlertBodyAndroid:
+      "此操作無法復原。你的帳戶、已發佈工作及訂閱紀錄將被永久刪除。進行中的 Google Play 訂閱請先在 Google Play → 付款與訂閱 中取消。",
     deleteConfirmTitle: "確認刪除",
     deleteConfirmBody: "確定要永久刪除此帳戶？",
     deleteConfirmAction: "確定刪除",
@@ -271,6 +275,10 @@ export const messages = {
     priceLabel: "價格：{price}（自動續期，直至取消）",
     paymentNote:
       "付款會從你的 Apple ID 或 Google Play 帳戶扣款。訂閱會自動續期，除非在當期結束前至少 24 小時關閉自動續期。你可於 App Store / Google Play 的訂閱設定中管理或取消。",
+    paymentNoteIos:
+      "付款會從你的 Apple ID 扣款。訂閱會自動續期，除非在當期結束前至少 24 小時關閉自動續期。你可於 App Store 的訂閱設定中管理或取消。",
+    paymentNoteAndroid:
+      "付款會從你的 Google Play 帳戶扣款。訂閱會自動續期，除非在當期結束前至少 24 小時關閉自動續期。你可於 Google Play → 付款與訂閱 中管理或取消。",
     privacyLink: "私隱政策",
     termsLink: "使用條款（EULA）",
   },

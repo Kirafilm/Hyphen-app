@@ -128,6 +128,10 @@ export const messages = {
     deleteAlertTitle: "删除账户",
     deleteAlertBody:
       "此操作无法复原。你的账户、已发布工作及订阅纪录将被永久删除。进行中的 App Store / Google Play 订阅请先在商店设置中取消。",
+    deleteAlertBodyIos:
+      "此操作无法复原。你的账户、已发布工作及订阅纪录将被永久删除。进行中的 App Store 订阅请先在 设置 → Apple ID → 订阅 中取消。",
+    deleteAlertBodyAndroid:
+      "此操作无法复原。你的账户、已发布工作及订阅纪录将被永久删除。进行中的 Google Play 订阅请先在 Google Play → 付款与订阅 中取消。",
     deleteConfirmTitle: "确认删除",
     deleteConfirmBody: "确定要永久删除此账户？",
     deleteConfirmAction: "确定删除",
@@ -271,6 +275,10 @@ export const messages = {
     priceLabel: "价格：{price}（自动续期，直至取消）",
     paymentNote:
       "付款会从你的 Apple ID 或 Google Play 账户扣款。订阅会自动续期，除非在当期结束前至少 24 小时关闭自动续期。你可于 App Store / Google Play 的订阅设置中管理或取消。",
+    paymentNoteIos:
+      "付款会从你的 Apple ID 扣款。订阅会自动续期，除非在当期结束前至少 24 小时关闭自动续期。你可于 App Store 的订阅设置中管理或取消。",
+    paymentNoteAndroid:
+      "付款会从你的 Google Play 账户扣款。订阅会自动续期，除非在当期结束前至少 24 小时关闭自动续期。你可于 Google Play → 付款与订阅 中管理或取消。",
     privacyLink: "隐私政策",
     termsLink: "使用条款（EULA）",
   },

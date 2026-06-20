@@ -55,6 +55,13 @@ export function SubscriptionDisclosure({ plans }: SubscriptionDisclosureProps) {
     void Linking.openURL(getTermsOfUseUrl());
   };
 
+  const paymentNoteKey =
+    Platform.OS === "ios"
+      ? "subscriptionDisclosure.paymentNoteIos"
+      : Platform.OS === "android"
+        ? "subscriptionDisclosure.paymentNoteAndroid"
+        : "subscriptionDisclosure.paymentNote";
+
   return (
     <View style={{ gap: 12 }}>
       <View style={{ gap: 6 }}>
@@ -85,7 +92,7 @@ export function SubscriptionDisclosure({ plans }: SubscriptionDisclosureProps) {
         </View>
       ))}
 
-      <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{t("subscriptionDisclosure.paymentNote")}</Text>
+      <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{t(paymentNoteKey)}</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
         <LegalLink label={t("subscriptionDisclosure.privacyLink")} onPress={openPrivacy} colors={colors} />

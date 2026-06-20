@@ -177,10 +177,17 @@ export default function SettingsScreen() {
     void Linking.openSettings();
   };
 
+  const deleteAlertBodyKey =
+    Platform.OS === "ios"
+      ? "settings.deleteAlertBodyIos"
+      : Platform.OS === "android"
+        ? "settings.deleteAlertBodyAndroid"
+        : "settings.deleteAlertBody";
+
   const handleDeleteAccount = () => {
     Alert.alert(
       t("settings.deleteAlertTitle"),
-      t("settings.deleteAlertBody"),
+      t(deleteAlertBodyKey),
       [
         { text: t("common.cancel"), style: "cancel" },
         {

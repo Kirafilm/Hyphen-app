@@ -150,6 +150,8 @@ export type Messages = {
     openSystemSettings: string;
     deleteAlertTitle: string;
     deleteAlertBody: string;
+    deleteAlertBodyIos: string;
+    deleteAlertBodyAndroid: string;
     deleteConfirmTitle: string;
     deleteConfirmBody: string;
     deleteConfirmAction: string;
@@ -290,6 +292,8 @@ export type Messages = {
     cycleLabel: string;
     priceLabel: string;
     paymentNote: string;
+    paymentNoteIos: string;
+    paymentNoteAndroid: string;
     privacyLink: string;
     termsLink: string;
   };

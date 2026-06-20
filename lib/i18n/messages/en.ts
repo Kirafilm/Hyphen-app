@@ -132,6 +132,10 @@ export const messages = {
     deleteAlertTitle: "Delete account",
     deleteAlertBody:
       "This cannot be undone. Your account, posted jobs, and subscription history will be permanently deleted. Cancel any active App Store / Google Play subscriptions in store settings first.",
+    deleteAlertBodyIos:
+      "This cannot be undone. Your account, posted jobs, and subscription history will be permanently deleted. Cancel any active App Store subscriptions in Settings → Apple ID → Subscriptions first.",
+    deleteAlertBodyAndroid:
+      "This cannot be undone. Your account, posted jobs, and subscription history will be permanently deleted. Cancel any active Google Play subscriptions under Google Play → Payments & subscriptions first.",
     deleteConfirmTitle: "Confirm deletion",
     deleteConfirmBody: "Are you sure you want to permanently delete this account?",
     deleteConfirmAction: "Delete permanently",
@@ -277,6 +281,10 @@ export const messages = {
     priceLabel: "Price: {price} (auto-renews until cancelled)",
     paymentNote:
       "Payment is charged to your Apple ID or Google Play account. Subscriptions renew automatically unless auto-renew is turned off at least 24 hours before the period ends. Manage or cancel in App Store / Google Play subscription settings.",
+    paymentNoteIos:
+      "Payment is charged to your Apple ID. Subscriptions renew automatically unless auto-renew is turned off at least 24 hours before the period ends. Manage or cancel in App Store subscription settings.",
+    paymentNoteAndroid:
+      "Payment is charged to your Google Play account. Subscriptions renew automatically unless auto-renew is turned off at least 24 hours before the period ends. Manage or cancel under Google Play → Payments & subscriptions.",
     privacyLink: "Privacy policy",
     termsLink: "Terms of use (EULA)",
   },
