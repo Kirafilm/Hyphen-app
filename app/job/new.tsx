@@ -248,7 +248,7 @@ export default function PostJobScreen() {
                     maxHeight: 192,
                   }}
                 >
-                  <ScreenScroll nestedScrollEnabled>
+                  <ScreenScroll nestedScrollEnabled style={{ maxHeight: 192 }}>
                     {categories.map((cat, index) => (
                       <TouchableOpacity
                         key={cat}
