@@ -85,6 +85,13 @@ export function detectDeviceLocale(): Locale {
   return inferTraditionalChineseRegion();
 }
 
+/** Native app default: Traditional Chinese unless device clearly prefers zh-TW or zh-Hans. */
+export function defaultNativeLocale(): Locale {
+  const detected = detectDeviceLocale();
+  if (detected === "zh-TW" || detected === "zh-Hans") return detected;
+  return "zh-HK";
+}
+
 /** @deprecated Use detectDeviceLocale */
 export function detectBrowserLocale(): Locale {
   return detectDeviceLocale();

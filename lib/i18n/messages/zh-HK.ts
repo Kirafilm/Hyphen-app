@@ -23,6 +23,8 @@ export const messages = {
     jobs: "瀏覽職位",
     post: "發佈工作",
     profile: "個人",
+    tabJobs: "職位",
+    tabPost: "發佈",
     login: "登入",
     signup: "免費註冊",
     account: "帳戶",

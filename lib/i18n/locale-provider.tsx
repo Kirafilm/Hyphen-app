@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { Platform } from "react-native";
 
 import { messagesByLocale } from "./messages";
-import { applyDocumentLocale, detectDeviceLocale, loadStoredLocale, saveStoredLocale } from "./storage";
+import { applyDocumentLocale, defaultNativeLocale, detectDeviceLocale, loadStoredLocale, saveStoredLocale } from "./storage";
 import type { Locale, Messages } from "./types";
 
 type LocaleContextValue = {
@@ -34,7 +34,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const stored = await loadStoredLocale();
       if (cancelled) return;
-      const next = stored ?? detectDeviceLocale();
+      const next = stored ?? (Platform.OS === "web" ? detectDeviceLocale() : defaultNativeLocale());
       setLocaleState(next);
       applyDocumentLocale(next);
       setReady(true);

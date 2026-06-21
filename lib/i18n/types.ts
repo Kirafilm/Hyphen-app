@@ -50,6 +50,8 @@ export type Messages = {
     jobs: string;
     post: string;
     profile: string;
+    tabJobs: string;
+    tabPost: string;
     login: string;
     signup: string;
     account: string;

@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -177,6 +177,10 @@ export default function ProfileScreen() {
               width: isDesktopWeb ? "100%" : undefined,
             }}
           >
+            {(Platform.OS !== "web" || isAuthenticated) && (
+              <MenuRow icon="card" label={t("profile.menuSubscription")} onPress={() => router.push("/paywall")} />
+            )}
+
             {!isAuthenticated ? (
               <TouchableOpacity
                 onPress={() => router.push("/login")}
@@ -198,7 +202,7 @@ export default function ProfileScreen() {
                 <Ionicons name="chevron-forward" size={20} color="#ffffff" />
               </TouchableOpacity>
             ) : (
-              <MenuRow icon="card" label={t("profile.menuSubscription")} onPress={() => router.push("/paywall")} />
+              null
             )}
 
             <MenuRow icon="settings" label={t("profile.menuSettings")} onPress={() => router.push("/settings")} />

@@ -23,6 +23,8 @@ export const messages = {
     jobs: "Browse jobs",
     post: "Post a job",
     profile: "Profile",
+    tabJobs: "Jobs",
+    tabPost: "Post",
     login: "Log in",
     signup: "Sign up free",
     account: "Account",
