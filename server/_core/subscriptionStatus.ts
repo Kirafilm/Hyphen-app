@@ -1,4 +1,7 @@
+import type { Request } from "express";
+
 import * as db from "../db";
+import { fetchActiveSubscriptionFromRevenueCat } from "./revenuecat";
 
 export type ResolvedSubscription = {
   plan: db.SubscriptionPlan;
@@ -29,4 +32,31 @@ export async function resolveSubscriptionStatus(user: {
 
 export function isResolvedSubscriptionActive(status: ResolvedSubscription) {
   return status.active;
+}
+
+function revenueCatAppUserIdFromRequest(req: Request): string {
+  const raw = req.headers["x-revenuecat-app-user-id"];
+  if (typeof raw === "string") return raw.trim();
+  if (Array.isArray(raw)) return raw[0]?.trim() ?? "";
+  return "";
+}
+
+/** Anonymous App Store / Play subscribers pass RevenueCat app user id on native clients. */
+export async function resolveStoreSubscriptionActiveFromRequest(req: Request): Promise<boolean> {
+  const appUserId = revenueCatAppUserIdFromRequest(req);
+  if (!appUserId) return false;
+
+  const sub = await fetchActiveSubscriptionFromRevenueCat(appUserId);
+  return sub !== null && sub.expiresAt.getTime() > Date.now();
+}
+
+export async function resolveViewerSubscriptionActive(
+  viewer: { id: number; openId: string; email?: string | null } | null,
+  req: Request,
+): Promise<boolean> {
+  if (viewer) {
+    const sub = await resolveSubscriptionStatus(viewer);
+    if (isResolvedSubscriptionActive(sub)) return true;
+  }
+  return resolveStoreSubscriptionActiveFromRequest(req);
 }

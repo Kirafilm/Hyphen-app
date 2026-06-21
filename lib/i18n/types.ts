@@ -253,6 +253,8 @@ export type Messages = {
     subtitle: string;
     pleaseLogin: string;
     goToLogin: string;
+    optionalSignInHint: string;
+    optionalSignInAction: string;
     statusTitle: string;
     planLabel: string;
     expiresLabel: string;

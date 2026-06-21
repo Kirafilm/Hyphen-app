@@ -203,6 +203,17 @@ export async function revenueCatGetCustomerInfo() {
   return mod.default.getCustomerInfo();
 }
 
+export async function revenueCatGetAppUserId() {
+  const mod = await ensureConfigured();
+  if (!mod) return null;
+  try {
+    return await mod.default.getAppUserID();
+  } catch (err) {
+    console.warn("[RevenueCat] getAppUserID failed:", err);
+    return null;
+  }
+}
+
 export function isRevenueCatUserCancellation(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? "");
   return (

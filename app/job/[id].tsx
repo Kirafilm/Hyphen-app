@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, ScrollView, Text, View, TouchableOpacity } from "react-native";
+import { ActivityIndicator, Alert, Platform, ScrollView, Text, View, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
@@ -90,6 +90,14 @@ export default function JobDetailScreen() {
     );
   }
 
+  const openPaywall = () => {
+    if (Platform.OS === "web" && !isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    router.push({ pathname: "/paywall", params: { jobId: job.id } });
+  };
+
   return (
     <AppScreen>
       <ScreenScroll contentContainerStyle={{ flexGrow: 1 }}>
@@ -132,7 +140,7 @@ export default function JobDetailScreen() {
                   </View>
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <TouchableOpacity
-                      onPress={() => (isAuthenticated ? router.push({ pathname: "/paywall", params: { jobId: job.id } }) : router.push("/login"))}
+                      onPress={openPaywall}
                       style={{ flex: 1, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: "center", justifyContent: "center" }}
                     >
                       <Text style={{ color: "white", fontWeight: "600" }}>{t("jobDetail.subscribeNow")}</Text>
@@ -190,7 +198,7 @@ export default function JobDetailScreen() {
             {/* CTA Buttons */}
             <View style={{ gap: 12, paddingBottom: 24 }}>
               <TouchableOpacity
-                onPress={() => (job.contactLocked ? router.push({ pathname: "/paywall", params: { jobId: job.id } }) : null)}
+                onPress={() => (job.contactLocked ? openPaywall() : null)}
                 style={{ backgroundColor: colors.surface, borderRadius: 8, paddingVertical: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.primary }}
               >
                 <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 16 }}>

@@ -20,6 +20,7 @@ import {
   SUBSCRIPTION_PRODUCT_IDS,
   type PurchasesStoreProduct,
 } from "@/lib/revenuecat";
+import { mobileSubscriptionFromCustomerInfo } from "@/lib/subscription-sync";
 import { trpc } from "@/lib/trpc";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
@@ -226,6 +227,7 @@ export default function PaywallScreen() {
   const meQuery = trpc.subscription.me.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const utils = trpc.useUtils();
   const { syncSubscription } = useMobileSubscriptionSync();
   const stripeCheckoutMutation = trpc.subscription.createStripeCheckout.useMutation();
   const stripePortalMutation = trpc.subscription.createStripePortal.useMutation();
@@ -237,10 +239,27 @@ export default function PaywallScreen() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [rcError, setRcError] = useState<string | null>(null);
 
-  const isSubscribed = Boolean(meQuery.data?.active);
+  const localStoreSubscription = useMemo(
+    () => mobileSubscriptionFromCustomerInfo(customerInfo),
+    [customerInfo],
+  );
+  const isSubscribed =
+    Platform.OS === "web"
+      ? Boolean(meQuery.data?.active)
+      : Boolean(meQuery.data?.active) || Boolean(localStoreSubscription);
   const subscriptionExpiresAt = meQuery.data?.expiresAt
     ? new Date(meQuery.data.expiresAt).toLocaleString()
-    : "—";
+    : localStoreSubscription?.expiresAt
+      ? localStoreSubscription.expiresAt.toLocaleString()
+      : "—";
+  const requiresWebLogin = Platform.OS === "web" && !isAuthenticated;
+
+  const invalidateJobQueries = async () => {
+    await utils.jobs.list.invalidate();
+    if (params.jobId) {
+      await utils.jobs.byId.invalidate({ id: params.jobId });
+    }
+  };
 
   const availablePackages: PurchasesPackage[] = useMemo(() => {
     const pkgs = offerings?.current?.availablePackages;
@@ -307,20 +326,17 @@ export default function PaywallScreen() {
   }, [storeProducts]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
     if (Platform.OS === "web") return;
 
     (async () => {
       setRcError(null);
       try {
-        if (user?.openId) {
+        if (isAuthenticated && user?.openId) {
           await linkRevenueCatAccount(user.openId, user.email ?? null);
         }
       } catch (e) {
         console.warn("[Paywall] RevenueCat login failed:", e);
       }
-
-      if (isSubscribed) return;
 
       try {
         const nextOfferings = await revenueCatGetOfferings();
@@ -343,7 +359,7 @@ export default function PaywallScreen() {
         console.warn("[Paywall] customer info unavailable:", e);
       }
     })();
-  }, [isAuthenticated, isSubscribed, user?.email, user?.openId]);
+  }, [isAuthenticated, user?.email, user?.openId]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);
@@ -353,7 +369,10 @@ export default function PaywallScreen() {
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
       await syncSubscription(nextCustomerInfo);
-      await meQuery.refetch();
+      await invalidateJobQueries();
+      if (isAuthenticated) {
+        await meQuery.refetch();
+      }
     } catch (e) {
       setPaywallError(setRcError, e);
     } finally {
@@ -369,7 +388,10 @@ export default function PaywallScreen() {
       const nextCustomerInfo = result?.customerInfo ?? null;
       if (nextCustomerInfo) setCustomerInfo(nextCustomerInfo);
       await syncSubscription(nextCustomerInfo);
-      await meQuery.refetch();
+      await invalidateJobQueries();
+      if (isAuthenticated) {
+        await meQuery.refetch();
+      }
     } catch (e) {
       setPaywallError(setRcError, e);
     } finally {
@@ -409,7 +431,10 @@ export default function PaywallScreen() {
       if (nextCustomerInfo) {
         setCustomerInfo(nextCustomerInfo);
         await syncSubscription(nextCustomerInfo);
-        await meQuery.refetch();
+        await invalidateJobQueries();
+        if (isAuthenticated) {
+          await meQuery.refetch();
+        }
       }
     } catch (e) {
       setPaywallError(setRcError, e);
@@ -536,7 +561,7 @@ export default function PaywallScreen() {
           />
 
           <View style={{ paddingHorizontal: pad, paddingVertical: 16, gap: 16 }}>
-            {!isAuthenticated ? (
+            {requiresWebLogin ? (
               <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, alignItems: "center", gap: 12 }}>
                 <Ionicons name="lock-closed" size={40} color={colors.muted} />
                 <Text style={{ color: colors.foreground, fontWeight: "600" }}>{t("paywall.pleaseLogin")}</Text>
@@ -549,15 +574,37 @@ export default function PaywallScreen() {
               </View>
             ) : (
               <>
-                <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
-                  <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>{t("paywall.statusTitle")}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 14 }}>
-                    {t("paywall.planLabel")}{meQuery.data?.plan ?? t("common.loading")}
-                  </Text>
-                  <Text style={{ color: colors.muted, fontSize: 14 }}>
-                    {t("paywall.expiresLabel")}{meQuery.data?.expiresAt ? new Date(meQuery.data.expiresAt).toLocaleString() : "—"}
-                  </Text>
-                </View>
+                {isAuthenticated || isSubscribed ? (
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 24, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+                    <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>{t("paywall.statusTitle")}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 14 }}>
+                      {t("paywall.planLabel")}
+                      {meQuery.data?.plan ?? localStoreSubscription?.plan ?? t("paywall.planFallback")}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 14 }}>
+                      {t("paywall.expiresLabel")}
+                      {subscriptionExpiresAt}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {Platform.OS !== "web" && !isAuthenticated ? (
+                  <View
+                    style={{
+                      backgroundColor: `${colors.primary}10`,
+                      borderRadius: 8,
+                      padding: 16,
+                      borderWidth: 1,
+                      borderColor: `${colors.primary}22`,
+                      gap: 8,
+                    }}
+                  >
+                    <Text style={{ color: colors.foreground, fontSize: 14, lineHeight: 22 }}>{t("paywall.optionalSignInHint")}</Text>
+                    <TouchableOpacity onPress={() => router.push("/login")} activeOpacity={0.85}>
+                      <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>{t("paywall.optionalSignInAction")}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
 
                 {Platform.OS === "web" ? (
                   <View style={{ flexDirection: isWeb ? "row" : "column", flexWrap: "wrap", gap: 16 }}>

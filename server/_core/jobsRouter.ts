@@ -3,16 +3,15 @@ import { z } from "zod";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./trpc";
 import * as db from "../db";
 import { notifyNewJobPosted } from "./pushNotifications";
-import { isResolvedSubscriptionActive, resolveSubscriptionStatus } from "./subscriptionStatus";
+import { resolveViewerSubscriptionActive } from "./subscriptionStatus";
 
 function canViewJobContact(
   job: db.JobRecord,
   viewer: { id: number; role: string; openId: string } | null,
   activeSub: boolean,
 ) {
-  if (!viewer) return false;
-  if (viewer.role === "admin") return true;
-  if (job.createdByUserId === viewer.id) return true;
+  if (viewer?.role === "admin") return true;
+  if (viewer && job.createdByUserId === viewer.id) return true;
   return activeSub;
 }
 
@@ -50,8 +49,7 @@ export const jobsRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
     const viewer = ctx.user;
     const jobs = await db.listJobs(viewer);
-    const sub = viewer ? await resolveSubscriptionStatus(viewer) : null;
-    const activeSub = sub ? isResolvedSubscriptionActive(sub) : false;
+    const activeSub = await resolveViewerSubscriptionActive(viewer, ctx.req);
     return jobs.map((job) => toJobPublic(job, canViewJobContact(job, viewer, activeSub)));
   }),
 
@@ -60,15 +58,13 @@ export const jobsRouter = router({
     if (!job) return null;
     const viewer = ctx.user;
     if (job.removedAt && viewer?.role !== "admin") return null;
-    const sub = viewer ? await resolveSubscriptionStatus(viewer) : null;
-    const activeSub = sub ? isResolvedSubscriptionActive(sub) : false;
+    const activeSub = await resolveViewerSubscriptionActive(viewer, ctx.req);
     return toJobPublic(job, canViewJobContact(job, viewer, activeSub));
   }),
 
   listForModeration: adminProcedure.query(async ({ ctx }) => {
     const jobs = await db.listAllJobsForModeration();
-    const sub = await resolveSubscriptionStatus(ctx.user);
-    const activeSub = isResolvedSubscriptionActive(sub);
+    const activeSub = await resolveViewerSubscriptionActive(ctx.user, ctx.req);
     return jobs.map((job) => toJobPublic(job, canViewJobContact(job, ctx.user, activeSub)));
   }),
 

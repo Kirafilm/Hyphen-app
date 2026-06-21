@@ -238,6 +238,9 @@ export const messages = {
     subtitle: "Without a subscription you can read job posts but not phone or email.",
     pleaseLogin: "Please sign in first",
     goToLogin: "Go to sign in",
+    optionalSignInHint:
+      "You can subscribe without an account. Sign in optionally to sync your subscription across devices.",
+    optionalSignInAction: "Sign in (optional)",
     statusTitle: "Your subscription",
     planLabel: "Plan: ",
     expiresLabel: "Expires: ",

@@ -1,9 +1,11 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client";
+import { Platform } from "react-native";
 import superjson from "superjson";
 import type { AppRouter } from "@/server/routers";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "@/lib/_core/auth";
+import { revenueCatGetAppUserId } from "@/lib/revenuecat";
 
 /**
  * tRPC React client for type-safe API calls.
@@ -27,7 +29,13 @@ export function createTRPCClient() {
         transformer: superjson,
         async headers() {
           const token = await Auth.getSessionToken();
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          const headers: Record<string, string> = {};
+          if (token) headers.Authorization = `Bearer ${token}`;
+          if (Platform.OS !== "web") {
+            const appUserId = await revenueCatGetAppUserId();
+            if (appUserId) headers["X-RevenueCat-App-User-Id"] = appUserId;
+          }
+          return headers;
         },
         // Custom fetch to include credentials for cookie-based auth
         fetch(url, options) {

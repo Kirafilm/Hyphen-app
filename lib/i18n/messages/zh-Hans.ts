@@ -233,6 +233,8 @@ export const messages = {
     subtitle: "未订阅可查看工作内容，但无法查看电话与电邮。",
     pleaseLogin: "请先登录",
     goToLogin: "前往登录",
+    optionalSignInHint: "无需注册即可订阅。你可选择登录，以便在多设备同步订阅。",
+    optionalSignInAction: "登录（可选）",
     statusTitle: "你的订阅状态",
     planLabel: "方案：",
     expiresLabel: "到期：",

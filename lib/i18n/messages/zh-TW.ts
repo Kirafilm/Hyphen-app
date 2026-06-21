@@ -234,6 +234,8 @@ export const messages = {
     subtitle: "未訂閱可查看工作內容，但無法查看電話與電子郵件。",
     pleaseLogin: "請先登入",
     goToLogin: "前往登入",
+    optionalSignInHint: "無需註冊即可訂閱。你可選擇登入，以便在多裝置同步訂閱。",
+    optionalSignInAction: "登入（可選）",
     statusTitle: "你的訂閱狀態",
     planLabel: "方案：",
     expiresLabel: "到期：",
