@@ -8,8 +8,8 @@ export const homeTw = {
   heroBody:
     "專為現代 Freelancer 與企業打造的接發案平台。\n30秒極速註冊，保護個人資料。發案方 100% 免費，\n接案方透明月費，直接聯繫零抽成！",
   heroTags: "",
-  browseJobs: "🚀 我是 Freelancer：探索最新專案",
-  postJob: "💼 我是發案方：免費發佈工作",
+  browseJobs: "我是 Freelancer：探索最新專案",
+  postJob: "我是發案方：免費發佈工作",
   heroEmailHint: "只要一個電子郵件地址就能開始",
   usp: [
     { icon: "mail-outline", title: "電子郵件即用", sub: "30 秒完成註冊" },
