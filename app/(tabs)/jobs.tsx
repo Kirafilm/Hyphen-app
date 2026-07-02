@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
+import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories, jobLocations } from "@/lib/mock-data";
@@ -257,8 +258,10 @@ export default function JobsScreen() {
   );
 
   return (
-    <AppScreen refreshControl={refreshControl} contentContainerStyle={{ paddingBottom: 32 }}>
-      {pageContent}
+    <AppScreen>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }} refreshControl={refreshControl}>
+        {pageContent}
+      </ScreenScroll>
     </AppScreen>
   );
 }
