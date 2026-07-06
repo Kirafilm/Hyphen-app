@@ -181,6 +181,7 @@ export const messages = {
     budget: "预算范围",
     budgetHint: "依工作地点显示当地货币预算",
     budgetNegotiable: "预算可商议",
+    remoteWork: "远程工作",
     selectLocation: "选择工作地点",
     selectBudget: "选择预算范围",
     skillsLabel: "所需技能",
@@ -466,6 +467,7 @@ export const messages = {
     家居工程: { name: "家居工程", desc: "装修、维修、水电" },
     學科補習: { name: "学科补习", desc: "中小学、公开考试补习" },
     興趣學習: { name: "兴趣学习", desc: "语言、艺术、生活技能" },
+    運動訓練: { name: "运动训练", desc: "健身、球类、瑜伽、体能教练" },
     其他: { name: "其他", desc: "其他类型工作" },
   },
   locations: {
@@ -474,5 +476,6 @@ export const messages = {
     台灣: "台湾",
     新加坡: "新加坡",
     英國: "英国",
+    遙距工作: "远程工作",
   },
 } satisfies Messages;

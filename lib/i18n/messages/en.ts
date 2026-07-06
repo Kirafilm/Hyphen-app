@@ -186,6 +186,7 @@ export const messages = {
     budget: "Budget range",
     budgetHint: "Budget shown in local currency for the selected location",
     budgetNegotiable: "Budget negotiable",
+    remoteWork: "Remote work",
     selectLocation: "Select location",
     selectBudget: "Select budget range",
     skillsLabel: "Skills required",
@@ -482,6 +483,7 @@ export const messages = {
     家居工程: { name: "Home improvement", desc: "Renovation, repairs, plumbing & electrical" },
     學科補習: { name: "Tutoring", desc: "School subjects, exam prep" },
     興趣學習: { name: "Hobbies & skills", desc: "Languages, arts, life skills" },
+    運動訓練: { name: "Sports & fitness coaching", desc: "Gym, ball sports, yoga, personal training" },
     其他: { name: "Other", desc: "Other job types" },
   },
   locations: {
@@ -490,5 +492,6 @@ export const messages = {
     台灣: "Taiwan",
     新加坡: "Singapore",
     英國: "United Kingdom",
+    遙距工作: "Remote work",
   },
 } satisfies Messages;

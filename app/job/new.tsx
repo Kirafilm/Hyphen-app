@@ -50,6 +50,7 @@ export default function PostJobScreen() {
     location: "",
     skills: "",
     isNegotiable: false,
+    isRemoteWork: false,
     contactPerson: "",
     contactEmail: "",
     contactPhone: "",
@@ -123,7 +124,9 @@ export default function PostJobScreen() {
       budgetMin: budget.min,
       budgetMax: budget.max,
       currency: budget.currency,
-      location: formData.location || defaultJobLocationForLocale(locale),
+      location: formData.isRemoteWork
+        ? "遙距工作"
+        : formData.location || defaultJobLocationForLocale(locale),
       skills,
       clientName: user?.name?.trim() || "匿名",
       ...(contactPerson ? { contactPerson } : {}),
@@ -452,6 +455,14 @@ export default function PostJobScreen() {
                   ))}
                 </View>
               )}
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
+                <Switch
+                  value={formData.isRemoteWork}
+                  onValueChange={(value) => updateField("isRemoteWork", value)}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                />
+                <Text style={{ color: colors.foreground, fontSize: 14, marginLeft: 8 }}>{t("jobNew.remoteWork")}</Text>
+              </View>
             </View>
 
             {/* Budget */}

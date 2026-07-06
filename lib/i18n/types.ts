@@ -201,6 +201,7 @@ export type Messages = {
     budget: string;
     budgetHint: string;
     budgetNegotiable: string;
+    remoteWork: string;
     selectLocation: string;
     selectBudget: string;
     skillsLabel: string;
