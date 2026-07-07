@@ -45,11 +45,12 @@ export function mobileSubscriptionFromCustomerInfo(
 
   const first = Object.values(active)[0];
   if (first) {
+    const plan = planFromProductId(first.productIdentifier ?? "");
     const expiresAt = first.expirationDate ? new Date(first.expirationDate) : null;
-    if (!expiresAt || expiresAt.getTime() > Date.now()) {
+    if (plan && (!expiresAt || expiresAt.getTime() > Date.now())) {
       return {
-        plan: "monthly",
-        expiresAt: expiresAt ?? new Date(Date.now() + planDurationMs("monthly")),
+        plan,
+        expiresAt: expiresAt ?? new Date(Date.now() + planDurationMs(plan)),
       };
     }
   }

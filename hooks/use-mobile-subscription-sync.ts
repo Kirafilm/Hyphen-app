@@ -36,7 +36,9 @@ export function useMobileSubscriptionSync() {
 
       if (isAuthenticated) {
         try {
-          await syncFromStore.mutateAsync();
+          await syncFromStore.mutateAsync(
+            payload ? { plan: payload.plan, expiresAt: payload.expiresAt } : undefined,
+          );
           setLastMessage(null);
           return { ok: true, message: null };
         } catch (err) {

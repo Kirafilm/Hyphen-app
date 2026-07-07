@@ -6,6 +6,7 @@ import { ENV } from "./env";
 import {
   fetchActiveSubscriptionFromRevenueCatForUser,
   isRevenueCatApiConfigured,
+  mergeClientSubscriptionHint,
 } from "./revenuecat";
 import { resolveSubscriptionStatus } from "./subscriptionStatus";
 import { getStripeClient, isStripeConfigured, stripeCheckoutUrls, stripePortalReturnUrl, stripePriceIdForPlan } from "./stripe";
@@ -89,32 +90,49 @@ export const subscriptionRouter = router({
   }),
 
   /** Verify App Store / Play subscription with RevenueCat and mirror it into our DB. */
-  syncFromStore: protectedProcedure.mutation(async ({ ctx }) => {
-    const openId = ctx.user.openId?.trim();
-    if (!openId) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "缺少使用者 ID" });
-    }
-    if (!isRevenueCatApiConfigured()) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "API 未設定 REVENUECAT_SECRET_API_KEY，無法向 RevenueCat 查詢。",
-      });
-    }
+  syncFromStore: protectedProcedure
+    .input(
+      z
+        .object({
+          plan: paidPlanSchema.optional(),
+          expiresAt: z.coerce.date().optional(),
+        })
+        .optional(),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const openId = ctx.user.openId?.trim();
+      if (!openId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "缺少使用者 ID" });
+      }
+      if (!isRevenueCatApiConfigured()) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "API 未設定 REVENUECAT_SECRET_API_KEY，無法向 RevenueCat 查詢。",
+        });
+      }
 
-    const active = await fetchActiveSubscriptionFromRevenueCatForUser({
-      openId,
-      email: ctx.user.email,
-    });
-    if (!active) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "目前沒有有效訂閱。若剛完成付款，請稍等片刻後再試。",
-      });
-    }
+      const clientHint =
+        input?.plan && input.expiresAt
+          ? { plan: input.plan, expiresAt: input.expiresAt }
+          : null;
 
-    await db.setSubscriptionStatus(ctx.user.id, { plan: active.plan, expiresAt: active.expiresAt });
-    return { active: true, plan: active.plan, expiresAt: active.expiresAt };
-  }),
+      const active = mergeClientSubscriptionHint(
+        await fetchActiveSubscriptionFromRevenueCatForUser({
+          openId,
+          email: ctx.user.email,
+        }),
+        clientHint,
+      );
+      if (!active) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "目前沒有有效訂閱。若剛完成付款，請稍等片刻後再試。",
+        });
+      }
+
+      await db.setSubscriptionStatus(ctx.user.id, { plan: active.plan, expiresAt: active.expiresAt });
+      return { active: true, plan: active.plan, expiresAt: active.expiresAt };
+    }),
 
   createStripeCheckout: protectedProcedure
     .input(z.object({ plan: paidPlanSchema }))

@@ -247,6 +247,8 @@ export const messages = {
     statusTitle: "Your subscription",
     planLabel: "Plan: ",
     expiresLabel: "Expires: ",
+    renewsAtLabel: "Renews: ",
+    billingPeriodLabel: "Billing period: ",
     choosePlan: "Choose a plan",
     webStripeHint: "Web checkout uses Stripe. The same account unlocks contacts on the app too.",
     subscribed: "Subscribed",

@@ -88,25 +88,24 @@ type RevenueCatV2Subscription = {
   } | null;
 };
 
-type RevenueCatV2ActiveEntitlement = {
-    environment?: string;
-    entitlement_id?: string | null;
-  expires_at?: number | null;
-  lookup_key?: string | null;
-};
-
 type RevenueCatV2ListResponse<T> = {
   items?: T[] | null;
 };
+
+function parseRevenueCatTimestamp(value: number): Date | null {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  // RevenueCat v2 uses milliseconds; guard against accidental seconds values.
+  const ms = value < 1_000_000_000_000 ? value * 1000 : value;
+  const date = new Date(ms);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 function parseSubscriptionRecord(
   subscription: RevenueCatV2Subscription,
 ): RevenueCatActiveSubscription | null {
   const endsAtMs = subscription.current_period_ends_at;
-  const fallbackExpiresAt =
-    typeof endsAtMs === "number" && Number.isFinite(endsAtMs)
-      ? new Date(endsAtMs)
-      : new Date(Date.now() + planToDurationMs("monthly"));
+  const fallbackExpiresAt = typeof endsAtMs === "number" ? parseRevenueCatTimestamp(endsAtMs) : null;
+  if (!fallbackExpiresAt) return null;
 
   const periodActive = fallbackExpiresAt.getTime() > Date.now();
   if (!subscription.gives_access && !periodActive) return null;
@@ -116,9 +115,6 @@ function parseSubscriptionRecord(
   if (pendingStoreId) storeIdentifiers.push(pendingStoreId);
 
   for (const entitlement of subscription.entitlements?.items ?? []) {
-    if (entitlement.lookup_key && isProEntitlementKey(entitlement.lookup_key) && periodActive) {
-      return { plan: "monthly", expiresAt: fallbackExpiresAt };
-    }
     for (const product of entitlement.products?.items ?? []) {
       if (product.store_identifier) storeIdentifiers.push(product.store_identifier);
     }
@@ -132,7 +128,41 @@ function parseSubscriptionRecord(
     return { plan, expiresAt: fallbackExpiresAt };
   }
 
-  return { plan: "monthly", expiresAt: fallbackExpiresAt };
+  return null;
+}
+
+function isBetterSubscription(
+  candidate: RevenueCatActiveSubscription,
+  current: RevenueCatActiveSubscription | null,
+): boolean {
+  if (!current) return true;
+  if (candidate.expiresAt.getTime() !== current.expiresAt.getTime()) {
+    return candidate.expiresAt.getTime() > current.expiresAt.getTime();
+  }
+  if (candidate.plan === "yearly" && current.plan === "monthly") return true;
+  return false;
+}
+
+export function mergeClientSubscriptionHint(
+  server: RevenueCatActiveSubscription | null,
+  client?: { plan: Exclude<SubscriptionPlan, "none">; expiresAt: Date } | null,
+): RevenueCatActiveSubscription | null {
+  if (!client || client.expiresAt.getTime() <= Date.now()) return server;
+  if (!server) return client;
+
+  if (client.plan === "yearly" && server.plan === "monthly") {
+    return {
+      plan: "yearly",
+      expiresAt:
+        client.expiresAt.getTime() > server.expiresAt.getTime() ? client.expiresAt : server.expiresAt,
+    };
+  }
+
+  if (client.expiresAt.getTime() > server.expiresAt.getTime()) {
+    return { ...server, expiresAt: client.expiresAt };
+  }
+
+  return server;
 }
 
 async function fetchActiveSubscriptionFromRevenueCatV1(
@@ -200,43 +230,12 @@ async function fetchActiveSubscriptionFromRevenueCatV2(
   for (const subscription of data.items ?? []) {
     const parsed = parseSubscriptionRecord(subscription);
     if (!parsed) continue;
-    if (!best || parsed.expiresAt.getTime() > best.expiresAt.getTime()) {
+    if (isBetterSubscription(parsed, best)) {
       best = parsed;
     }
   }
 
   return best;
-}
-
-async function fetchActiveSubscriptionFromRevenueCatV2Entitlements(
-  appUserId: string,
-  secret: string,
-  projectId: string,
-): Promise<RevenueCatActiveSubscription | null> {
-  const res = await fetch(
-    `https://api.revenuecat.com/v2/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(appUserId)}/active_entitlements`,
-    { headers: revenueCatAuthHeaders(secret) },
-  );
-
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.warn("[revenuecat] v2 active_entitlements lookup failed:", res.status, body.slice(0, 200));
-    return null;
-  }
-
-  const data = (await res.json()) as RevenueCatV2ListResponse<RevenueCatV2ActiveEntitlement>;
-  for (const entitlement of data.items ?? []) {
-    const expiresAt =
-      typeof entitlement.expires_at === "number" && Number.isFinite(entitlement.expires_at)
-        ? new Date(entitlement.expires_at)
-        : new Date(Date.now() + planToDurationMs("monthly"));
-    if (expiresAt.getTime() <= Date.now()) continue;
-
-    return { plan: "monthly", expiresAt };
-  }
-
-  return null;
 }
 
 export type RevenueCatActiveSubscription = {
@@ -272,24 +271,23 @@ export async function fetchActiveSubscriptionFromRevenueCat(
   const secret = revenueCatSecretKey();
   if (!secret) return null;
 
-  const projectId = revenueCatProjectId();
-  if (projectId) {
-    const environments: Array<"production" | "sandbox"> =
-      process.env.NODE_ENV === "production" ? ["production"] : ["production", "sandbox"];
-    for (const environment of environments) {
-      const v2 = await fetchActiveSubscriptionFromRevenueCatV2(appUserId, secret, projectId, environment);
-      if (v2) return v2;
-    }
+  const v1 = await fetchActiveSubscriptionFromRevenueCatV1(appUserId, secret);
+  if (v1) return v1;
 
-    const entitlements = await fetchActiveSubscriptionFromRevenueCatV2Entitlements(
-      appUserId,
-      secret,
-      projectId,
-    );
-    if (entitlements) return entitlements;
+  const projectId = revenueCatProjectId();
+  if (!projectId) return null;
+
+  const environments: Array<"production" | "sandbox"> =
+    process.env.NODE_ENV === "production" ? ["production", "sandbox"] : ["production", "sandbox"];
+  let best: RevenueCatActiveSubscription | null = null;
+  for (const environment of environments) {
+    const v2 = await fetchActiveSubscriptionFromRevenueCatV2(appUserId, secret, projectId, environment);
+    if (v2 && isBetterSubscription(v2, best)) {
+      best = v2;
+    }
   }
 
-  return fetchActiveSubscriptionFromRevenueCatV1(appUserId, secret);
+  return best;
 }
 
 async function findRevenueCatCustomerIdsByEmail(email: string): Promise<string[]> {

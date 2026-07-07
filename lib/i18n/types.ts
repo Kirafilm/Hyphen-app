@@ -261,6 +261,8 @@ export type Messages = {
     statusTitle: string;
     planLabel: string;
     expiresLabel: string;
+    renewsAtLabel: string;
+    billingPeriodLabel: string;
     choosePlan: string;
     webStripeHint: string;
     subscribed: string;

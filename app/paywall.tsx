@@ -21,6 +21,11 @@ import {
   type PurchasesStoreProduct,
 } from "@/lib/revenuecat";
 import { mobileSubscriptionFromCustomerInfo } from "@/lib/subscription-sync";
+import {
+  formatSubscriptionExpiry,
+  resolveDisplayedSubscription,
+  type SubscriptionPlan,
+} from "@/lib/subscription-display";
 import { trpc } from "@/lib/trpc";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
@@ -61,13 +66,19 @@ function setPaywallError(
 }
 
 function planDisplayTitle(
-  plan: "monthly" | "yearly" | null,
+  plan: SubscriptionPlan | null,
   fallback: string,
   t: (key: string) => string,
 ) {
   if (plan === "monthly") return t("paywall.planMonthly");
   if (plan === "yearly") return t("paywall.planYearly");
   return fallback;
+}
+
+function billingPeriodForPlan(plan: SubscriptionPlan | null, t: (key: string) => string) {
+  if (plan === "monthly") return t("paywall.lengthMonth");
+  if (plan === "yearly") return t("paywall.lengthYear");
+  return "—";
 }
 
 function LaunchPromoBadge({ colors, badge }: { colors: ReturnType<typeof useColors>; badge: string }) {
@@ -243,15 +254,29 @@ export default function PaywallScreen() {
     () => mobileSubscriptionFromCustomerInfo(customerInfo),
     [customerInfo],
   );
+  const displayedSubscription = useMemo(
+    () =>
+      resolveDisplayedSubscription({
+        serverPlan: meQuery.data?.plan,
+        serverExpiresAt: meQuery.data?.expiresAt,
+        local: localStoreSubscription,
+        preferLocal: Platform.OS !== "web",
+      }),
+    [localStoreSubscription, meQuery.data?.expiresAt, meQuery.data?.plan],
+  );
   const isSubscribed =
     Platform.OS === "web"
       ? Boolean(meQuery.data?.active)
       : Boolean(meQuery.data?.active) || Boolean(localStoreSubscription);
-  const subscriptionExpiresAt = meQuery.data?.expiresAt
-    ? new Date(meQuery.data.expiresAt).toLocaleString()
-    : localStoreSubscription?.expiresAt
-      ? localStoreSubscription.expiresAt.toLocaleString()
-      : "—";
+  const subscriptionPlanLabel = planDisplayTitle(
+    displayedSubscription.plan,
+    meQuery.data?.plan ?? t("paywall.planFallback"),
+    t,
+  );
+  const subscriptionBillingPeriod = billingPeriodForPlan(displayedSubscription.plan, t);
+  const subscriptionRenewsAt = displayedSubscription.expiresAt
+    ? formatSubscriptionExpiry(displayedSubscription.expiresAt, locale)
+    : "—";
   const requiresWebLogin = Platform.OS === "web" && !isAuthenticated;
 
   const invalidateJobQueries = async () => {
@@ -579,11 +604,15 @@ export default function PaywallScreen() {
                     <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>{t("paywall.statusTitle")}</Text>
                     <Text style={{ color: colors.muted, fontSize: 14 }}>
                       {t("paywall.planLabel")}
-                      {meQuery.data?.plan ?? localStoreSubscription?.plan ?? t("paywall.planFallback")}
+                      {subscriptionPlanLabel}
                     </Text>
                     <Text style={{ color: colors.muted, fontSize: 14 }}>
-                      {t("paywall.expiresLabel")}
-                      {subscriptionExpiresAt}
+                      {t("paywall.billingPeriodLabel")}
+                      {subscriptionBillingPeriod}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 14 }}>
+                      {t("paywall.renewsAtLabel")}
+                      {subscriptionRenewsAt}
                     </Text>
                   </View>
                 ) : null}
@@ -689,7 +718,7 @@ export default function PaywallScreen() {
                     <Text style={{ color: colors.foreground, fontWeight: "bold", fontSize: 18 }}>{t("paywall.manageTitle")}</Text>
                     <View style={{ backgroundColor: `${colors.primary}1A`, borderRadius: 8, padding: 16, borderWidth: 1, borderColor: `${colors.primary}33`, gap: 4 }}>
                       <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>{t("paywall.unlocked")}</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12 }}>{t("paywall.expiresLabel")}{subscriptionExpiresAt}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>{t("paywall.renewsAtLabel")}{subscriptionRenewsAt}</Text>
                     </View>
                     <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>
                       {Platform.OS === "android" ? t("paywall.androidManageHint") : t("paywall.iosManageHint")}
