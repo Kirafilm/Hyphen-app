@@ -23,6 +23,7 @@ import {
 import { mobileSubscriptionFromCustomerInfo } from "@/lib/subscription-sync";
 import {
   formatSubscriptionExpiry,
+  isMeaningfulSubscriptionExpiry,
   resolveDisplayedSubscription,
   type SubscriptionPlan,
 } from "@/lib/subscription-display";
@@ -249,21 +250,25 @@ export default function PaywallScreen() {
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [rcError, setRcError] = useState<string | null>(null);
+  const [lastPurchasedPlan, setLastPurchasedPlan] = useState<SubscriptionPlan | null>(null);
 
   const localStoreSubscription = useMemo(
     () => mobileSubscriptionFromCustomerInfo(customerInfo),
     [customerInfo],
   );
-  const displayedSubscription = useMemo(
-    () =>
-      resolveDisplayedSubscription({
-        serverPlan: meQuery.data?.plan,
-        serverExpiresAt: meQuery.data?.expiresAt,
-        local: localStoreSubscription,
-        preferLocal: Platform.OS !== "web",
-      }),
-    [localStoreSubscription, meQuery.data?.expiresAt, meQuery.data?.plan],
-  );
+  const displayedSubscription = useMemo(() => {
+    const resolved = resolveDisplayedSubscription({
+      serverPlan: meQuery.data?.plan,
+      serverExpiresAt: meQuery.data?.expiresAt,
+      local: localStoreSubscription,
+      preferLocal: Platform.OS !== "web",
+    });
+    const plan =
+      lastPurchasedPlan && resolved.plan === "monthly" && lastPurchasedPlan === "yearly"
+        ? lastPurchasedPlan
+        : lastPurchasedPlan ?? resolved.plan;
+    return { plan, expiresAt: resolved.expiresAt };
+  }, [lastPurchasedPlan, localStoreSubscription, meQuery.data?.expiresAt, meQuery.data?.plan]);
   const isSubscribed =
     Platform.OS === "web"
       ? Boolean(meQuery.data?.active)
@@ -274,9 +279,10 @@ export default function PaywallScreen() {
     t,
   );
   const subscriptionBillingPeriod = billingPeriodForPlan(displayedSubscription.plan, t);
-  const subscriptionRenewsAt = displayedSubscription.expiresAt
-    ? formatSubscriptionExpiry(displayedSubscription.expiresAt, locale)
-    : "—";
+  const subscriptionRenewsAt =
+    displayedSubscription.expiresAt && isMeaningfulSubscriptionExpiry(displayedSubscription.expiresAt)
+      ? formatSubscriptionExpiry(displayedSubscription.expiresAt, locale)
+      : t("paywall.autoRenews");
   const requiresWebLogin = Platform.OS === "web" && !isAuthenticated;
 
   const invalidateJobQueries = async () => {
@@ -389,6 +395,8 @@ export default function PaywallScreen() {
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setRcError(null);
     setPurchasingId(pkg.identifier);
+    const purchasedPlan = planFromProductId(pkg.product?.identifier ?? pkg.identifier);
+    if (purchasedPlan) setLastPurchasedPlan(purchasedPlan);
     try {
       const result = await revenueCatPurchasePackage(pkg);
       const nextCustomerInfo = result?.customerInfo ?? null;
@@ -408,6 +416,8 @@ export default function PaywallScreen() {
   const handlePurchaseProduct = async (product: PurchasesStoreProduct) => {
     setRcError(null);
     setPurchasingId(product.identifier);
+    const purchasedPlan = planFromProductId(product.identifier);
+    if (purchasedPlan) setLastPurchasedPlan(purchasedPlan);
     try {
       const result = await revenueCatPurchaseStoreProduct(product);
       const nextCustomerInfo = result?.customerInfo ?? null;

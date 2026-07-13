@@ -244,6 +244,7 @@ export const messages = {
     expiresLabel: "到期：",
     renewsAtLabel: "下次續期：",
     billingPeriodLabel: "訂閱週期：",
+    autoRenews: "自動續期",
     choosePlan: "選擇訂閱",
     webStripeHint:
       "付款由 Stripe 安全處理。訂閱會自動續期。如需取消或更改方案，請點擊「管理訂閱」進入 Stripe 安全頁面自行操作。頁面顯示新台幣參考價，實際扣款金額與幣別以 Stripe 結帳頁為準。",

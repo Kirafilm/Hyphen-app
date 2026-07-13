@@ -249,6 +249,7 @@ export const messages = {
     expiresLabel: "Expires: ",
     renewsAtLabel: "Renews: ",
     billingPeriodLabel: "Billing period: ",
+    autoRenews: "Auto-renews",
     choosePlan: "Choose a plan",
     webStripeHint: "Web checkout uses Stripe. The same account unlocks contacts on the app too.",
     subscribed: "Subscribed",

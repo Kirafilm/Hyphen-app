@@ -243,6 +243,7 @@ export const messages = {
     expiresLabel: "到期：",
     renewsAtLabel: "下次續期：",
     billingPeriodLabel: "訂閱週期：",
+    autoRenews: "自動續期",
     choosePlan: "選擇訂閱",
     webStripeHint: "網頁版使用 Stripe 付款。同一帳戶在 App 內購買亦可解鎖聯絡資訊。",
     subscribed: "已訂閱",

@@ -56,3 +56,9 @@ export function formatSubscriptionExpiry(date: Date, locale: string): string {
     minute: "2-digit",
   });
 }
+
+/** Sandbox / post-purchase payloads may briefly return purchase time instead of renewal time. */
+export function isMeaningfulSubscriptionExpiry(expiresAt: Date | null): boolean {
+  if (!expiresAt) return false;
+  return expiresAt.getTime() - Date.now() > 2 * 60 * 1000;
+}
