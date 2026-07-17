@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemo } from "react";
 import { formatJobSchedule } from "@/lib/job-schedule";
+import { formatJobBudget } from "@/lib/job-locations";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 import { useLocale } from "@/lib/i18n/locale-provider";
 
@@ -48,11 +49,7 @@ export default function JobDetailScreen() {
 
   const budgetText = useMemo(() => {
     if (!job) return "";
-    const min = job.budget.min;
-    const max = job.budget.max;
-    const invalid = !Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0 || max < min;
-    if (invalid) return `${job.budget.currency} $${t("jobDetail.budgetPending")}`;
-    return `${job.budget.currency} $${min.toLocaleString()}-${max.toLocaleString()}`;
+    return formatJobBudget(job.budget, { pendingLabel: t("jobDetail.budgetPending") });
   }, [job, t]);
 
   const scheduleDisplay = useMemo(() => {

@@ -10,7 +10,7 @@ import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories, jobLocations } from "@/lib/mock-data";
-import { isJobLocation } from "@/lib/job-locations";
+import { isJobLocation, formatJobBudget } from "@/lib/job-locations";
 import { translateCategory, translateLocation } from "@/lib/i18n/helpers";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { formatJobSchedule } from "@/lib/job-schedule";
@@ -62,16 +62,8 @@ export default function JobsScreen() {
     );
   });
 
-  const formatBudget = (budget: { currency: string; min: number; max: number }) => {
-    const invalid =
-      !Number.isFinite(budget.min) ||
-      !Number.isFinite(budget.max) ||
-      budget.min <= 0 ||
-      budget.max <= 0 ||
-      budget.max < budget.min;
-    if (invalid) return `${budget.currency} $${t("jobDetail.budgetPending")}`;
-    return `${budget.currency} $${budget.min.toLocaleString()}-${budget.max.toLocaleString()}`;
-  };
+  const formatBudget = (budget: { currency: string; min: number; max: number }) =>
+    formatJobBudget(budget, { pendingLabel: t("jobDetail.budgetPending") });
 
   const pad = screenPaddingHorizontal();
   const refreshControl = (

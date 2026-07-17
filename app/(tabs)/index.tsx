@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories } from "@/lib/mock-data";
+import { formatJobBudget } from "@/lib/job-locations";
 import { formatJobSchedule } from "@/lib/job-schedule";
 import { formatPublishedDate } from "@/lib/utils";
 import { AppScreen } from "@/components/app-screen";
@@ -18,16 +19,8 @@ export default function HomeScreen() {
   const jobsQuery = useJobsList();
   const latestJobs = useMemo(() => (jobsQuery.data ?? []).slice(0, 10), [jobsQuery.data]);
 
-  const formatBudget = (budget: { currency: string; min: number; max: number }) => {
-    const invalid =
-      !Number.isFinite(budget.min) ||
-      !Number.isFinite(budget.max) ||
-      budget.min <= 0 ||
-      budget.max <= 0 ||
-      budget.max < budget.min;
-    if (invalid) return `${budget.currency} $待確認`;
-    return `${budget.currency} $${budget.min.toLocaleString()}-${budget.max.toLocaleString()}`;
-  };
+  const formatBudget = (budget: { currency: string; min: number; max: number }) =>
+    formatJobBudget(budget, { pendingLabel: "待確認" });
 
   return (
     <AppScreen>

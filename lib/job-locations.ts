@@ -103,3 +103,27 @@ export function isBudgetRangeValidForLocation(location: string, label: string): 
   if (!label) return false;
   return getBudgetRangesForLocation(location).includes(label);
 }
+
+function currencySymbol(currency: string): string {
+  return currency === "GBP" ? "£" : "$";
+}
+
+/** Format stored budget for UI. Open-ended tiers are saved as min === max (e.g. HKD $50,000+). */
+export function formatJobBudget(
+  budget: { currency: string; min: number; max: number },
+  options?: { pendingLabel?: string },
+): string {
+  const { currency, min, max } = budget;
+  const symbol = currencySymbol(currency);
+  const invalid =
+    !Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0 || max < min;
+  if (invalid) {
+    return `${currency} ${symbol}${options?.pendingLabel ?? "—"}`;
+  }
+
+  const fmt = (n: number) => n.toLocaleString("en-US");
+  if (min === max) {
+    return `${currency} ${symbol}${fmt(min)}+`;
+  }
+  return `${currency} ${symbol}${fmt(min)}-${fmt(max)}`;
+}
