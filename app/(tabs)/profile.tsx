@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppScreen } from "@/components/app-screen";
+import { AdSenseBanner } from "@/components/adsense-banner";
 import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
@@ -214,7 +215,11 @@ export default function ProfileScreen() {
             {isAuthenticated && <MenuRow icon="log-out" label={t("profile.menuLogout")} onPress={() => logout()} danger />}
           </View>
 
-          <View style={{ paddingHorizontal: pad, paddingTop: 24 }}>
+          <View style={{ paddingHorizontal: pad, maxWidth: isDesktopWeb ? 720 : undefined, alignSelf: isDesktopWeb ? "center" : "stretch", width: isDesktopWeb ? "100%" : undefined }}>
+            <AdSenseBanner />
+          </View>
+
+          <View style={{ paddingHorizontal: pad, paddingTop: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>© Hyphen - All Rights Reserved</Text>
           </View>
         </ScreenScroll>
