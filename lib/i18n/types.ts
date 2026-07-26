@@ -344,10 +344,16 @@ export type Messages = {
     ctaBody: string;
     ctaSignup: string;
     ctaBrowse: string;
+    mbtiLabel: string;
+    mbtiTitle: string;
+    mbtiBody: string;
+    mbtiCta: string;
     footerAbout: string;
     footerPlatform: string;
     footerCategories: string;
     footerAboutCol: string;
+    footerAppStoreTitle: string;
+    footerAppStoreHint: string;
     footerLinks: {
       browse: string;
       post: string;

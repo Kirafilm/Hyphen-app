@@ -149,11 +149,17 @@ export const homeTw = {
   ctaBody: "30 秒完成註冊。\n你的電子郵件，就是開始接案或發案所需的全部。",
   ctaSignup: "用電子郵件免費註冊",
   ctaBrowse: "或先瀏覽職缺列表",
+  mbtiLabel: "MBTI 職涯配對",
+  mbtiTitle: "了解你的 MBTI",
+  mbtiBody: "兩分鐘測出你的性格類型，發掘更適合你的方向。",
+  mbtiCta: "立即測試",
   footerAbout:
     "Hyphen 是專為 Freelance 與外包案件設計的媒合平台。台灣使用者可透過電子郵件快速註冊，案主免費刊登，接案者訂閱後解鎖聯絡資訊。",
   footerPlatform: "平台",
   footerCategories: "熱門分類",
   footerAboutCol: "關於",
+  footerAppStoreTitle: "App Store",
+  footerAppStoreHint: "掃描下載 iOS App",
   footerLinks: {
     browse: "瀏覽職缺",
     post: "刊登案件",

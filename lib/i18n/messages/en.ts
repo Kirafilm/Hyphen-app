@@ -455,11 +455,17 @@ export const messages = {
     ctaBody: "In 30 seconds you'll be part of Hyphen.\nYour email address is all you need.",
     ctaSignup: "Sign up free with email",
     ctaBrowse: "Or browse freelance jobs first",
+    mbtiLabel: "MBTI career match",
+    mbtiTitle: "Know your MBTI",
+    mbtiBody: "Take a two-minute test and discover the direction that fits you better.",
+    mbtiCta: "Take the test",
     footerAbout:
       "Hong Kong's first zero-friction freelance platform. Email in, no privacy collection — focus on work, not forms.",
     footerPlatform: "Platform",
     footerCategories: "Popular categories",
     footerAboutCol: "About",
+    footerAppStoreTitle: "App Store",
+    footerAppStoreHint: "Scan to download on iOS",
     footerLinks: {
       browse: "Browse jobs",
       post: "Post a job",

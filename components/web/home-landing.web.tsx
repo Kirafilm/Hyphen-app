@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Platform, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { Platform, Text, TouchableOpacity, View, Image, Linking, type ViewStyle } from "react-native";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
 import { AdSenseSlot } from "@/components/web/adsense-slot.web";
@@ -16,6 +16,9 @@ import type { ThemeColorPalette } from "@/lib/_core/theme";
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://api.hyphenjob.com").replace(/\/$/, "");
 const HERO_BG_URI = `${API_BASE}/web-assets/hero-front-page.png`;
+const APP_STORE_URL = "https://apps.apple.com/hk/app/hyphen%E8%87%AA%E7%94%B1%E8%81%B7/id6774014657";
+const APP_STORE_QR = require("../../assets/images/app-store-qr.png");
+const MBTI_URL = "https://mbti.hyphenjob.com/";
 
 function heroOverlayGradient(primary: string, primaryDark: string, primaryDeep: string) {
   const toRgba = (hex: string, alpha: number) => {
@@ -596,6 +599,60 @@ export function HomeLandingWeb({
         </View>
       </View>
 
+      {/* MBTI promo — above final CTA */}
+      <View
+        style={[
+          fullBleed(),
+          {
+            paddingVertical: 56,
+            ...(Platform.OS === "web"
+              ? ({
+                  backgroundImage: "linear-gradient(120deg, #0F172A 0%, #1E1B4B 55%, #312E81 100%)",
+                } as ViewStyle)
+              : { backgroundColor: "#0F172A" }),
+          },
+        ]}
+      >
+        <View
+          style={[
+            sectionInner(),
+            {
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 28,
+            },
+          ]}
+        >
+          <View style={{ flex: 1, minWidth: 260, gap: 10, maxWidth: 560 }}>
+            <Text style={{ fontSize: 12, fontWeight: "700", color: "#A5B4FC", letterSpacing: 1.2, textTransform: "uppercase" }}>
+              {home.mbtiLabel}
+            </Text>
+            <Text style={{ fontSize: 28, fontWeight: "800", color: "#FFFFFF", lineHeight: 36 }}>{home.mbtiTitle}</Text>
+            <Text style={{ fontSize: 15, color: "#CBD5E1", lineHeight: 24 }}>{home.mbtiBody}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => void Linking.openURL(MBTI_URL)}
+            activeOpacity={0.88}
+            accessibilityRole="link"
+            accessibilityLabel={home.mbtiCta}
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 12,
+              paddingHorizontal: 28,
+              paddingVertical: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <Text style={{ color: "#312E81", fontWeight: "800", fontSize: 15 }}>{home.mbtiCta}</Text>
+            <Ionicons name="arrow-forward" size={18} color="#312E81" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Final CTA */}
       <View
         style={[
@@ -666,6 +723,27 @@ export function HomeLandingWeb({
                 ))}
               </View>
             ))}
+            <View style={{ flex: 1, minWidth: 148, alignItems: "flex-end", gap: 10, marginLeft: "auto" }}>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5, textTransform: "uppercase", alignSelf: "flex-end" }}>
+                {home.footerAppStoreTitle}
+              </Text>
+              <TouchableOpacity
+                onPress={() => void Linking.openURL(APP_STORE_URL)}
+                activeOpacity={0.85}
+                accessibilityRole="link"
+                accessibilityLabel={home.footerAppStoreHint}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 12,
+                  padding: 10,
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Image source={APP_STORE_QR} style={{ width: 112, height: 112 }} accessibilityLabel="App Store QR code" />
+                <Text style={{ fontSize: 12, fontWeight: "600", color: "#0F172A", textAlign: "center" }}>{home.footerAppStoreHint}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={{ borderTopWidth: 1, borderTopColor: "#1E293B", paddingTop: 20, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 12 }}>
             <Text style={{ fontSize: 12, color: "#94A3B8" }}>© {new Date().getFullYear()} {t("common.copyright")}</Text>
