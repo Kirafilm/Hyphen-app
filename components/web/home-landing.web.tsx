@@ -620,12 +620,12 @@ export function HomeLandingWeb({
               flexDirection: "row",
               flexWrap: "wrap",
               alignItems: "center",
-              justifyContent: "space-between",
-              gap: 28,
+              justifyContent: "flex-start",
+              gap: 24,
             },
           ]}
         >
-          <View style={{ flex: 1, minWidth: 260, gap: 10, maxWidth: 560 }}>
+          <View style={{ flexShrink: 1, gap: 10, maxWidth: 480 }}>
             <Text style={{ fontSize: 12, fontWeight: "700", color: "#A5B4FC", letterSpacing: 1.2, textTransform: "uppercase" }}>
               {home.mbtiLabel}
             </Text>
@@ -645,6 +645,7 @@ export function HomeLandingWeb({
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
+              flexShrink: 0,
             }}
           >
             <Text style={{ color: "#312E81", fontWeight: "800", fontSize: 15 }}>{home.mbtiCta}</Text>
@@ -723,8 +724,8 @@ export function HomeLandingWeb({
                 ))}
               </View>
             ))}
-            <View style={{ flex: 1, minWidth: 148, alignItems: "flex-end", gap: 10, marginLeft: "auto" }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5, textTransform: "uppercase", alignSelf: "flex-end" }}>
+            <View style={{ flex: 1, minWidth: 148, alignItems: "center", gap: 10, marginLeft: "auto" }}>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5, textTransform: "uppercase", textAlign: "center" }}>
                 {home.footerAppStoreTitle}
               </Text>
               <TouchableOpacity
