@@ -613,25 +613,14 @@ export function HomeLandingWeb({
           },
         ]}
       >
-        <View
-          style={[
-            sectionInner(),
-            {
-              flexDirection: "row",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 24,
-            },
-          ]}
-        >
-          <View style={{ flexShrink: 1, gap: 10, maxWidth: 480 }}>
-            <Text style={{ fontSize: 12, fontWeight: "700", color: "#A5B4FC", letterSpacing: 1.2, textTransform: "uppercase" }}>
-              {home.mbtiLabel}
-            </Text>
-            <Text style={{ fontSize: 28, fontWeight: "800", color: "#FFFFFF", lineHeight: 36 }}>{home.mbtiTitle}</Text>
-            <Text style={{ fontSize: 15, color: "#CBD5E1", lineHeight: 24 }}>{home.mbtiBody}</Text>
-          </View>
+        <View style={[sectionInner(), { alignItems: "center", gap: 16 }]}>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: "#A5B4FC", letterSpacing: 1.2, textTransform: "uppercase", textAlign: "center" }}>
+            {home.mbtiLabel}
+          </Text>
+          <Text style={{ fontSize: 28, fontWeight: "800", color: "#FFFFFF", lineHeight: 36, textAlign: "center" }}>{home.mbtiTitle}</Text>
+          <Text style={{ fontSize: 15, color: "#CBD5E1", lineHeight: 24, textAlign: "center", maxWidth: 480 }}>
+            {home.mbtiBody}
+          </Text>
           <TouchableOpacity
             onPress={() => void Linking.openURL(MBTI_URL)}
             activeOpacity={0.88}
@@ -645,7 +634,7 @@ export function HomeLandingWeb({
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
-              flexShrink: 0,
+              marginTop: 4,
             }}
           >
             <Text style={{ color: "#312E81", fontWeight: "800", fontSize: 15 }}>{home.mbtiCta}</Text>
