@@ -39,13 +39,17 @@ export const privacySectionsZhTW = [
     body: "我們可能使用「Cookies」來改善服務並增強您的線上體驗。Cookies 是自動儲存在您裝置瀏覽器中的小檔案。Cookies 可能用於記住您的偏好設定，收集的資訊為匿名的訪客行為數據，不包含可直接識別您身份的資訊。您可以透過更改瀏覽器的設定來拒絕或禁用 Cookies，但這可能會導致本平台部分功能無法正常運作。",
   },
   {
-    title: "11. 本隱私權政策的修改",
+    title: "11. 廣告服務（Google AdSense／AdMob）",
+    body: "本網站（https://hyphenjob.com）可能展示 Google AdSense 廣告；行動應用程式日後亦可能展示 Google AdMob 廣告。Google 及其合作夥伴可能使用 Cookies 或其他識別碼，根據您的瀏覽紀錄提供個人化廣告。\n\n您可前往 Google 廣告設定（https://adssettings.google.com/）查看或管理個人化廣告偏好，或透過瀏覽器設定限制 Cookies。有關 Google 如何使用資料，請參閱：https://policies.google.com/technologies/ads\n\n我們不會出售您的個人資料。廣告相關技術由第三方（Google）按其隱私權政策處理。若您對廣告展示有任何意見，請電郵 hyphe.office@gmail.com 與我們聯繫。",
+  },
+  {
+    title: "12. 本隱私權政策的修改",
     body: "因應法令變更或服務調整，本公司保留隨時修改本隱私權政策的權利。修改後的政策將發布在本平台上並註明生效日期。請不時訪問本平台以獲取最新資訊。",
   },
-  { title: "12. 當事人權利行使（重要）", body: SECTION_12 },
+  { title: "13. 當事人權利行使（重要）", body: SECTION_12 },
   {
-    title: "13. 聯絡我們",
+    title: "14. 聯絡我們",
     body: "若您對我們的隱私權政策有任何疑問、要求或意見，請致函 hyphe.office@gmail.com 與我們聯繫。在一般情況下，您的要求將在收到並驗證您的身份後 14 個工作日內處理。",
   },
-  { title: "14. 生效日期", body: "本隱私權政策於 2026 年 5 月 25 日起生效。" },
+  { title: "15. 生效日期", body: "本隱私權政策於 2026 年 5 月 25 日起生效；廣告揭露條款於 2026 年 8 月 3 日更新。" },
 ] satisfies LegalSection[];

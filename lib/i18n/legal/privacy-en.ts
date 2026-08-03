@@ -40,16 +40,20 @@ export const privacySectionsEn = [
     body: 'We may use "Cookies" to improve our internet services and enhance your online experience. Cookies are small files automatically stored in your computer\'s web browser and can be retrieved by the application/website. Cookies may be used to remember you and your preferences when you visit the website, and to tailor the application/website to your needs. Information collected by Cookies is anonymous visitor personalisation information and does not include name or address information, or any information that would enable anyone to contact you by telephone, email, or any other means. When using Cookies, we do not collect any personal data from you. You can disable Cookies by changing your web browser settings. Cookies cannot be used to run programmes or transmit viruses to your computer.',
   },
   {
-    title: "11. Changes to This Privacy Policy",
+    title: "11. Advertising (Google AdSense / AdMob)",
+    body: "Our website (https://hyphenjob.com) may display Google AdSense ads. Our mobile apps may in future display Google AdMob ads. Google and its partners may use cookies or other identifiers to serve personalised ads based on your browsing activity.\n\nYou can view or manage personalised ad preferences at Google Ads Settings (https://adssettings.google.com/) or limit cookies in your browser. Learn how Google uses data: https://policies.google.com/technologies/ads\n\nWe do not sell your personal data. Advertising technologies are operated by third parties (Google) under their own privacy policies. For questions about ads on our services, contact hyphe.office@gmail.com.",
+  },
+  {
+    title: "12. Changes to This Privacy Policy",
     body: "If necessary, the Company may update or revise this Privacy Policy in the future. The revised policy will be published on our website with the effective date stated. Please visit our website from time to time for the latest information.",
   },
   {
-    title: "12. Access to Personal Data",
+    title: "13. Access to Personal Data",
     body: "Under the Ordinance, you have the right to request access to and correction of personal data relating to your application. If you wish to exercise these rights, please contact us.",
   },
   {
-    title: "13. Contact Us",
+    title: "14. Contact Us",
     body: "If you have any requests (including opt-out), enquiries, or comments regarding our Privacy Policy or practices, please contact us at hyphe.office@gmail.com. In general, your request or enquiry will be processed within 14 business days after receipt and verification of your identity.",
   },
-  { title: "14. Effective Date", body: "This Privacy Policy is effective from 25 May 2026." },
+  { title: "15. Effective Date", body: "This Privacy Policy is effective from 25 May 2026. The advertising disclosure was updated on 3 August 2026." },
 ] satisfies LegalSection[];

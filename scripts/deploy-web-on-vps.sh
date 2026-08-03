@@ -16,10 +16,21 @@ mkdir -p dist/privacy dist/terms
 cp dist/privacy.html dist/privacy/index.html
 cp dist/terms.html dist/terms/index.html
 
+echo "→ Publisher files (ads.txt / app-ads.txt / robots / sitemap)"
+for f in ads.txt app-ads.txt robots.txt sitemap.xml; do
+  if [[ -f "public/$f" ]]; then
+    cp "public/$f" "dist/$f"
+  fi
+done
+
 echo "→ Installing to $WEB_ROOT ..."
 sudo mkdir -p "$WEB_ROOT"
 sudo rsync -a --delete dist/ "$WEB_ROOT/"
 sudo chown -R ubuntu:ubuntu "$WEB_ROOT" 2>/dev/null || true
+
+echo "→ Verify publisher files:"
+head -1 "$WEB_ROOT/ads.txt" "$WEB_ROOT/app-ads.txt" 2>/dev/null || true
+file -b --mime-type "$WEB_ROOT/ads.txt" "$WEB_ROOT/app-ads.txt" "$WEB_ROOT/robots.txt" 2>/dev/null || true
 
 echo "→ Verify (host):"
 ls -lh "$WEB_ROOT/images/hero-front-page.png" "$WEB_ROOT/index.html"

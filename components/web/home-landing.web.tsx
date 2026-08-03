@@ -155,6 +155,7 @@ export function HomeLandingWeb({
   const goPost = () => router.push("/(tabs)/post");
   const goPrivacy = () => router.push("/privacy");
   const goTerms = () => router.push("/terms");
+  const goAbout = () => router.push("/about");
   const goContact = () => router.push("/contact");
 
   const featuredCategories = categories.slice(0, 8);
@@ -698,6 +699,7 @@ export function HomeLandingWeb({
               {
                 title: home.footerAboutCol,
                 links: [
+                  [home.footerLinks.about, goAbout],
                   [home.footerLinks.contact, goContact],
                   [home.footerLinks.privacy, goPrivacy],
                   [home.footerLinks.terms, goTerms],

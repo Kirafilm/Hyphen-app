@@ -359,6 +359,7 @@ export type Messages = {
       post: string;
       categories: string;
       why: string;
+      about: string;
       contact: string;
       privacy: string;
       terms: string;

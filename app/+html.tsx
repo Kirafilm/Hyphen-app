@@ -29,6 +29,11 @@ export default function Root({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta
+          name="description"
+          content="Hyphen 自由職 — 香港及台灣 Freelance 媒合平台。電郵即用、發案免費、零抽成，讓你專注工作本身。"
+        />
+        <title>Hyphen 自由職</title>
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>

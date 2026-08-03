@@ -21,6 +21,13 @@ for html in dist/*.html; do
   cp "$html" "dist/$base/index.html"
 done
 
+echo "→ Publisher files (ads.txt / app-ads.txt / robots / sitemap)"
+for f in ads.txt app-ads.txt robots.txt sitemap.xml; do
+  if [[ -f "public/$f" ]]; then
+    cp "public/$f" "dist/$f"
+  fi
+done
+
 TARBALL="$ROOT/hyphen-web-dist.tgz"
 # macOS adds com.apple.provenance xattrs that Linux tar warns about on extract
 COPYFILE_DISABLE=1 tar czf "$TARBALL" -C dist .

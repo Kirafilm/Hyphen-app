@@ -40,16 +40,20 @@ export const privacySectionsZhHans = [
     body: "我们可能使用「Cookies」来改善我们的互联网服务并增强您的网上体验。Cookies 是自动储存在您电脑网页浏览器中的小文件，可由应用程序/网站检索。Cookies 可能用于在您访问网站时记住您及您的偏好，并使我们能够根据您的需求量身定制应用程序/网站。Cookies 收集的资讯是匿名的访客个性化设置资讯，不包含姓名或地址资讯，或任何能使任何人透过电话、电子邮件或任何其他方式联络您的资讯。在使用 Cookies 时，我们不会向您收集任何个人资料。您可以透过更改网页浏览器的设置来禁用 Cookies。Cookies 不能用于运行程序或将病毒传送到您的电脑。",
   },
   {
-    title: "11. 本隐私政策的变更",
+    title: "11. 广告服务（Google AdSense／AdMob）",
+    body: "本网站（https://hyphenjob.com）可能展示 Google AdSense 广告；移动应用日后亦可能展示 Google AdMob 广告。Google 及其合作伙伴可能使用 Cookies 或其他识别码，根据您的浏览记录提供个性化广告。\n\n您可前往 Google 广告设置（https://adssettings.google.com/）查看或管理个性化广告偏好，或透过浏览器设置限制 Cookies。有关 Google 如何使用数据，请参阅：https://policies.google.com/technologies/ads\n\n我们不会出售您的个人资料。广告相关技术由第三方（Google）按其隐私政策处理。若您对广告展示有任何意见，请电邮 hyphe.office@gmail.com 与我们联络。",
+  },
+  {
+    title: "12. 本隐私政策的变更",
     body: "如有需要，本公司未来可能会更新或修订本隐私政策。修订后的政策将发布在我们的网站上并注明生效日期。请不时访问我们的网站以获取最新资讯。",
   },
   {
-    title: "12. 查阅个人资料",
+    title: "13. 查阅个人资料",
     body: "根据条例，您有权要求查阅及要求更正与您的申请有关的个人资料。若您欲行使这些权利，请与我们联络。",
   },
   {
-    title: "13. 联络我们",
+    title: "14. 联络我们",
     body: "若您对我们的隐私政策或做法有任何要求（包括选择退出）、查询或意见，请致函 hyphe.office@gmail.com 与我们联络。在一般情况下，您的要求或查询将在收到后及验证您的身份后 14 个工作天内处理。",
   },
-  { title: "14. 生效日期", body: "本隐私政策于 2026 年 5 月 25 日起生效。" },
+  { title: "15. 生效日期", body: "本隐私政策于 2026 年 5 月 25 日起生效；广告披露条款于 2026 年 8 月 3 日更新。" },
 ] satisfies LegalSection[];

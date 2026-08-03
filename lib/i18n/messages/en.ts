@@ -471,6 +471,7 @@ export const messages = {
       post: "Post a job",
       categories: "Categories",
       why: "Why Hyphen",
+      about: "About us",
       contact: "Contact us",
       privacy: "Privacy policy",
       terms: "Terms of use",

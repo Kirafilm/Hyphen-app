@@ -165,6 +165,7 @@ export const homeTw = {
     post: "刊登案件",
     categories: "案件分類",
     why: "為什麼選 Hyphen",
+    about: "關於我們",
     contact: "聯繫我們",
     privacy: "隱私權政策",
     terms: "服務條款",
