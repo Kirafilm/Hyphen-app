@@ -456,6 +456,7 @@ export const messages = {
       categories: "工作分类",
       why: "为什么选择 Hyphen",
       about: "关于我们",
+      guides: "使用指南",
       contact: "联系我们",
       privacy: "隐私条款",
       terms: "使用条款",

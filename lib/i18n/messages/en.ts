@@ -472,6 +472,7 @@ export const messages = {
       categories: "Categories",
       why: "Why Hyphen",
       about: "About us",
+      guides: "Guides",
       contact: "Contact us",
       privacy: "Privacy policy",
       terms: "Terms of use",

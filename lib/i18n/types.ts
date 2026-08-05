@@ -360,6 +360,7 @@ export type Messages = {
       categories: string;
       why: string;
       about: string;
+      guides: string;
       contact: string;
       privacy: string;
       terms: string;
