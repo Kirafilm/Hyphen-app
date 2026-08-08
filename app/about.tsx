@@ -24,7 +24,7 @@ const COPY = {
       },
       {
         h: "私隱與安全",
-        p: "我們只收集提供服務所需的最少資料。網站可能顯示 Google AdSense 廣告；詳情請參閱私隱政策。如有疑問，歡迎透過聯絡我們頁面或電郵 hyphe.office@gmail.com 查詢。",
+        p: "我們只收集提供服務所需的最少資料。網站可能顯示第三方廣告（例如 Adsterra）；詳情請參閱私隱政策。如有疑問，歡迎透過聯絡我們頁面或電郵 hyphe.office@gmail.com 查詢。",
       },
     ],
   },
@@ -46,7 +46,7 @@ const COPY = {
       },
       {
         h: "隱私與安全",
-        p: "我們僅蒐集提供服務所需的最少資料。網站可能顯示 Google AdSense 廣告；詳情請見隱私權政策。如有疑問，請至聯絡我們或來信 hyphe.office@gmail.com。",
+        p: "我們僅蒐集提供服務所需的最少資料。網站可能顯示第三方廣告（例如 Adsterra）；詳情請見隱私權政策。如有疑問，請至聯絡我們或來信 hyphe.office@gmail.com。",
       },
     ],
   },
@@ -68,7 +68,7 @@ const COPY = {
       },
       {
         h: "Privacy and ads",
-        p: "We collect only what we need to run the service. The website may show Google AdSense ads—see our Privacy Policy. Questions: contact page or hyphe.office@gmail.com.",
+        p: "We collect only what we need to run the service. The website may show third-party ads (for example Adsterra)—see our Privacy Policy. Questions: contact page or hyphe.office@gmail.com.",
       },
     ],
   },
@@ -90,7 +90,7 @@ const COPY = {
       },
       {
         h: "隐私与安全",
-        p: "我们只收集提供服务所需的最少资料。网站可能显示 Google AdSense 广告；详情见隐私政策。疑问请通过联系我们页面或电邮 hyphe.office@gmail.com。",
+        p: "我们只收集提供服务所需的最少资料。网站可能显示第三方广告（例如 Adsterra）；详情见隐私政策。疑问请通过联系我们页面或电邮 hyphe.office@gmail.com。",
       },
     ],
   },

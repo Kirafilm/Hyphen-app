@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Platform, Text, TouchableOpacity, View, Image, Linking, type ViewStyle } from "react-native";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
-import { AdSenseSlot } from "@/components/web/adsense-slot.web";
+import { AdsterraSlot } from "@/components/web/adsterra-slot.web";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "@/components/web/constants";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
@@ -557,10 +557,10 @@ export function HomeLandingWeb({
         </View>
       </View>
 
-      {/* AdSense — web only, between platform comparison and FAQ */}
+      {/* Adsterra Native Banner — web only, between platform comparison and FAQ */}
       <View style={[fullBleed(), { backgroundColor: colors.background, paddingVertical: 24 }]}>
         <View style={sectionInner()}>
-          <AdSenseSlot />
+          <AdsterraSlot />
         </View>
       </View>
 

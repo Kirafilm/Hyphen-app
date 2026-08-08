@@ -277,7 +277,7 @@ export const GUIDES: GuideDoc[] = [
           },
           {
             h: "廣告與其他",
-            p: "網站部分頁面可能顯示 Google AdSense 廣告，用以支援免費內容與平台營運；詳見私隱政策。廣告與你的 Freelancer 服務費無關，亦不是成交抽成。",
+            p: "網站部分頁面可能顯示第三方廣告（例如 Adsterra），用以支援免費內容與平台營運；詳見私隱政策。廣告與你的 Freelancer 服務費無關，亦不是成交抽成。",
           },
         ],
       },
@@ -303,7 +303,7 @@ export const GUIDES: GuideDoc[] = [
           },
           {
             h: "廣告",
-            p: "網站可能顯示 AdSense 廣告，與接案服務費無關。詳見隱私權政策。",
+            p: "網站可能顯示第三方廣告（例如 Adsterra），與接案服務費無關。詳見隱私權政策。",
           },
         ],
       },
@@ -329,7 +329,7 @@ export const GUIDES: GuideDoc[] = [
           },
           {
             h: "广告",
-            p: "网站可能显示 AdSense，与服务费无关。详见隐私政策。",
+            p: "网站可能显示第三方广告（例如 Adsterra），与服务费无关。详见隐私政策。",
           },
         ],
       },
@@ -355,7 +355,7 @@ export const GUIDES: GuideDoc[] = [
           },
           {
             h: "Ads",
-            p: "Some web pages may show AdSense ads. They are unrelated to your freelance fees—see the Privacy Policy.",
+            p: "Some web pages may show third-party ads (for example Adsterra). They are unrelated to your freelance fees—see the Privacy Policy.",
           },
         ],
       },
