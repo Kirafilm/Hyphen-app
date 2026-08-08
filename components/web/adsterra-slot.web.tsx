@@ -1,9 +1,10 @@
 import { createElement, useEffect, useRef } from "react";
 import { Platform, Text, View, type ViewStyle } from "react-native";
 
-const ADSTERRA_SCRIPT =
-  "https://pl30741884.effectivecpmnetwork.com/68cb7e66e4404b5749c7db7db8949f76/invoke.js";
-const ADSTERRA_CONTAINER_ID = "container-68cb7e66e4404b5749c7db7db8949f76";
+const AD_KEY = "38293ea339dba5bc588c2356bbff619a";
+const AD_SCRIPT = `https://www.highperformanceformat.com/${AD_KEY}/invoke.js`;
+const AD_WIDTH = 728;
+const AD_HEIGHT = 90;
 
 type AdsterraSlotProps = {
   style?: ViewStyle;
@@ -16,49 +17,47 @@ function isLocalHost(): boolean {
 }
 
 /**
- * Web-only Adsterra Native Banner.
- * Note: Adsterra usually serves inventory only on the approved site domain
- * (hyphenjob.com), so localhost often stays empty even when the code is correct.
+ * Web-only Adsterra Banner (728×90 iframe).
+ * Localhost often stays empty — inventory usually serves on hyphenjob.com only.
  */
 export function AdsterraSlot({ style }: AdsterraSlotProps) {
-  const hostRef = useRef<View>(null);
+  const mountRef = useRef<HTMLDivElement | null>(null);
   const local = Platform.OS === "web" && isLocalHost();
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (typeof document === "undefined" || !mountRef.current) return;
 
-    const container = document.getElementById(ADSTERRA_CONTAINER_ID);
-    if (!container) return;
+    const host = mountRef.current;
+    host.innerHTML = "";
 
-    // Match Adsterra snippet order: container first, then invoke.js next to it.
-    document.querySelectorAll(`script[data-adsterra-invoke="${ADSTERRA_CONTAINER_ID}"]`).forEach((n) => n.remove());
+    // Adsterra iframe units expect atOptions on window before invoke.js runs.
+    (window as Window & { atOptions?: Record<string, unknown> }).atOptions = {
+      key: AD_KEY,
+      format: "iframe",
+      height: AD_HEIGHT,
+      width: AD_WIDTH,
+      params: {},
+    };
 
     const script = document.createElement("script");
+    script.src = `${AD_SCRIPT}?t=${Date.now()}`;
     script.async = true;
-    script.setAttribute("data-cfasync", "false");
-    script.setAttribute("data-adsterra-invoke", ADSTERRA_CONTAINER_ID);
-    script.src = `${ADSTERRA_SCRIPT}?t=${Date.now()}`;
-
-    if (container.parentNode) {
-      container.parentNode.insertBefore(script, container.nextSibling);
-    } else {
-      document.body.appendChild(script);
-    }
+    host.appendChild(script);
 
     return () => {
-      script.remove();
+      host.innerHTML = "";
     };
   }, []);
 
   return (
     <View
-      ref={hostRef}
       style={[
         {
           width: "100%",
-          maxWidth: 728,
+          maxWidth: AD_WIDTH,
           alignSelf: "center",
-          minHeight: local ? 88 : 120,
+          minHeight: AD_HEIGHT,
+          alignItems: "center",
           overflow: "visible",
         },
         style,
@@ -67,25 +66,34 @@ export function AdsterraSlot({ style }: AdsterraSlotProps) {
       {local ? (
         <View
           style={{
+            width: "100%",
+            maxWidth: AD_WIDTH,
+            height: AD_HEIGHT,
             borderWidth: 1,
             borderColor: "#CBD5E1",
             borderStyle: "dashed",
             borderRadius: 8,
-            padding: 16,
             backgroundColor: "#F8FAFC",
-            marginBottom: 8,
+            justifyContent: "center",
+            paddingHorizontal: 12,
+            marginBottom: 4,
           }}
         >
-          <Text style={{ fontSize: 13, color: "#64748B", lineHeight: 20, textAlign: "center" }}>
-            Adsterra 廣告位（本機預覽）{"\n"}
-            多數情況只會喺正式網域 hyphenjob.com 顯示廣告，localhost 常見空白。
+          <Text style={{ fontSize: 12, color: "#64748B", textAlign: "center", lineHeight: 18 }}>
+            Adsterra 728×90（本機預覽）· 正式網域 hyphenjob.com 先會出廣告
           </Text>
         </View>
       ) : null}
       {createElement("div", {
-        id: ADSTERRA_CONTAINER_ID,
-        // Ensure a real DOM node id for the Adsterra crawler/script
-        style: { width: "100%", minHeight: local ? 0 : 90 },
+        ref: (node: HTMLDivElement | null) => {
+          mountRef.current = node;
+        },
+        style: {
+          width: AD_WIDTH,
+          maxWidth: "100%",
+          height: AD_HEIGHT,
+          overflow: "hidden",
+        },
       })}
     </View>
   );
