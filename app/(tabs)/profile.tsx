@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppScreen } from "@/components/app-screen";
-import { AdSenseBanner } from "@/components/adsense-banner";
+import { WebAdBanner } from "@/components/web-ad-banner";
 import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
@@ -216,7 +216,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={{ paddingHorizontal: pad, maxWidth: isDesktopWeb ? 720 : undefined, alignSelf: isDesktopWeb ? "center" : "stretch", width: isDesktopWeb ? "100%" : undefined }}>
-            <AdSenseBanner />
+            <WebAdBanner />
           </View>
 
           <View style={{ paddingHorizontal: pad, paddingTop: 8 }}>

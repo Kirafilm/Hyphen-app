@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 
 import { AppScreen } from "@/components/app-screen";
-import { AdSenseBanner } from "@/components/adsense-banner";
+import { WebAdBanner } from "@/components/web-ad-banner";
 import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { useColors } from "@/hooks/use-colors";
@@ -246,7 +246,7 @@ export default function JobsScreen() {
             ))}
           </View>
         )}
-        <AdSenseBanner style={{ paddingTop: 24, paddingBottom: 8 }} />
+        <WebAdBanner style={{ paddingTop: 24, paddingBottom: 8 }} />
       </View>
     </>
   );

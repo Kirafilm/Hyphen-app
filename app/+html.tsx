@@ -7,7 +7,7 @@ export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="zh-HK">
       <head>
-        {/* Google tag (gtag.js) — Ads conversion; not AdSense inventory */}
+        {/* Google tag (gtag.js) — conversion tracking only; no AdSense/AdMob inventory */}
         <script async src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_AW_ID}`} />
         <script
           dangerouslySetInnerHTML={{

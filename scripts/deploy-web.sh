@@ -21,8 +21,8 @@ for html in dist/*.html; do
   cp "$html" "dist/$base/index.html"
 done
 
-echo "→ Publisher files (ads.txt / app-ads.txt / robots / sitemap)"
-for f in ads.txt app-ads.txt robots.txt sitemap.xml; do
+echo "→ Publisher files (robots / sitemap)"
+for f in robots.txt sitemap.xml; do
   if [[ -f "public/$f" ]]; then
     cp "public/$f" "dist/$f"
   fi
@@ -42,6 +42,8 @@ set -euo pipefail
 sudo mkdir -p '$VPS_WEB_ROOT'
 # NOTE: must be -xzf (with dash). "tar ... xzf" treats xzf as a filename on GNU tar.
 sudo tar -xzf /tmp/hyphen-web-dist.tgz -C '$VPS_WEB_ROOT'
+# Drop retired Google AdSense/AdMob publisher files if present from older deploys
+sudo rm -f '$VPS_WEB_ROOT/ads.txt' '$VPS_WEB_ROOT/app-ads.txt'
 sudo chown -R ubuntu:ubuntu '$VPS_WEB_ROOT' 2>/dev/null || true
 rm -f /tmp/hyphen-web-dist.tgz
 ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs/index.html'
@@ -54,5 +56,5 @@ else
   echo ""
   echo "Upload manually:"
   echo "  scp $TARBALL $VPS_HOST:/tmp/"
-  echo "  ssh $VPS_HOST \"sudo mkdir -p $VPS_WEB_ROOT && sudo tar -xzf /tmp/hyphen-web-dist.tgz -C $VPS_WEB_ROOT && rm -f /tmp/hyphen-web-dist.tgz\""
+  echo "  ssh $VPS_HOST \"sudo mkdir -p $VPS_WEB_ROOT && sudo tar -xzf /tmp/hyphen-web-dist.tgz -C $VPS_WEB_ROOT && sudo rm -f $VPS_WEB_ROOT/ads.txt $VPS_WEB_ROOT/app-ads.txt && rm -f /tmp/hyphen-web-dist.tgz\""
 fi
