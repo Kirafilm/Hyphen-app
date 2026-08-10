@@ -46,7 +46,7 @@ export default function Root({ children }: PropsWithChildren) {
       <body>
         <noscript>
           <div style={{ padding: 24, fontFamily: "system-ui,sans-serif", maxWidth: 720, margin: "0 auto" }}>
-            <h1>Hyphen 自由職</h1>
+            <p style={{ fontSize: 28, fontWeight: 800, margin: "0 0 12px" }}>Hyphen 自由職</p>
             <p>{SEO.defaultDescription}</p>
             <p>
               <a href="/jobs">瀏覽職位</a>

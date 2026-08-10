@@ -11,15 +11,21 @@ echo "→ Exporting web (API: https://api.hyphenjob.com)..."
 mkdir -p node_modules/react-native-css-interop/.cache
 EXPO_PUBLIC_API_BASE_URL=https://api.hyphenjob.com npx expo export -p web --clear
 
-echo "→ Clean URLs (/jobs, /post, …) + App Store /privacy/ /terms/"
-for html in dist/*.html; do
-  base="$(basename "$html" .html)"
+echo "→ Clean URLs (/jobs, /post, /guides/post-job, …) + App Store /privacy/ /terms/"
+# Flatten: dist/foo.html → dist/foo/index.html and dist/a/b.html → dist/a/b/index.html
+while IFS= read -r -d '' html; do
+  rel="${html#dist/}"
+  base="${rel%.html}"
   case "$base" in
     index|+not-found|_sitemap) continue ;;
   esac
+  # Skip files that are already directory indexes
+  if [[ "$(basename "$html")" == "index.html" ]]; then
+    continue
+  fi
   mkdir -p "dist/$base"
-  cp "$html" "dist/$base/index.html"
-done
+  mv "$html" "dist/$base/index.html"
+done < <(find dist -name '*.html' -print0)
 
 echo "→ Publisher files (robots / sitemap)"
 for f in robots.txt sitemap.xml; do

@@ -119,3 +119,59 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
     })),
   };
 }
+
+export function jobPostingJsonLd(input: {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  currency: string;
+  budgetMin: number;
+  budgetMax: number;
+  datePosted?: string | Date | null;
+  clientName?: string | null;
+}) {
+  const path = `/job/${input.id}`;
+  const description =
+    input.description.length > 5000 ? `${input.description.slice(0, 4997)}...` : input.description;
+  const min = Math.max(0, input.budgetMin);
+  const max = Math.max(min, input.budgetMax);
+  const currency = (input.currency || "HKD").toUpperCase();
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: input.title,
+    description,
+    datePosted: input.datePosted
+      ? new Date(input.datePosted).toISOString()
+      : new Date().toISOString(),
+    hiringOrganization: {
+      "@type": "Organization",
+      name: input.clientName?.trim() || "Hyphen 自由職",
+    },
+    jobLocation: {
+      "@type": "Place",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: input.location,
+        addressCountry: input.location.includes("台灣") || input.location.includes("Taiwan") ? "TW" : "HK",
+      },
+    },
+    employmentType: "CONTRACTOR",
+    industry: input.category,
+    url: absoluteUrl(path),
+    directApply: true,
+    baseSalary: {
+      "@type": "MonetaryAmount",
+      currency,
+      value: {
+        "@type": "QuantitativeValue",
+        minValue: min,
+        maxValue: max,
+        unitText: "ONE_TIME",
+      },
+    },
+  };
+}

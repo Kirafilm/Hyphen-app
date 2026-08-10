@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { createElement, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, Image, Linking, type ViewStyle } from "react-native";
 
@@ -143,11 +143,15 @@ export function HomeLandingWeb({
   heroLayout?: "default" | "tw";
 } = {}) {
   const router = useRouter();
+  const pathname = usePathname();
   const colors = useColors();
   const { isAuthenticated } = useAuth();
   const { messages, t } = useLocale();
   const home = homeOverride ?? messages.home;
   const [openFaq, setOpenFaq] = useState(0);
+  // Avoid duplicate <h1> when this landing stays mounted under other routes during static export / tabs.
+  const isPrimaryHome =
+    pathname === "/" || pathname === "/tw" || pathname === "/(tabs)" || pathname === "/(tabs)/index";
 
   const primaryDark = "#5B45E8";
   const primaryDeep = "#4528D4";
@@ -221,7 +225,7 @@ export function HomeLandingWeb({
 
           {Platform.OS === "web" ? (
             createElement(
-              "h1",
+              isPrimaryHome ? "h1" : "p",
               {
                 style: {
                   margin: 0,

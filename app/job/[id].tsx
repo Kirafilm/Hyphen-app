@@ -5,6 +5,7 @@ import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
+import { SeoHead } from "@/components/seo-head";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemo } from "react";
@@ -12,6 +13,7 @@ import { formatJobSchedule } from "@/lib/job-schedule";
 import { formatJobBudget } from "@/lib/job-locations";
 import { isWeb, screenPaddingHorizontal } from "@/lib/web-layout";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { breadcrumbJsonLd, jobPostingJsonLd } from "@/lib/seo";
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -97,6 +99,30 @@ export default function JobDetailScreen() {
 
   return (
     <AppScreen>
+      <SeoHead
+        title={job.title}
+        description={job.description.slice(0, 160)}
+        path={`/job/${job.id}`}
+        jsonLd={[
+          jobPostingJsonLd({
+            id: job.id,
+            title: job.title,
+            description: job.description,
+            category: job.category,
+            location: job.location,
+            currency: job.currency,
+            budgetMin: job.budgetMin,
+            budgetMax: job.budgetMax,
+            datePosted: job.createdAt,
+            clientName: job.clientName,
+          }),
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: t("nav.jobs"), path: "/jobs" },
+            { name: job.title, path: `/job/${job.id}` },
+          ]),
+        ]}
+      />
       <ScreenScroll contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1 }}>
           <PageHeader

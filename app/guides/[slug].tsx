@@ -10,6 +10,11 @@ import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 
+/** Pre-render each guide HTML for static web export / crawlers. */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  return GUIDES.map((guide) => ({ slug: guide.slug }));
+}
+
 export default function GuideArticleScreen() {
   const colors = useColors();
   const { locale } = useLocale();
