@@ -229,8 +229,9 @@ export function HomeLandingWeb({
                   fontWeight: "800",
                   color: "#FFFFFF",
                   textAlign: "center",
-                  lineHeight: heroLayout === "tw" ? 52 : 56,
-                  letterSpacing: -0.5,
+                  // Must use px: raw numbers are CSS multipliers on DOM elements
+                  lineHeight: heroLayout === "tw" ? "52px" : "56px",
+                  letterSpacing: "-0.5px",
                 },
               },
               home.heroTitle,
