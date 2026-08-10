@@ -2,6 +2,7 @@ import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
+import { SeoHead } from "@/components/seo-head";
 import { Text } from "react-native";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { getTermsText } from "@/lib/i18n/legal/terms";
@@ -13,6 +14,12 @@ export default function TermsScreen() {
 
   return (
     <AppScreen>
+      <SeoHead
+        title={t("legal.termsTitle")}
+        description="Hyphen 自由職使用條款：平台服務、訂閱、使用者責任與適用法律說明。"
+        path="/terms"
+        locale={(locale as "zh-HK" | "zh-TW" | "zh-Hans" | "en") || "zh-HK"}
+      />
       <PageHeader title={t("legal.termsTitle")} showBack />
 
       <ScreenScroll contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, paddingBottom: 40 }}>

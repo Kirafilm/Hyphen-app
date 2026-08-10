@@ -2,6 +2,7 @@ import { useColors } from "@/hooks/use-colors";
 import { AppScreen } from "@/components/app-screen";
 import { ScreenScroll } from "@/components/screen-scroll";
 import { PageHeader } from "@/components/page-header";
+import { SeoHead } from "@/components/seo-head";
 import { isEmailJsConfigured, sendContactEmail } from "@/lib/emailjs";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState, type ReactNode } from "react";
@@ -124,6 +125,11 @@ export default function ContactScreen() {
 
   return (
     <AppScreen>
+      <SeoHead
+        title={t("contact.title")}
+        description={t("contact.subtitle")}
+        path="/contact"
+      />
       <PageHeader title={t("contact.title")} subtitle={t("contact.subtitle")} showBack />
 
       <KeyboardAvoidingView

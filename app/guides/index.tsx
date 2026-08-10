@@ -1,9 +1,11 @@
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
+import { SeoHead } from "@/components/seo-head";
 import { useColors } from "@/hooks/use-colors";
 import { GUIDES, guideCopy, guideLabel } from "@/lib/content/guides";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { breadcrumbJsonLd } from "@/lib/seo";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -34,6 +36,16 @@ export default function GuidesIndexScreen() {
 
   return (
     <AppScreen>
+      <SeoHead
+        title={meta.title}
+        description={meta.lead}
+        path="/guides"
+        locale={(locale as "zh-HK" | "zh-TW" | "zh-Hans" | "en") || "zh-HK"}
+        jsonLd={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: meta.title, path: "/guides" },
+        ])}
+      />
       <PageHeader title={meta.title} />
       <ScreenScroll>
         <View style={{ paddingHorizontal: 24, paddingBottom: 40, gap: 16, maxWidth: 720, width: "100%", alignSelf: "center" }}>

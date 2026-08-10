@@ -7,6 +7,7 @@ import { AppScreen } from "@/components/app-screen";
 import { WebAdBanner } from "@/components/web-ad-banner";
 import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
+import { SeoHead } from "@/components/seo-head";
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
 import { categories, jobLocations } from "@/lib/mock-data";
@@ -14,6 +15,7 @@ import { isJobLocation, formatJobBudget } from "@/lib/job-locations";
 import { translateCategory, translateLocation } from "@/lib/i18n/helpers";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { formatJobSchedule } from "@/lib/job-schedule";
+import { breadcrumbJsonLd } from "@/lib/seo";
 import { formatPublishedDate } from "@/lib/utils";
 import { screenPaddingHorizontal, useWebLayout } from "@/lib/web-layout";
 
@@ -119,6 +121,16 @@ export default function JobsScreen() {
 
   const pageContent = (
     <>
+      <SeoHead
+        title={t("jobs.title")}
+        description={t("jobs.subtitle")}
+        path="/jobs"
+        locale={(locale as "zh-HK" | "zh-TW" | "zh-Hans" | "en") || "zh-HK"}
+        jsonLd={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: t("jobs.title"), path: "/jobs" },
+        ])}
+      />
       <PageHeader title={t("jobs.title")} subtitle={isDesktopWeb ? t("jobs.subtitle") : undefined} />
       <View style={{ paddingHorizontal: pad, paddingBottom: 12, gap: 12 }}>
         <View

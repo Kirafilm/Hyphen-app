@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { createElement, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, Image, Linking, type ViewStyle } from "react-native";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
 import { AdsterraSlot } from "@/components/web/adsterra-slot.web";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "@/components/web/constants";
+import { WebHeading } from "@/components/web-heading";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
 import { useLocale } from "@/lib/i18n/locale-provider";
@@ -79,9 +80,12 @@ function SectionHeader({
       <Text style={{ fontSize: 12, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", color: colors.primary }}>
         {label}
       </Text>
-      <Text style={{ fontSize: 32, fontWeight: "800", color: colors.foreground, textAlign: "center", letterSpacing: -0.3 }}>
+      <WebHeading
+        level={2}
+        style={{ fontSize: 32, fontWeight: "800", color: colors.foreground, textAlign: "center", letterSpacing: -0.3 }}
+      >
         {title}
-      </Text>
+      </WebHeading>
       {subtitle ? (
         <Text style={{ fontSize: 16, color: colors.muted, textAlign: "center", maxWidth: 560, lineHeight: 24 }}>{subtitle}</Text>
       ) : null}
@@ -215,11 +219,40 @@ export function HomeLandingWeb({
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>{home.badge}</Text>
           </View>
 
-          <Text style={{ fontSize: heroLayout === "tw" ? 42 : 48, fontWeight: "800", color: "#FFFFFF", textAlign: "center", lineHeight: heroLayout === "tw" ? 52 : 56, letterSpacing: -0.5 }}>
-            {home.heroTitle}
-            {"\n"}
-            <Text style={{ color: heroHighlight }}>{home.heroHighlight}</Text>
-          </Text>
+          {Platform.OS === "web" ? (
+            createElement(
+              "h1",
+              {
+                style: {
+                  margin: 0,
+                  fontSize: heroLayout === "tw" ? 42 : 48,
+                  fontWeight: "800",
+                  color: "#FFFFFF",
+                  textAlign: "center",
+                  lineHeight: heroLayout === "tw" ? 52 : 56,
+                  letterSpacing: -0.5,
+                },
+              },
+              home.heroTitle,
+              createElement("br"),
+              createElement("span", { style: { color: heroHighlight } }, home.heroHighlight),
+            )
+          ) : (
+            <Text
+              style={{
+                fontSize: heroLayout === "tw" ? 42 : 48,
+                fontWeight: "800",
+                color: "#FFFFFF",
+                textAlign: "center",
+                lineHeight: heroLayout === "tw" ? 52 : 56,
+                letterSpacing: -0.5,
+              }}
+            >
+              {home.heroTitle}
+              {"\n"}
+              <Text style={{ color: heroHighlight }}>{home.heroHighlight}</Text>
+            </Text>
+          )}
 
           <Text style={{ fontSize: heroLayout === "tw" ? 17 : 18, color: "rgba(255,255,255,0.85)", textAlign: "center", maxWidth: heroLayout === "tw" ? 640 : 560, lineHeight: 28 }}>
             {home.heroBody}
@@ -659,7 +692,9 @@ export function HomeLandingWeb({
         ]}
       >
         <View style={[sectionInner(), { alignItems: "center", gap: 16 }]}>
-          <Text style={{ fontSize: 36, fontWeight: "800", color: "#FFFFFF", textAlign: "center" }}>{home.ctaTitle}</Text>
+          <WebHeading level={2} style={{ fontSize: 36, fontWeight: "800", color: "#FFFFFF", textAlign: "center" }}>
+            {home.ctaTitle}
+          </WebHeading>
           <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", textAlign: "center", maxWidth: 480, lineHeight: 24 }}>
             {home.ctaBody}
           </Text>

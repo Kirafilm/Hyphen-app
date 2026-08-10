@@ -3,9 +3,11 @@ import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { AppScreen } from "@/components/app-screen";
+import { SeoHead } from "@/components/seo-head";
 import { HomeLandingWeb } from "@/components/web/home-landing.web";
 import { useColors } from "@/hooks/use-colors";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { SEO } from "@/lib/seo";
 
 export default function HomeWebScreen() {
   const router = useRouter();
@@ -17,9 +19,16 @@ export default function HomeWebScreen() {
     router.replace("/tw");
   }, [locale, ready, router]);
 
-  if (!ready || locale === "zh-TW") {
+  // Keep HK landing in static HTML for crawlers. Only gate on confirmed zh-TW redirect.
+  if (ready && locale === "zh-TW") {
     return (
       <AppScreen webScroll webContentWide safeArea={false} edges={[]}>
+        <SeoHead
+          title={SEO.defaultTitle}
+          description={SEO.defaultDescription}
+          path="/"
+          locale="zh-HK"
+        />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 120 }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -29,6 +38,12 @@ export default function HomeWebScreen() {
 
   return (
     <AppScreen webScroll webContentWide safeArea={false} edges={[]}>
+      <SeoHead
+        title={SEO.defaultTitle}
+        description={SEO.defaultDescription}
+        path="/"
+        locale="zh-HK"
+      />
       <HomeLandingWeb />
     </AppScreen>
   );

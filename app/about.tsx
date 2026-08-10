@@ -1,8 +1,11 @@
 import { AppScreen } from "@/components/app-screen";
 import { PageHeader } from "@/components/page-header";
 import { ScreenScroll } from "@/components/screen-scroll";
+import { SeoHead } from "@/components/seo-head";
+import { WebHeading } from "@/components/web-heading";
 import { useColors } from "@/hooks/use-colors";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { breadcrumbJsonLd } from "@/lib/seo";
 import { Text, View } from "react-native";
 
 const COPY = {
@@ -103,13 +106,25 @@ export default function AboutScreen() {
 
   return (
     <AppScreen>
+      <SeoHead
+        title={copy.title}
+        description={copy.lead}
+        path="/about"
+        locale={(locale as "zh-HK" | "zh-TW" | "zh-Hans" | "en") || "zh-HK"}
+        jsonLd={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: copy.title, path: "/about" },
+        ])}
+      />
       <PageHeader title={copy.title} />
       <ScreenScroll>
         <View style={{ paddingHorizontal: 24, paddingBottom: 40, gap: 20, maxWidth: 720, width: "100%", alignSelf: "center" }}>
           <Text style={{ fontSize: 16, lineHeight: 26, color: colors.muted }}>{copy.lead}</Text>
           {copy.sections.map((section) => (
             <View key={section.h} style={{ gap: 8 }}>
-              <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>{section.h}</Text>
+              <WebHeading level={2} style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>
+                {section.h}
+              </WebHeading>
               <Text style={{ fontSize: 15, lineHeight: 24, color: colors.muted }}>{section.p}</Text>
             </View>
           ))}
