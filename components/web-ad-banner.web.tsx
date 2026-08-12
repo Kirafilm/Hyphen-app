@@ -1,10 +1,16 @@
-import { type ViewStyle } from "react-native";
+import { View, type ViewStyle } from "react-native";
+
+import { AdSenseSlot } from "@/components/web/adsense-slot.web";
 
 type WebAdBannerProps = {
   style?: ViewStyle;
 };
 
-/** Web ads disabled (Adsterra removed due to full-page / popunder behavior). */
-export function WebAdBanner(_props: WebAdBannerProps) {
-  return null;
+/** Web-only AdSense banner for shared screens (jobs, profile, …). */
+export function WebAdBanner({ style }: WebAdBannerProps) {
+  return (
+    <View style={[{ width: "100%", paddingVertical: 20 }, style]}>
+      <AdSenseSlot />
+    </View>
+  );
 }
