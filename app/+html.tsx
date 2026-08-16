@@ -62,12 +62,6 @@ export default function Root({ children }: PropsWithChildren) {
           </div>
         </noscript>
         {children}
-        {/* Third-party vignette ad (zone 11588628) */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11588628',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`,
-          }}
-        />
       </body>
     </html>
   );
