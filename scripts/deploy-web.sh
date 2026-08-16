@@ -27,8 +27,8 @@ while IFS= read -r -d '' html; do
   mv "$html" "dist/$base/index.html"
 done < <(find dist -name '*.html' -print0)
 
-echo "→ Publisher files (robots / sitemap)"
-for f in robots.txt sitemap.xml; do
+echo "→ Publisher files (robots / sitemap / sw.js)"
+for f in robots.txt sitemap.xml sw.js; do
   if [[ -f "public/$f" ]]; then
     cp "public/$f" "dist/$f"
   fi
