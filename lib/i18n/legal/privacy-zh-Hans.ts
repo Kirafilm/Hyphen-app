@@ -40,8 +40,8 @@ export const privacySectionsZhHans = [
     body: "我们可能使用「Cookies」来改善我们的互联网服务并增强您的网上体验。Cookies 是自动储存在您电脑网页浏览器中的小文件，可由应用程序/网站检索。Cookies 可能用于在您访问网站时记住您及您的偏好，并使我们能够根据您的需求量身定制应用程序/网站。Cookies 收集的资讯是匿名的访客个性化设置资讯，不包含姓名或地址资讯，或任何能使任何人透过电话、电子邮件或任何其他方式联络您的资讯。在使用 Cookies 时，我们不会向您收集任何个人资料。您可以透过更改网页浏览器的设置来禁用 Cookies。Cookies 不能用于运行程序或将病毒传送到您的电脑。",
   },
   {
-    title: "11. 广告服务（Google AdSense）",
-    body: "本网站（https://hyphenjob.com）可能展示 Google AdSense 广告。Google 及其合作伙伴可能使用 Cookies 或其他识别码，根据您的浏览记录提供个性化广告。\n\n您可前往 Google 广告设置（https://adssettings.google.com/）查看或管理个性化广告偏好，或通过浏览器设置限制 Cookies。有关 Google 如何使用数据，请参阅：https://policies.google.com/technologies/ads\n\n我们不会出售您的个人资料。广告相关技术由第三方（Google）按其隐私政策处理。若您对广告展示有任何意见，请电邮 hyphe.office@gmail.com 与我们联络。",
+    title: "11. 广告服务（第三方广告）",
+    body: "本网站（https://hyphenjob.com）可能展示第三方广告，用以支持平台运营。广告商可能使用 Cookies、像素或其他识别码，以衡量成效或提供较相关的广告内容。\n\n您可通过浏览器设置限制或清除 Cookies。第三方广告服务按其自身隐私政策处理数据；我们不会出售您的个人资料。若您对网站广告展示有任何意见，请电邮 hyphe.office@gmail.com 与我们联络。",
   },
   {
     title: "12. 本隐私政策的变更",

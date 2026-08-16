@@ -39,8 +39,8 @@ export const privacySectionsZhTW = [
     body: "我們可能使用「Cookies」來改善服務並增強您的線上體驗。Cookies 是自動儲存在您裝置瀏覽器中的小檔案。Cookies 可能用於記住您的偏好設定，收集的資訊為匿名的訪客行為數據，不包含可直接識別您身份的資訊。您可以透過更改瀏覽器的設定來拒絕或禁用 Cookies，但這可能會導致本平台部分功能無法正常運作。",
   },
   {
-    title: "11. 廣告服務（Google AdSense）",
-    body: "本網站（https://hyphenjob.com）可能展示 Google AdSense 廣告。Google 及其合作夥伴可能使用 Cookies 或其他識別碼，根據您的瀏覽紀錄提供個人化廣告。\n\n您可前往 Google 廣告設定（https://adssettings.google.com/）查看或管理個人化廣告偏好，或透過瀏覽器設定限制 Cookies。有關 Google 如何使用資料，請參閱：https://policies.google.com/technologies/ads\n\n我們不會出售您的個人資料。廣告相關技術由第三方（Google）按其隱私權政策處理。若您對廣告展示有任何意見，請電郵 hyphe.office@gmail.com 與我們聯繫。",
+    title: "11. 廣告服務（第三方廣告）",
+    body: "本網站（https://hyphenjob.com）可能展示第三方廣告，用以支援平台營運。廣告商可能使用 Cookies、像素或其他識別碼，以衡量成效或提供較相關的廣告內容。\n\n您可透過瀏覽器設定限制或清除 Cookies。第三方廣告服務按其自身隱私權政策處理資料；我們不會出售您的個人資料。若您對網站廣告展示有任何意見，請電郵 hyphe.office@gmail.com 與我們聯繫。",
   },
   {
     title: "12. 本隱私權政策的修改",

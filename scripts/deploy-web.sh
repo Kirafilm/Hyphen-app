@@ -27,8 +27,8 @@ while IFS= read -r -d '' html; do
   mv "$html" "dist/$base/index.html"
 done < <(find dist -name '*.html' -print0)
 
-echo "→ Publisher files (robots / sitemap / ads.txt)"
-for f in robots.txt sitemap.xml ads.txt; do
+echo "→ Publisher files (robots / sitemap)"
+for f in robots.txt sitemap.xml; do
   if [[ -f "public/$f" ]]; then
     cp "public/$f" "dist/$f"
   fi
@@ -48,19 +48,19 @@ set -euo pipefail
 sudo mkdir -p '$VPS_WEB_ROOT'
 # NOTE: must be -xzf (with dash). "tar ... xzf" treats xzf as a filename on GNU tar.
 sudo tar -xzf /tmp/hyphen-web-dist.tgz -C '$VPS_WEB_ROOT'
-# Ensure retired AdMob publisher file is not left from older deploys
-sudo rm -f '$VPS_WEB_ROOT/app-ads.txt'
+# Drop retired Google AdSense/AdMob publisher files if present from older deploys
+sudo rm -f '$VPS_WEB_ROOT/ads.txt' '$VPS_WEB_ROOT/app-ads.txt'
 sudo chown -R ubuntu:ubuntu '$VPS_WEB_ROOT' 2>/dev/null || true
 rm -f /tmp/hyphen-web-dist.tgz
-ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs/index.html' '$VPS_WEB_ROOT/ads.txt'
+ls -lh '$VPS_WEB_ROOT/index.html' '$VPS_WEB_ROOT/jobs/index.html'
 EOF
   echo "→ Verifying deploy..."
-  ssh "$VPS_HOST" "grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html' && grep -q 'Hyphen' '$VPS_WEB_ROOT/index.html' && grep -q '台灣接案' '$VPS_WEB_ROOT/tw/index.html' && grep -q 'pub-2239617378202687' '$VPS_WEB_ROOT/ads.txt'"
-  echo "✓ jobs route + homepage + /tw + ads.txt present"
+  ssh "$VPS_HOST" "grep -q '搜尋職位' '$VPS_WEB_ROOT/jobs/index.html' && grep -q 'Hyphen' '$VPS_WEB_ROOT/index.html' && grep -q '台灣接案' '$VPS_WEB_ROOT/tw/index.html'"
+  echo "✓ jobs route + homepage + /tw present"
   echo "Done. Open https://hyphenjob.com/jobs or https://hyphenjob.com/tw"
 else
   echo ""
   echo "Upload manually:"
   echo "  scp $TARBALL $VPS_HOST:/tmp/"
-  echo "  ssh $VPS_HOST \"sudo mkdir -p $VPS_WEB_ROOT && sudo tar -xzf /tmp/hyphen-web-dist.tgz -C $VPS_WEB_ROOT && sudo rm -f $VPS_WEB_ROOT/app-ads.txt && rm -f /tmp/hyphen-web-dist.tgz\""
+  echo "  ssh $VPS_HOST \"sudo mkdir -p $VPS_WEB_ROOT && sudo tar -xzf /tmp/hyphen-web-dist.tgz -C $VPS_WEB_ROOT && sudo rm -f $VPS_WEB_ROOT/ads.txt $VPS_WEB_ROOT/app-ads.txt && rm -f /tmp/hyphen-web-dist.tgz\""
 fi

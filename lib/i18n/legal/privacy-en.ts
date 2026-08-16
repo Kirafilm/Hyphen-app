@@ -40,8 +40,8 @@ export const privacySectionsEn = [
     body: 'We may use "Cookies" to improve our internet services and enhance your online experience. Cookies are small files automatically stored in your computer\'s web browser and can be retrieved by the application/website. Cookies may be used to remember you and your preferences when you visit the website, and to tailor the application/website to your needs. Information collected by Cookies is anonymous visitor personalisation information and does not include name or address information, or any information that would enable anyone to contact you by telephone, email, or any other means. When using Cookies, we do not collect any personal data from you. You can disable Cookies by changing your web browser settings. Cookies cannot be used to run programmes or transmit viruses to your computer.',
   },
   {
-    title: "11. Advertising (Google AdSense)",
-    body: "Our website (https://hyphenjob.com) may display Google AdSense ads. Google and its partners may use cookies or other identifiers to show personalised ads based on your browsing activity.\n\nYou can review or manage personalised ad preferences at Google Ads Settings (https://adssettings.google.com/), or limit cookies in your browser. For how Google uses data, see: https://policies.google.com/technologies/ads\n\nWe do not sell your personal data. Ad-related technology is handled by Google under its own privacy policies. For questions about ads on our site, contact hyphe.office@gmail.com.",
+    title: "11. Advertising (third-party ads)",
+    body: "Our website (https://hyphenjob.com) may display third-party ads to support the platform. Providers may use cookies, pixels, or other identifiers to measure performance or show more relevant ads.\n\nYou can limit or clear cookies in your browser settings. Third-party ad services process data under their own privacy policies. We do not sell your personal data. For questions about ads on our site, contact hyphe.office@gmail.com.",
   },
   {
     title: "12. Changes to This Privacy Policy",

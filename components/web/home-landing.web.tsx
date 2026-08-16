@@ -4,7 +4,7 @@ import { createElement, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, Image, Linking, type ViewStyle } from "react-native";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
-import { AdSenseSlot } from "@/components/web/adsense-slot.web";
+import { WebAdBanner } from "@/components/web-ad-banner";
 import { WEB_HORIZONTAL_PADDING, WEB_MAX_WIDTH } from "@/components/web/constants";
 import { WebHeading } from "@/components/web-heading";
 import { useAuth } from "@/hooks/use-auth";
@@ -595,10 +595,10 @@ export function HomeLandingWeb({
         </View>
       </View>
 
-      {/* AdSense — web only, between platform comparison and FAQ */}
+      {/* Web ad placement — between platform comparison and FAQ */}
       <View style={[fullBleed(), { backgroundColor: colors.background, paddingVertical: 24 }]}>
         <View style={sectionInner()}>
-          <AdSenseSlot />
+          <WebAdBanner />
         </View>
       </View>
 
