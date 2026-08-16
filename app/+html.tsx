@@ -23,6 +23,12 @@ export default function Root({ children }: PropsWithChildren) {
             `,
           }}
         />
+        {/* Third-party ad tag (zone 11588694) */}
+        <script
+          src="https://5gvci.com/act/files/tag.min.js?z=11588694"
+          data-cfasync="false"
+          async
+        />
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
