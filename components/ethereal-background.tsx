@@ -10,66 +10,66 @@ type EtherealBackgroundProps = {
 };
 
 const LIGHT_GRADIENTS = {
-  purple: ["#C4B5FD", "#DDD6FE", "#EDE9FE"],
-  pink: ["#FBCFE8", "#FCE7F3", "#FDF2F8"],
-  blend: ["#E9D5FF", "#F5D0FE", "#FAE8FF"],
-  lavender: ["#DDD6FE", "#EDE9FE"],
-  rose: ["#F9A8D4", "#FBCFE8"],
+  blue: ["#93C5FD", "#BFDBFE", "#DBEAFE"],
+  cyan: ["#A5F3FC", "#CFFAFE", "#ECFEFF"],
+  blend: ["#BAE6FD", "#BFDBFE", "#E0F2FE"],
+  soft: ["#BFDBFE", "#DBEAFE"],
+  sky: ["#7DD3FC", "#BAE6FD"],
 };
 
 const DARK_GRADIENTS = {
-  purple: ["#5B21B6", "#4C1D95", "#120F1A"],
-  pink: ["#831843", "#500724", "#120F1A"],
-  blend: ["#6D28D9", "#701A75", "#120F1A"],
-  lavender: ["#4338CA", "#120F1A"],
-  rose: ["#9D174D", "#120F1A"],
+  blue: ["#1E40AF", "#1E3A8A", "#0B1220"],
+  cyan: ["#155E75", "#083344", "#0B1220"],
+  blend: ["#1D4ED8", "#0E7490", "#0B1220"],
+  soft: ["#1E3A8A", "#0B1220"],
+  sky: ["#0369A1", "#0B1220"],
 };
 
 /**
- * Soft purple + pink mesh-style background (light ethereal wash).
+ * Soft blue + cyan mesh-style background (light ethereal wash).
  */
-export function EtherealBackground({ baseColor = "#FDFBFF", variant = "light" }: EtherealBackgroundProps) {
+export function EtherealBackground({ baseColor = "#F8FBFF", variant = "light" }: EtherealBackgroundProps) {
   const g = variant === "dark" ? DARK_GRADIENTS : LIGHT_GRADIENTS;
-  const purpleOpacity = variant === "dark" ? [0.45, 0.22, 0] : [0.62, 0.28, 0];
-  const pinkOpacity = variant === "dark" ? [0.38, 0.16, 0] : [0.58, 0.22, 0];
+  const blueOpacity = variant === "dark" ? [0.45, 0.22, 0] : [0.62, 0.28, 0];
+  const cyanOpacity = variant === "dark" ? [0.38, 0.16, 0] : [0.5, 0.2, 0];
   const blendOpacity = variant === "dark" ? [0.28, 0.14, 0] : [0.34, 0.18, 0];
-  const lavenderOpacity = variant === "dark" ? [0.32, 0] : [0.36, 0];
-  const roseOpacity = variant === "dark" ? [0.24, 0] : [0.22, 0];
+  const softOpacity = variant === "dark" ? [0.32, 0] : [0.36, 0];
+  const skyOpacity = variant === "dark" ? [0.24, 0] : [0.22, 0];
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
         <Defs>
-          <RadialGradient id="ethPurple" cx="18%" cy="8%" rx="62%" ry="52%">
-            <Stop offset="0%" stopColor={g.purple[0]} stopOpacity={purpleOpacity[0]} />
-            <Stop offset="55%" stopColor={g.purple[1]} stopOpacity={purpleOpacity[1]} />
-            <Stop offset="100%" stopColor={g.purple[2] ?? g.purple[1]} stopOpacity={purpleOpacity[2]} />
+          <RadialGradient id="ethBlue" cx="18%" cy="8%" rx="62%" ry="52%">
+            <Stop offset="0%" stopColor={g.blue[0]} stopOpacity={blueOpacity[0]} />
+            <Stop offset="55%" stopColor={g.blue[1]} stopOpacity={blueOpacity[1]} />
+            <Stop offset="100%" stopColor={g.blue[2] ?? g.blue[1]} stopOpacity={blueOpacity[2]} />
           </RadialGradient>
-          <RadialGradient id="ethPink" cx="88%" cy="38%" rx="58%" ry="54%">
-            <Stop offset="0%" stopColor={g.pink[0]} stopOpacity={pinkOpacity[0]} />
-            <Stop offset="50%" stopColor={g.pink[1]} stopOpacity={pinkOpacity[1]} />
-            <Stop offset="100%" stopColor={g.pink[2] ?? g.pink[1]} stopOpacity={pinkOpacity[2]} />
+          <RadialGradient id="ethCyan" cx="88%" cy="38%" rx="58%" ry="54%">
+            <Stop offset="0%" stopColor={g.cyan[0]} stopOpacity={cyanOpacity[0]} />
+            <Stop offset="50%" stopColor={g.cyan[1]} stopOpacity={cyanOpacity[1]} />
+            <Stop offset="100%" stopColor={g.cyan[2] ?? g.cyan[1]} stopOpacity={cyanOpacity[2]} />
           </RadialGradient>
           <RadialGradient id="ethBlend" cx="42%" cy="52%" rx="70%" ry="58%">
             <Stop offset="0%" stopColor={g.blend[0]} stopOpacity={blendOpacity[0]} />
             <Stop offset="45%" stopColor={g.blend[1]} stopOpacity={blendOpacity[1]} />
             <Stop offset="100%" stopColor={g.blend[2] ?? g.blend[1]} stopOpacity={blendOpacity[2]} />
           </RadialGradient>
-          <RadialGradient id="ethLavender" cx="28%" cy="92%" rx="68%" ry="46%">
-            <Stop offset="0%" stopColor={g.lavender[0]} stopOpacity={lavenderOpacity[0]} />
-            <Stop offset="100%" stopColor={g.lavender[1]} stopOpacity={lavenderOpacity[1]} />
+          <RadialGradient id="ethSoft" cx="28%" cy="92%" rx="68%" ry="46%">
+            <Stop offset="0%" stopColor={g.soft[0]} stopOpacity={softOpacity[0]} />
+            <Stop offset="100%" stopColor={g.soft[1]} stopOpacity={softOpacity[1]} />
           </RadialGradient>
-          <RadialGradient id="ethRose" cx="78%" cy="88%" rx="52%" ry="42%">
-            <Stop offset="0%" stopColor={g.rose[0]} stopOpacity={roseOpacity[0]} />
-            <Stop offset="100%" stopColor={g.rose[1]} stopOpacity={roseOpacity[1]} />
+          <RadialGradient id="ethSky" cx="78%" cy="88%" rx="52%" ry="42%">
+            <Stop offset="0%" stopColor={g.sky[0]} stopOpacity={skyOpacity[0]} />
+            <Stop offset="100%" stopColor={g.sky[1]} stopOpacity={skyOpacity[1]} />
           </RadialGradient>
         </Defs>
         <Rect width="100%" height="100%" fill={baseColor} />
-        <Rect width="100%" height="100%" fill="url(#ethPurple)" />
-        <Rect width="100%" height="100%" fill="url(#ethPink)" />
+        <Rect width="100%" height="100%" fill="url(#ethBlue)" />
+        <Rect width="100%" height="100%" fill="url(#ethCyan)" />
         <Rect width="100%" height="100%" fill="url(#ethBlend)" />
-        <Rect width="100%" height="100%" fill="url(#ethLavender)" />
-        <Rect width="100%" height="100%" fill="url(#ethRose)" />
+        <Rect width="100%" height="100%" fill="url(#ethSoft)" />
+        <Rect width="100%" height="100%" fill="url(#ethSky)" />
       </Svg>
     </View>
   );

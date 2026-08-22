@@ -153,9 +153,9 @@ export function HomeLandingWeb({
   const isPrimaryHome =
     pathname === "/" || pathname === "/tw" || pathname === "/(tabs)" || pathname === "/(tabs)/index";
 
-  const primaryDark = "#5B45E8";
-  const primaryDeep = "#4528D4";
-  const heroHighlight = "#C4B5FD";
+  const primaryDark = "#2563EB";
+  const primaryDeep = "#1D4ED8";
+  const heroHighlight = "#93C5FD";
   const bgAlt = Platform.OS === "web" ? "#F8FAFC" : colors.surface;
 
   const goLogin = () => router.push(isAuthenticated ? "/(tabs)/profile" : "/login");

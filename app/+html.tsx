@@ -33,7 +33,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content={SEO.defaultDescription} />
-        <meta name="theme-color" content="#6D5EF5" />
+        <meta name="theme-color" content="#3B82F6" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content={SEO.siteName} />
         <meta property="og:title" content={SEO.defaultTitle} />

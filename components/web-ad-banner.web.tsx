@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { Platform, View, type ViewStyle } from "react-native";
 
+import { useColors } from "@/hooks/use-colors";
 import { useLocale } from "@/lib/i18n/locale-provider";
 
 const SMARTLINK_URL =
@@ -15,6 +16,7 @@ type WebAdBannerProps = {
  * Native app never imports this file (`.web.tsx`).
  */
 export function WebAdBanner({ style }: WebAdBannerProps) {
+  const colors = useColors();
   const { locale } = useLocale();
   const isEn = locale === "en";
   const label = isEn ? "Sponsored" : "贊助";
@@ -40,8 +42,8 @@ export function WebAdBanner({ style }: WebAdBannerProps) {
             width: "100%",
             padding: "16px 20px",
             borderRadius: 12,
-            border: "1px solid #E5DFF6",
-            background: "linear-gradient(135deg, #F8FAFC 0%, #F3EFFF 100%)",
+            border: `1px solid ${colors.border}`,
+            background: `linear-gradient(135deg, #F8FAFC 0%, ${colors.surface} 100%)`,
             textDecoration: "none",
             boxSizing: "border-box",
           },
@@ -65,7 +67,7 @@ export function WebAdBanner({ style }: WebAdBannerProps) {
             style: {
               fontSize: 16,
               fontWeight: 700,
-              color: "#5B45E8",
+              color: colors.primary,
             },
           },
           cta,
