@@ -160,6 +160,8 @@ export const homeTw = {
   footerAboutCol: "關於",
   footerAppStoreTitle: "App Store",
   footerAppStoreHint: "掃描下載 iOS App",
+  footerPlayStoreTitle: "Play Store",
+  footerPlayStoreHint: "Android app 優先測試版下載",
   footerLinks: {
     browse: "瀏覽職缺",
     post: "刊登案件",

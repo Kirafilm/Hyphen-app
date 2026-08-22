@@ -466,6 +466,8 @@ export const messages = {
     footerAboutCol: "About",
     footerAppStoreTitle: "App Store",
     footerAppStoreHint: "Scan to download on iOS",
+    footerPlayStoreTitle: "Play Store",
+    footerPlayStoreHint: "Android app early access beta",
     footerLinks: {
       browse: "Browse jobs",
       post: "Post a job",

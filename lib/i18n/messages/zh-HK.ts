@@ -450,6 +450,8 @@ export const messages = {
     footerAboutCol: "關於",
     footerAppStoreTitle: "App Store",
     footerAppStoreHint: "掃描下載 iOS App",
+    footerPlayStoreTitle: "Play Store",
+    footerPlayStoreHint: "Android app 優先測試版下載",
     footerLinks: {
       browse: "瀏覽工作",
       post: "發佈工作",

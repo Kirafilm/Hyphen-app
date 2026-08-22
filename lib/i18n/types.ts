@@ -354,6 +354,8 @@ export type Messages = {
     footerAboutCol: string;
     footerAppStoreTitle: string;
     footerAppStoreHint: string;
+    footerPlayStoreTitle: string;
+    footerPlayStoreHint: string;
     footerLinks: {
       browse: string;
       post: string;
