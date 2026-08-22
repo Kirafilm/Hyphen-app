@@ -451,7 +451,7 @@ export const messages = {
     footerAppStoreTitle: "App Store",
     footerAppStoreHint: "扫描下载 iOS App",
     footerPlayStoreTitle: "Play Store",
-    footerPlayStoreHint: "Android app 优先测试版下载",
+    footerPlayStoreHint: "优先测试版下载",
     footerLinks: {
       browse: "浏览工作",
       post: "发布工作",

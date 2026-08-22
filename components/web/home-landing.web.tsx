@@ -759,53 +759,65 @@ export function HomeLandingWeb({
                 ))}
               </View>
             ))}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginLeft: "auto", justifyContent: "center" }}>
-              <View style={{ minWidth: 148, alignItems: "center", gap: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5, textTransform: "uppercase", textAlign: "center" }}>
-                  {home.footerAppStoreTitle}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => void Linking.openURL(APP_STORE_URL)}
-                  activeOpacity={0.85}
-                  accessibilityRole="link"
-                  accessibilityLabel={home.footerAppStoreHint}
-                  style={{
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 12,
-                    padding: 10,
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <Image source={APP_STORE_QR} style={{ width: 112, height: 112 }} accessibilityLabel="App Store QR code" />
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: "#0F172A", textAlign: "center", maxWidth: 132 }}>
-                    {home.footerAppStoreHint}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginLeft: "auto", justifyContent: "center", alignItems: "flex-start" }}>
+              {(
+                [
+                  {
+                    title: home.footerAppStoreTitle,
+                    hint: home.footerAppStoreHint,
+                    url: APP_STORE_URL,
+                    qr: APP_STORE_QR,
+                    qrLabel: "App Store QR code",
+                  },
+                  {
+                    title: home.footerPlayStoreTitle,
+                    hint: home.footerPlayStoreHint,
+                    url: PLAY_STORE_URL,
+                    qr: PLAY_STORE_QR,
+                    qrLabel: "Play Store QR code",
+                  },
+                ] as const
+              ).map((store) => (
+                <View key={store.title} style={{ width: 148, alignItems: "center", gap: 10 }}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: "#FFFFFF",
+                      letterSpacing: 0.5,
+                      textTransform: "uppercase",
+                      textAlign: "center",
+                      height: 18,
+                    }}
+                  >
+                    {store.title}
                   </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{ minWidth: 148, alignItems: "center", gap: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5, textTransform: "uppercase", textAlign: "center" }}>
-                  {home.footerPlayStoreTitle}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => void Linking.openURL(PLAY_STORE_URL)}
-                  activeOpacity={0.85}
-                  accessibilityRole="link"
-                  accessibilityLabel={home.footerPlayStoreHint}
-                  style={{
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 12,
-                    padding: 10,
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <Image source={PLAY_STORE_QR} style={{ width: 112, height: 112 }} accessibilityLabel="Play Store QR code" />
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: "#0F172A", textAlign: "center", maxWidth: 132 }}>
-                    {home.footerPlayStoreHint}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                  <TouchableOpacity
+                    onPress={() => void Linking.openURL(store.url)}
+                    activeOpacity={0.85}
+                    accessibilityRole="link"
+                    accessibilityLabel={store.hint}
+                    style={{
+                      width: 148,
+                      height: 168,
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 12,
+                      padding: 10,
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      gap: 8,
+                    }}
+                  >
+                    <Image source={store.qr} style={{ width: 112, height: 112 }} accessibilityLabel={store.qrLabel} />
+                    <Text
+                      numberOfLines={1}
+                      style={{ fontSize: 12, fontWeight: "600", color: "#0F172A", textAlign: "center", width: "100%" }}
+                    >
+                      {store.hint}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
           </View>
           <View style={{ borderTopWidth: 1, borderTopColor: "#1E293B", paddingTop: 20, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 12 }}>
