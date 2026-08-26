@@ -11,7 +11,7 @@ export const users = mysqlTable("users", {
    * Use this for relations between tables.
    */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  /** Stable auth subject id (Supabase user id / openId). Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -24,6 +24,53 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+export const serviceProfiles = mysqlTable("service_profiles", {
+  userId: int("userId").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  headline: varchar("headline", { length: 255 }).default("").notNull(),
+  avatarStorageKey: varchar("avatarStorageKey", { length: 512 }),
+  intro: text("intro").notNull(),
+  serviceInfo: text("serviceInfo").notNull(),
+  skills: text("skills").notNull(),
+  categories: text("categories").notNull(),
+  locations: text("locations").notNull(),
+  isPublished: int("isPublished").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ServiceProfile = typeof serviceProfiles.$inferSelect;
+
+export const servicePortfolioImages = mysqlTable("service_portfolio_images", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  storageKey: varchar("storageKey", { length: 512 }).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ServicePortfolioImage = typeof servicePortfolioImages.$inferSelect;
+
+export const messageThreads = mysqlTable("message_threads", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  profileUserId: int("profileUserId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  visitorUserId: int("visitorUserId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MessageThread = typeof messageThreads.$inferSelect;
+
+export const serviceMessages = mysqlTable("service_messages", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  threadId: varchar("threadId", { length: 36 }).notNull().references(() => messageThreads.id, { onDelete: "cascade" }),
+  senderUserId: int("senderUserId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ServiceMessage = typeof serviceMessages.$inferSelect;
 
 export const subscriptions = mysqlTable("subscriptions", {
   userId: int("userId").notNull().primaryKey().references(() => users.id),
@@ -69,11 +116,12 @@ export const jobSkills = mysqlTable(
   }),
 );
 
-/** Expo push tokens for new-job alerts; one row per device token. */
+/** Expo push tokens for job / message alerts; one row per device token. */
 export const pushDevices = mysqlTable("push_devices", {
   expoPushToken: varchar("expoPushToken", { length: 255 }).primaryKey(),
   userId: int("userId").references(() => users.id),
   platform: varchar("platform", { length: 16 }),
   jobAlertsEnabled: int("jobAlertsEnabled").notNull().default(1),
+  messageAlertsEnabled: int("messageAlertsEnabled").notNull().default(1),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

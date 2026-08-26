@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
-import { SESSION_TOKEN_KEY, USER_INFO_KEY } from "@/constants/oauth";
+import { SESSION_TOKEN_KEY, USER_INFO_KEY, LEGACY_USER_INFO_KEY } from "@/constants/oauth";
 
 export type User = {
   id: number;
@@ -70,11 +70,23 @@ export async function getUserInfo(): Promise<User | null> {
 
     let info: string | null = null;
     if (Platform.OS === "web") {
-      // Use localStorage for web
       info = window.localStorage.getItem(USER_INFO_KEY);
+      if (!info) {
+        info = window.localStorage.getItem(LEGACY_USER_INFO_KEY);
+        if (info) {
+          window.localStorage.setItem(USER_INFO_KEY, info);
+          window.localStorage.removeItem(LEGACY_USER_INFO_KEY);
+        }
+      }
     } else {
-      // Use SecureStore for native
       info = await SecureStore.getItemAsync(USER_INFO_KEY);
+      if (!info) {
+        info = await SecureStore.getItemAsync(LEGACY_USER_INFO_KEY);
+        if (info) {
+          await SecureStore.setItemAsync(USER_INFO_KEY, info);
+          await SecureStore.deleteItemAsync(LEGACY_USER_INFO_KEY);
+        }
+      }
     }
 
     if (!info) {
@@ -112,13 +124,13 @@ export async function setUserInfo(user: User): Promise<void> {
 export async function clearUserInfo(): Promise<void> {
   try {
     if (Platform.OS === "web") {
-      // Use localStorage for web
       window.localStorage.removeItem(USER_INFO_KEY);
+      window.localStorage.removeItem(LEGACY_USER_INFO_KEY);
       return;
     }
 
-    // Use SecureStore for native
     await SecureStore.deleteItemAsync(USER_INFO_KEY);
+    await SecureStore.deleteItemAsync(LEGACY_USER_INFO_KEY);
   } catch (error) {
     console.error("[Auth] Failed to clear user info:", error);
   }

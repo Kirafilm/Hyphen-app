@@ -4,6 +4,7 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 export const JOB_ALERTS_ENABLED_KEY = "hyphen_job_alerts_enabled";
+export const MESSAGE_ALERTS_ENABLED_KEY = "hyphen_message_alerts_enabled";
 export const EXPO_PUSH_TOKEN_KEY = "hyphen_expo_push_token";
 
 Notifications.setNotificationHandler({
@@ -42,6 +43,16 @@ export async function setJobAlertsEnabledLocal(enabled: boolean): Promise<void> 
   await AsyncStorage.setItem(JOB_ALERTS_ENABLED_KEY, enabled ? "1" : "0");
 }
 
+export async function getMessageAlertsEnabledLocal(): Promise<boolean> {
+  const value = await AsyncStorage.getItem(MESSAGE_ALERTS_ENABLED_KEY);
+  if (value === null) return true;
+  return value === "1";
+}
+
+export async function setMessageAlertsEnabledLocal(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(MESSAGE_ALERTS_ENABLED_KEY, enabled ? "1" : "0");
+}
+
 export async function requestNotificationPermissions(): Promise<boolean> {
   if (!isNativePushSupported()) return false;
 
@@ -62,6 +73,10 @@ export async function obtainExpoPushToken(): Promise<string | null> {
     await Notifications.setNotificationChannelAsync("default", {
       name: "一般通知",
       importance: Notifications.AndroidImportance.DEFAULT,
+    });
+    await Notifications.setNotificationChannelAsync("messages", {
+      name: "訊息通知",
+      importance: Notifications.AndroidImportance.HIGH,
     });
   }
 

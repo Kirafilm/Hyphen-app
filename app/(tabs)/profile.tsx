@@ -182,6 +182,16 @@ export default function ProfileScreen() {
               <MenuRow icon="card" label={t("profile.menuSubscription")} onPress={() => router.push("/paywall")} />
             )}
 
+            <MenuRow icon="people" label={t("profile.menuFindTalent")} onPress={() => router.push("/pro" as never)} />
+
+            {isAuthenticated ? (
+              <MenuRow icon="chatbubbles" label={t("profile.menuMessages")} onPress={() => router.push("/messages" as never)} />
+            ) : null}
+
+            {Platform.OS === "web" && isAuthenticated && (subscriptionQuery.data?.active || role === "admin") ? (
+              <MenuRow icon="briefcase" label={t("profile.menuServicePage")} onPress={() => router.push("/pro/edit" as never)} />
+            ) : null}
+
             {!isAuthenticated ? (
               <TouchableOpacity
                 onPress={() => router.push("/login")}

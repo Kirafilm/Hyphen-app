@@ -1,6 +1,7 @@
 import { authRouter } from "./_core/authRouter";
 import { jobsRouter } from "./_core/jobsRouter";
 import { notificationsRouter } from "./_core/notificationsRouter";
+import { serviceMessagesRouter, serviceProfilesRouter } from "./_core/serviceProfilesRouter";
 import { subscriptionRouter } from "./_core/subscriptionRouter";
 import { systemRouter } from "./_core/systemRouter";
 import { router } from "./_core/trpc";
@@ -12,6 +13,8 @@ export const appRouter = router({
   subscription: subscriptionRouter,
   notifications: notificationsRouter,
   auth: authRouter,
+  serviceProfiles: serviceProfilesRouter,
+  serviceMessages: serviceMessagesRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: router({

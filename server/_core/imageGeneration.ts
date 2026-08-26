@@ -1,21 +1,7 @@
 /**
- * Image generation helper using internal ImageService
- *
- * Example usage:
- *   const { url: imageUrl } = await generateImage({
- *     prompt: "A serene landscape with mountains"
- *   });
- *
- * For editing:
- *   const { url: imageUrl } = await generateImage({
- *     prompt: "Add a rainbow to this landscape",
- *     originalImages: [{
- *       url: "https://example.com/original.jpg",
- *       mimeType: "image/jpeg"
- *     }]
- *   });
+ * Optional image generation helper.
+ * Not wired to any provider — configure LLM_API_URL / LLM_API_KEY if needed later.
  */
-import { storagePut } from "../storage";
 import { ENV } from "./env";
 
 export type GenerateImageOptions = {
@@ -31,51 +17,10 @@ export type GenerateImageResponse = {
   url?: string;
 };
 
-export async function generateImage(options: GenerateImageOptions): Promise<GenerateImageResponse> {
-  if (!ENV.forgeApiUrl) {
-    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
+export async function generateImage(_options: GenerateImageOptions): Promise<GenerateImageResponse> {
+  void _options;
+  if (!ENV.llmApiUrl || !ENV.llmApiKey) {
+    throw new Error("Image generation is not configured (set LLM_API_URL and LLM_API_KEY)");
   }
-  if (!ENV.forgeApiKey) {
-    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
-  }
-
-  // Build the full URL by appending the service path to the base URL
-  const baseUrl = ENV.forgeApiUrl.endsWith("/") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/`;
-  const fullUrl = new URL("images.v1.ImageService/GenerateImage", baseUrl).toString();
-
-  const response = await fetch(fullUrl, {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      "content-type": "application/json",
-      "connect-protocol-version": "1",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
-    },
-    body: JSON.stringify({
-      prompt: options.prompt,
-      original_images: options.originalImages || [],
-    }),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `Image generation request failed (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`,
-    );
-  }
-
-  const result = (await response.json()) as {
-    image: {
-      b64Json: string;
-      mimeType: string;
-    };
-  };
-  const base64Data = result.image.b64Json;
-  const buffer = Buffer.from(base64Data, "base64");
-
-  // Save to S3
-  const { url } = await storagePut(`generated/${Date.now()}.png`, buffer, result.image.mimeType);
-  return {
-    url,
-  };
+  throw new Error("Image generation provider is not implemented for Hyphen");
 }

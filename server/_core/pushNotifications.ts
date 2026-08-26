@@ -11,7 +11,7 @@ type NewJobNotification = {
 };
 
 async function sendExpoPushBatch(
-  messages: Array<{ to: string; title: string; body: string; data: Record<string, string> }>,
+  messages: Array<{ to: string; title: string; body: string; data: Record<string, string>; channelId?: string }>,
 ) {
   if (messages.length === 0) return;
 
@@ -31,6 +31,7 @@ async function sendExpoPushBatch(
           title: msg.title,
           body: msg.body,
           data: msg.data,
+          ...(msg.channelId ? { channelId: msg.channelId } : {}),
         })),
       ),
     });
@@ -53,6 +54,30 @@ export async function notifyNewJobPosted(job: NewJobNotification): Promise<void>
       title: "有新工作發佈",
       body: `${job.title} · ${job.category}`,
       data: { jobId: job.id, type: "new_job" },
+    })),
+  );
+}
+
+type NewMessageNotification = {
+  threadId: string;
+  recipientUserId: number;
+  preview: string;
+};
+
+export async function notifyNewServiceMessage(payload: NewMessageNotification): Promise<void> {
+  const tokens = await db.listPushTokensForMessageAlerts(payload.recipientUserId);
+  console.log(`[Push] new message thread=${payload.threadId} → ${tokens.length} device(s)`);
+  if (tokens.length === 0) return;
+
+  const preview = payload.preview.length > 80 ? `${payload.preview.slice(0, 80)}…` : payload.preview;
+
+  await sendExpoPushBatch(
+    tokens.map((token) => ({
+      to: token,
+      title: "Hyphen 訊息",
+      body: preview,
+      data: { threadId: payload.threadId, type: "new_message" },
+      channelId: "messages",
     })),
   );
 }

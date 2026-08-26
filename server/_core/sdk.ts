@@ -14,7 +14,7 @@ import type {
   GetUserInfoResponse,
   GetUserInfoWithJwtRequest,
   GetUserInfoWithJwtResponse,
-} from "./types/manusTypes";
+} from "./types/oauthTypes";
 // Utility function
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0;
@@ -158,7 +158,7 @@ class SDKServer {
   }
 
   /**
-   * Create a session token for a Manus user openId
+   * Create a session token for a user openId
    * @example
    * const sessionToken = await sdk.createSessionToken(userInfo.openId);
    */
@@ -282,7 +282,7 @@ class SDKServer {
         });
         const user = await db.getUserByOpenId(sb.id);
         if (!user) throw ForbiddenError("User not found");
-        return user;
+        return db.ensureOwnerAdminRole(user);
       } catch (error) {
         console.error("[Auth] Supabase token verification failed:", error);
         throw ForbiddenError("Invalid token");
@@ -316,10 +316,12 @@ class SDKServer {
 
     await db.upsertUser({
       openId: user.openId,
+      email: user.email,
       lastSignedIn: signedInAt,
     });
 
-    return user;
+    const refreshed = await db.getUserByOpenId(user.openId);
+    return db.ensureOwnerAdminRole(refreshed ?? user);
   }
 }
 

@@ -10,7 +10,8 @@ This guide covers server-side features including authentication, database, tRPC 
 |----------|-----------------|---------------------|----------|
 | Data stays on device only | No | No | Use `AsyncStorage` |
 | Data syncs across devices | Yes | Yes | Database + tRPC |
-| User accounts / login | Yes | Yes | Manus OAuth |
+| User accounts / login | Yes | Yes | Supabase email auth |
+| File uploads | Yes | Local disk `/uploads` on API server |
 | AI-powered features | Yes | **Optional** | LLM Integration |
 | User uploads files | Yes | **Optional** | S3 Storage |
 | Server-side validation | Yes | **Optional** | tRPC procedures |
@@ -52,7 +53,7 @@ Only touch the files with "←" markers. Anything under `_core/` directories is 
 
 ### Overview
 
-The template uses **Manus OAuth** for user authentication. It works differently on native and web:
+Primary auth is **Supabase email**. A legacy OAuth callback route remains for compatibility.
 
 | Platform | Auth Method | Token Storage |
 |----------|-------------|---------------|
@@ -89,7 +90,7 @@ The `user` object contains:
 ```tsx
 interface User {
   id: number;
-  openId: string;        // Manus OAuth ID
+  openId: string;        // Auth subject id (Supabase / OAuth)
   name: string | null;
   email: string | null;
   loginMethod: string;
@@ -101,7 +102,7 @@ interface User {
 ### Login Flow (Native)
 
 1. User taps Login button
-2. `WebBrowser.openAuthSessionAsync()` opens Manus OAuth
+2. User signs in via Supabase email (or legacy OAuth if configured)
 3. User authenticates
 4. Deep link redirects to `app/oauth/callback.tsx`
 5. Callback exchanges code for session token
@@ -111,7 +112,7 @@ interface User {
 ### Login Flow (Web)
 
 1. User clicks Login button
-2. Browser redirects to Manus OAuth
+2. Browser completes Supabase email auth
 3. User authenticates
 4. Redirect back with session cookie
 5. Cookie automatically sent with requests
@@ -530,7 +531,7 @@ Tips
 
 ## ☁️ File Storage
 
-Use the preconfigured storage helpers in `server/storage.ts`. Credentials are injected from the platform (no manual setup required). Files are stored securely and served via the built-in `/manus-storage/` path — no manual URL management needed.
+Use `storagePut` / local disk helpers in `server/storage.ts`. Files are stored under `STORAGE_DIR` and served at `/uploads/{key}`.
 
 ```ts
 import { storagePut } from "./server/storage";
@@ -542,27 +543,27 @@ const { key, url } = await storagePut(
   fileBuffer, // Buffer | Uint8Array | string
   "image/png"
 );
-// url = "/manus-storage/{key}" — use directly in frontend code
+// url = "/uploads/{key}" — use with storagePublicUrl() on the client
 // key = unique storage key — save in database
 ```
 
 Tips
 - Save the `key` or `url` in your database; use storage for the actual file bytes. This applies to all files including images, documents, and media.
 - For file uploads, have the client POST to your server, then call `storagePut` from your backend.
-- The returned `url` (e.g. `/manus-storage/...`) is automatically served via signed redirect — no manual URL signing needed.
+- The returned `url` (e.g. `/uploads/...`) is served directly by the API.
 - To delete a file, drop its `key` from your DB and any UI references — the key is the only way to reach the object, so an unreferenced file is effectively gone. Do not implement a helper to remove the underlying object; the template's storage layer does not expose a delete endpoint.
 
 ---
 
 ## ☁️ Data API
 
-When you need external data, use the omni_search with search_type = 'api' to see there's any built-in api available in Manus API Hub access. You only have to connect other api if there's no suitable built-in api available.
+External data APIs are not bundled; integrate your own providers as needed.
 
 ---
 
 ## Owner Notifications
 
-This template already ships with a `notifyOwner({ title, content })` helper (`server/_core/notification.ts`) and a protected tRPC mutation at `trpc.system.notifyOwner`. Use it whenever backend logic needs to push an operational update to the Manus project owner—common triggers are new form submissions, survey feedback, or workflow results.
+`notifyOwner` logs locally (no external notifier). Prefer EmailJS / your own ops channel for real alerts.
 
 1. On the server, call `await notifyOwner({ title, content })` or reuse the provided `system.notifyOwner` mutation from jobs/webhooks (`trpc.system.notifyOwner.useMutation()` on the client).
 2. Handle the boolean return (`true` on success, `false` if the upstream service is temporarily unavailable) to decide whether you need a fallback channel.
@@ -579,13 +580,13 @@ Available environment variables:
 |----------|-------------|
 | `DATABASE_URL` | MySQL/TiDB connection string |
 | `JWT_SECRET` | Session signing secret |
-| `VITE_APP_ID` | Manus OAuth app ID |
-| `OAUTH_SERVER_URL` | Manus OAuth backend URL |
-| `VITE_OAUTH_PORTAL_URL` | Manus login portal URL |
-| `OWNER_OPEN_ID` | Owner's Manus ID |
+| `OWNER_OPEN_ID` | Optional openId promoted to admin |
+| `STORAGE_DIR` | Local upload directory |
+
+
 | `OWNER_NAME` | Owner's display name |
-| `BUILT_IN_FORGE_API_URL` | Manus API endpoint |
-| `BUILT_IN_FORGE_API_KEY` | Manus API key |
+
+
 
 Expo runtime variables (prefixed with `EXPO_PUBLIC_`):
 
@@ -648,7 +649,7 @@ export const users = mysqlTable("users", {
    * Use this for relations between tables.
    */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  /** Auth subject id (openId). Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -795,78 +796,7 @@ export type AppRouter = typeof appRouter;
 
 `server/storage.ts`
 ```ts
-// Preconfigured storage helpers for Manus WebDev templates
-// Uploads via Forge Server presigned URL to S3 (PUT direct).
-// Downloads return /manus-storage/{key} paths served via 307 redirect.
-
-import { ENV } from "./_core/env";
-
-function getForgeConfig() {
-  const forgeUrl = ENV.forgeApiUrl;
-  const forgeKey = ENV.forgeApiKey;
-
-  if (!forgeUrl || !forgeKey) {
-    throw new Error(
-      "Storage config missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY",
-    );
-  }
-
-  return { forgeUrl: forgeUrl.replace(/\/+$/, ""), forgeKey };
-}
-
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
-}
-
-function appendHashSuffix(relKey: string): string {
-  const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  const lastDot = relKey.lastIndexOf(".");
-  if (lastDot === -1) return `${relKey}_${hash}`;
-  return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
-}
-
-export async function storagePut(
-  relKey: string,
-  data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream",
-): Promise<{ key: string; url: string }> {
-  const { forgeUrl, forgeKey } = getForgeConfig();
-  const key = appendHashSuffix(normalizeKey(relKey));
-
-  // 1. Get presigned PUT URL from Forge
-  const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
-  presignUrl.searchParams.set("path", key);
-
-  const presignResp = await fetch(presignUrl, {
-    headers: { Authorization: `Bearer ${forgeKey}` },
-  });
-
-  if (!presignResp.ok) {
-    const msg = await presignResp.text().catch(() => presignResp.statusText);
-    throw new Error(`Storage presign failed (${presignResp.status}): ${msg}`);
-  }
-
-  const { url: s3Url } = (await presignResp.json()) as { url: string };
-  if (!s3Url) throw new Error("Forge returned empty presign URL");
-
-  // 2. PUT file directly to S3
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-
-  const uploadResp = await fetch(s3Url, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: blob,
-  });
-
-  if (!uploadResp.ok) {
-    throw new Error(`Storage upload to S3 failed (${uploadResp.status})`);
-  }
-
-  return { key, url: `/manus-storage/${key}` };
-}
+// See server/storage.ts for local disk uploads served at /uploads/.
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
@@ -1109,7 +1039,7 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
     openId: "sample-user",
     email: "sample@example.com",
     name: "Sample User",
-    loginMethod: "manus",
+    loginMethod: "email",
     role: "user",
     createdAt: new Date(),
     updatedAt: new Date(),

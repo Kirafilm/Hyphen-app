@@ -48,6 +48,12 @@ export const homeTw = {
   categoriesSubtitle: "從設計、程式到活動拍攝，依你的專長找到合適案件。",
   categoriesFallback: "瀏覽相關職缺",
   categoriesAll: "查看全部 {count} 個分類 →",
+  proFeatureLabel: "新功能",
+  proFeatureTitle: "訂閱者可開設個人專業頁面",
+  proFeatureBody:
+    "建立你的專業服務頁，展示簡介、服務內容與作品集。發案方可在「尋找專業人才」瀏覽，並透過 Hyphen 訊息直接聯絡你。",
+  proFeatureBrowseCta: "尋找專業人才",
+  proFeatureCreateCta: "建立我的專業頁",
   howLabel: "運作流程",
   howTitle: "只需 30 秒，開啟你的接發案之旅",
   howSubtitle: "簡單三步，降低用戶心理門檻。",

@@ -9,6 +9,7 @@ export const notificationsRouter = router({
       const device = await db.getPushDevice(input.expoPushToken);
       return {
         jobAlertsEnabled: device?.jobAlertsEnabled ?? true,
+        messageAlertsEnabled: device?.messageAlertsEnabled ?? true,
         registered: Boolean(device),
       };
     }),
@@ -19,6 +20,7 @@ export const notificationsRouter = router({
         expoPushToken: z.string().min(1),
         platform: z.enum(["ios", "android", "web"]).optional(),
         jobAlertsEnabled: z.boolean().optional(),
+        messageAlertsEnabled: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -27,6 +29,7 @@ export const notificationsRouter = router({
         userId: ctx.user?.id ?? null,
         platform: input.platform ?? null,
         jobAlertsEnabled: input.jobAlertsEnabled,
+        messageAlertsEnabled: input.messageAlertsEnabled,
       });
       return { success: true as const };
     }),
@@ -40,6 +43,18 @@ export const notificationsRouter = router({
     )
     .mutation(async ({ input }) => {
       await db.setPushDeviceJobAlerts(input.expoPushToken, input.enabled);
+      return { success: true as const };
+    }),
+
+  setMessageAlerts: publicProcedure
+    .input(
+      z.object({
+        expoPushToken: z.string().min(1),
+        enabled: z.boolean(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      await db.setPushDeviceMessageAlerts(input.expoPushToken, input.enabled);
       return { success: true as const };
     }),
 });

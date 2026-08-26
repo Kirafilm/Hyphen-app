@@ -292,7 +292,7 @@ eas build:list
 
 | 欄位 | 位置 | 目前 |
 |------|------|------|
-| `version` | `app.config.ts` | `0.1.2` |
+| `version` | `app.config.ts` | `0.1.3` |
 | iOS build number | EAS `autoIncrement` + remote | 自動遞增 |
 | Android versionCode | EAS `autoIncrement` | 自動遞增 |
 

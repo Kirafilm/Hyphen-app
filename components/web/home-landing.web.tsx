@@ -168,6 +168,8 @@ export function HomeLandingWeb({
   const goAbout = () => router.push("/about");
   const goGuides = () => router.push("/guides");
   const goContact = () => router.push("/contact");
+  const goPros = () => router.push("/pro" as never);
+  const goProEdit = () => router.push(isAuthenticated ? ("/pro/edit" as never) : "/login");
 
   const featuredCategories = categories.slice(0, 8);
 
@@ -509,6 +511,65 @@ export function HomeLandingWeb({
           </View>
           <View style={{ alignItems: "center", marginTop: 24 }}>
             <PrimaryButton label={home.categoriesAll.replace("{count}", String(categories.length))} onPress={goJobs} colors={colors} variant="ghost" />
+          </View>
+        </View>
+      </View>
+
+      {/* Professional pages feature */}
+      <View style={[fullBleed(), { backgroundColor: colors.background, paddingVertical: 72 }]}>
+        <View style={sectionInner()}>
+          <View
+            style={{
+              width: "100%",
+              borderRadius: 24,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: `${colors.primary}08`,
+              paddingVertical: 40,
+              paddingHorizontal: 28,
+              gap: 20,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: colors.primary,
+              }}
+            >
+              {home.proFeatureLabel}
+            </Text>
+            <WebHeading
+              level={2}
+              style={{
+                fontSize: 28,
+                fontWeight: "800",
+                color: colors.foreground,
+                textAlign: "center",
+                letterSpacing: -0.3,
+                maxWidth: 640,
+              }}
+            >
+              {home.proFeatureTitle}
+            </WebHeading>
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.muted,
+                textAlign: "center",
+                lineHeight: 26,
+                maxWidth: 560,
+              }}
+            >
+              {home.proFeatureBody}
+            </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginTop: 4 }}>
+              <PrimaryButton label={home.proFeatureBrowseCta} onPress={goPros} colors={colors} large />
+              <PrimaryButton label={home.proFeatureCreateCta} onPress={goProEdit} colors={colors} variant="ghost" large />
+            </View>
           </View>
         </View>
       </View>

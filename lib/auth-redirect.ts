@@ -1,6 +1,7 @@
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 
+// Locked App Store / Play Store bundle ID — do not change.
 const bundleId = "space.manus.freehunter.app.t20260427031216";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const deepLinkScheme = `manus${timestamp}`;

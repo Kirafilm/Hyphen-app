@@ -239,10 +239,25 @@ export default function PaywallScreen() {
   const meQuery = trpc.subscription.me.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const authMeQuery = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
+  const isAdmin = authMeQuery.data?.role === "admin";
   const utils = trpc.useUtils();
   const { syncSubscription } = useMobileSubscriptionSync();
   const stripeCheckoutMutation = trpc.subscription.createStripeCheckout.useMutation();
   const stripePortalMutation = trpc.subscription.createStripePortal.useMutation();
+  const debugActivateMutation = trpc.subscription.debugActivate.useMutation({
+    onSuccess: async () => {
+      await utils.subscription.me.invalidate();
+      setRcError(null);
+    },
+    onError: (err) => {
+      setRcError(err.message);
+    },
+  });
+  const showDebugUnlock =
+    isAuthenticated &&
+    !meQuery.data?.active &&
+    (isAdmin || __DEV__ || APP_VARIANT !== "production");
 
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [storeProducts, setStoreProducts] = useState<PurchasesStoreProduct[]>([]);
@@ -718,6 +733,34 @@ export default function PaywallScreen() {
                             saleColor={colors.primary}
                           />
                         </TouchableOpacity>
+                        {showDebugUnlock ? (
+                          <TouchableOpacity
+                            onPress={() =>
+                              debugActivateMutation.mutate({
+                                plan: "yearly",
+                                expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+                              })
+                            }
+                            disabled={debugActivateMutation.isPending}
+                            style={{
+                              backgroundColor: "rgba(59, 130, 246, 0.12)",
+                              borderRadius: 12,
+                              paddingVertical: 14,
+                              paddingHorizontal: 12,
+                              alignItems: "center",
+                              borderWidth: 1,
+                              borderColor: "rgba(59, 130, 246, 0.35)",
+                            }}
+                          >
+                            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>
+                              {debugActivateMutation.isPending
+                                ? "解鎖中…"
+                                : isAdmin
+                                  ? "萬用帳號：測試解鎖一年訂閱"
+                                  : "開發測試：解鎖一年訂閱"}
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
                       </>
                     )}
                     {rcError ? <Text style={{ color: colors.error, fontSize: 12 }}>{rcError}</Text> : null}

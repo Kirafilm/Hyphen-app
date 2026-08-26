@@ -25,12 +25,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { trpc } from "@/lib/trpc";
 import {
   getJobAlertsEnabledLocal,
+  getMessageAlertsEnabledLocal,
   getNotificationPlatform,
   getStoredPushToken,
   isNativePushSupported,
   obtainExpoPushToken,
   requestNotificationPermissions,
   setJobAlertsEnabledLocal,
+  setMessageAlertsEnabledLocal,
   setStoredPushToken,
 } from "@/lib/notifications";
 import { useLocale } from "@/lib/i18n/locale-provider";
@@ -43,6 +45,7 @@ export default function SettingsScreen() {
   const { colorScheme, setColorScheme } = useThemeContext();
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [jobAlertsEnabled, setJobAlertsEnabled] = useState(true);
+  const [messageAlertsEnabled, setMessageAlertsEnabled] = useState(true);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -50,6 +53,7 @@ export default function SettingsScreen() {
 
   const utils = trpc.useUtils();
   const setJobAlertsMutation = trpc.notifications.setJobAlerts.useMutation();
+  const setMessageAlertsMutation = trpc.notifications.setMessageAlerts.useMutation();
   const registerMutation = trpc.notifications.register.useMutation();
   const deleteAccountMutation = trpc.auth.deleteAccount.useMutation();
   const settingsQuery = trpc.notifications.getSettings.useQuery(
@@ -76,8 +80,14 @@ export default function SettingsScreen() {
 
     (async () => {
       try {
-        const localEnabled = await getJobAlertsEnabledLocal();
-        if (!cancelled) setJobAlertsEnabled(localEnabled);
+        const [localJobEnabled, localMessageEnabled] = await Promise.all([
+          getJobAlertsEnabledLocal(),
+          getMessageAlertsEnabledLocal(),
+        ]);
+        if (!cancelled) {
+          setJobAlertsEnabled(localJobEnabled);
+          setMessageAlertsEnabled(localMessageEnabled);
+        }
 
         if (!isNativePushSupported()) {
           if (!cancelled) setBootstrapping(false);
@@ -111,8 +121,34 @@ export default function SettingsScreen() {
     if (!settingsQuery.data || hasHydratedFromServer.current || saving) return;
     hasHydratedFromServer.current = true;
     setJobAlertsEnabled(settingsQuery.data.jobAlertsEnabled);
+    setMessageAlertsEnabled(settingsQuery.data.messageAlertsEnabled);
     void setJobAlertsEnabledLocal(settingsQuery.data.jobAlertsEnabled);
+    void setMessageAlertsEnabledLocal(settingsQuery.data.messageAlertsEnabled);
   }, [saving, settingsQuery.data]);
+
+  const ensurePushTokenForEnable = useCallback(
+    async (previousJob: boolean, previousMessage: boolean) => {
+      let token = pushToken ?? (await getStoredPushToken());
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        setPermissionDenied(true);
+        setJobAlertsEnabled(previousJob);
+        setMessageAlertsEnabled(previousMessage);
+        return null;
+      }
+      setPermissionDenied(false);
+      token = token ?? (await obtainExpoPushToken());
+      if (!token) {
+        setJobAlertsEnabled(previousJob);
+        setMessageAlertsEnabled(previousMessage);
+        return null;
+      }
+      setPushToken(token);
+      await setStoredPushToken(token);
+      return token;
+    },
+    [pushToken],
+  );
 
   const handleToggleJobAlerts = useCallback(
     async (enabled: boolean) => {
@@ -125,21 +161,8 @@ export default function SettingsScreen() {
         let token = pushToken ?? (await getStoredPushToken());
 
         if (enabled) {
-          const granted = await requestNotificationPermissions();
-          if (!granted) {
-            setPermissionDenied(true);
-            setJobAlertsEnabled(previous);
-            return;
-          }
-          setPermissionDenied(false);
-
-          token = token ?? (await obtainExpoPushToken());
-          if (!token) {
-            setJobAlertsEnabled(previous);
-            return;
-          }
-          setPushToken(token);
-          await setStoredPushToken(token);
+          token = await ensurePushTokenForEnable(previous, messageAlertsEnabled);
+          if (!token) return;
         }
 
         if (!token) {
@@ -152,21 +175,83 @@ export default function SettingsScreen() {
           expoPushToken: token,
           platform: getNotificationPlatform(),
           jobAlertsEnabled: enabled,
+          messageAlertsEnabled,
         });
         await setJobAlertsMutation.mutateAsync({ expoPushToken: token, enabled });
         utils.notifications.getSettings.setData(
           { expoPushToken: token },
-          { jobAlertsEnabled: enabled, registered: true },
+          { jobAlertsEnabled: enabled, messageAlertsEnabled, registered: true },
         );
       } catch (error) {
-        console.warn("[Settings] toggle failed:", error);
+        console.warn("[Settings] job alerts toggle failed:", error);
         setJobAlertsEnabled(previous);
         await setJobAlertsEnabledLocal(previous);
       } finally {
         setSaving(false);
       }
     },
-    [jobAlertsEnabled, pushToken, registerMutation, saving, setJobAlertsMutation, utils.notifications.getSettings],
+    [
+      ensurePushTokenForEnable,
+      jobAlertsEnabled,
+      messageAlertsEnabled,
+      pushToken,
+      registerMutation,
+      saving,
+      setJobAlertsMutation,
+      utils.notifications.getSettings,
+    ],
+  );
+
+  const handleToggleMessageAlerts = useCallback(
+    async (enabled: boolean) => {
+      if (!isNativePushSupported() || saving) return;
+
+      const previous = messageAlertsEnabled;
+      setMessageAlertsEnabled(enabled);
+      setSaving(true);
+      try {
+        let token = pushToken ?? (await getStoredPushToken());
+
+        if (enabled) {
+          token = await ensurePushTokenForEnable(jobAlertsEnabled, previous);
+          if (!token) return;
+        }
+
+        if (!token) {
+          setMessageAlertsEnabled(previous);
+          return;
+        }
+
+        await setMessageAlertsEnabledLocal(enabled);
+        await registerMutation.mutateAsync({
+          expoPushToken: token,
+          platform: getNotificationPlatform(),
+          jobAlertsEnabled,
+          messageAlertsEnabled: enabled,
+        });
+        await setMessageAlertsMutation.mutateAsync({ expoPushToken: token, enabled });
+        utils.notifications.getSettings.setData(
+          { expoPushToken: token },
+          { jobAlertsEnabled, messageAlertsEnabled: enabled, registered: true },
+        );
+      } catch (error) {
+        console.warn("[Settings] message alerts toggle failed:", error);
+        setMessageAlertsEnabled(previous);
+        await setMessageAlertsEnabledLocal(previous);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [
+      ensurePushTokenForEnable,
+      jobAlertsEnabled,
+      messageAlertsEnabled,
+      pushToken,
+      registerMutation,
+      saving,
+      setMessageAlertsMutation,
+      utils.notifications.getSettings,
+    ],
   );
 
   const openSystemSettings = () => {
@@ -317,6 +402,32 @@ export default function SettingsScreen() {
                   value={jobAlertsEnabled}
                   disabled={saving || !isNativePushSupported()}
                   onValueChange={handleToggleJobAlerts}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                />
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 16 }} />
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 16,
+                  paddingVertical: 18,
+                  gap: 16,
+                }}
+              >
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>
+                    {t("settings.messageAlertsTitle")}
+                  </Text>
+                  <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
+                    {t("settings.messageAlertsHint")}
+                  </Text>
+                </View>
+                <Switch
+                  value={messageAlertsEnabled}
+                  disabled={saving || !isNativePushSupported()}
+                  onValueChange={handleToggleMessageAlerts}
                   trackColor={{ false: colors.border, true: colors.primary }}
                 />
               </View>

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useColors } from "@/hooks/use-colors";
 import { useJobsList } from "@/hooks/use-jobs-list";
+import { useLocale } from "@/lib/i18n/locale-provider";
 import { categories } from "@/lib/mock-data";
 import { formatJobBudget } from "@/lib/job-locations";
 import { formatJobSchedule } from "@/lib/job-schedule";
@@ -15,6 +16,7 @@ import { HyphenLogo } from "@/components/hyphen-logo";
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { t } = useLocale();
 
   const jobsQuery = useJobsList();
   const latestJobs = useMemo(() => (jobsQuery.data ?? []).slice(0, 10), [jobsQuery.data]);
@@ -38,7 +40,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={{ paddingHorizontal: 24, paddingVertical: 16 }}>
+          <View style={{ paddingHorizontal: 24, paddingVertical: 16, gap: 12 }}>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/jobs")}
@@ -76,6 +78,26 @@ export default function HomeScreen() {
                 <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700", marginTop: 8 }}>發佈工作</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              onPress={() => router.push("/pro" as never)}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingVertical: 16,
+                paddingHorizontal: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+              }}
+            >
+              <Ionicons name="people" size={22} color={colors.primary} />
+              <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>{t("nav.pros")}</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 8 }}>

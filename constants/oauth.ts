@@ -2,8 +2,8 @@ import * as Linking from "expo-linking";
 import Constants from "expo-constants";
 import * as ReactNative from "react-native";
 
-// Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
-// e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
+// App Store / Play Store bundle ID (locked — do not change).
+// Deep link scheme is derived from the timestamp segment: manus20260427031216
 const bundleId = "space.manus.freehunter.app.t20260427031216";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
@@ -43,6 +43,18 @@ function readConfiguredApiBaseUrl(): string {
  * URL pattern: https://PORT-sandboxid.region.domain
  */
 export function getApiBaseUrl(): string {
+  // Local Expo web preview: always hit local API so new routers are available
+  // even if .env still points at production.
+  if (
+    __DEV__ &&
+    ReactNative.Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    window.location &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+  ) {
+    return `${window.location.protocol}//${window.location.hostname}:3000`;
+  }
+
   const configured = readConfiguredApiBaseUrl();
   // If API_BASE_URL is set, use it
   if (configured) {
@@ -80,7 +92,9 @@ export function getApiBaseUrl(): string {
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
-export const USER_INFO_KEY = "manus-runtime-user-info";
+export const USER_INFO_KEY = "hyphen-user-info";
+/** @deprecated migrated storage key — still read for one-time upgrade */
+export const LEGACY_USER_INFO_KEY = "manus-runtime-user-info";
 
 const encodeState = (value: string) => {
   if (typeof globalThis.btoa === "function") {
@@ -94,9 +108,10 @@ const encodeState = (value: string) => {
 };
 
 /**
- * Get the redirect URI for OAuth callback.
+ * Get the redirect URI for OAuth callback (legacy optional flow).
+ * Auth is primarily Supabase email; this remains for compatibility.
  * - Web: uses API server callback endpoint
- * - Native: uses deep link scheme
+ * - Native: uses locked deep link scheme from App Store bundle ID
  */
 export const getRedirectUri = () => {
   if (ReactNative.Platform.OS === "web") {

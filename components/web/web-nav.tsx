@@ -1,6 +1,7 @@
 import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
 import { HyphenLogo } from "@/components/hyphen-logo";
 import { LanguagePicker } from "@/components/web/language-picker";
@@ -16,14 +17,14 @@ const NAV_KEYS = [
   { key: "home", href: "/(tabs)" as const },
   { key: "jobs", href: "/(tabs)/jobs" as const },
   { key: "post", href: "/(tabs)/post" as const },
-  { key: "profile", href: "/(tabs)/profile" as const },
+  { key: "pros", href: "/pro" as const },
 ] as const;
 
 function isNavActive(pathname: string, key: string, locale: Locale) {
   const path = pathname || "/";
   if (key === "jobs") return path.includes("/jobs");
   if (key === "post") return path.includes("/post");
-  if (key === "profile") return path.includes("/profile");
+  if (key === "pros") return path === "/pro" || path.startsWith("/pro/");
   if (key === "home") {
     if (locale === "zh-TW") return isTaiwanMarketingHome(path);
     return isDefaultMarketingHome(path);
@@ -77,6 +78,23 @@ export function WebNav() {
         <Text style={{ color: colors.muted, fontWeight: "600", fontSize: compact ? 13 : 14 }}>
           {isAuthenticated ? t("nav.account") : t("nav.login")}
         </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => router.push(isAuthenticated ? ("/messages" as never) : "/login")}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={t("nav.messages")}
+        style={[
+          styles.outlineBtn,
+          styles.iconBtn,
+          {
+            borderColor: colors.border,
+            minWidth: compact ? 34 : 38,
+            paddingHorizontal: compact ? 8 : 10,
+          },
+        ]}
+      >
+        <Ionicons name="chatbubble-ellipses-outline" size={compact ? 16 : 18} color={colors.muted} />
       </TouchableOpacity>
       {!isAuthenticated ? (
         <TouchableOpacity
@@ -209,6 +227,10 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  iconBtn: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   primaryBtn: {
     paddingHorizontal: 12,

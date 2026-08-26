@@ -14,12 +14,23 @@ function isActiveStatus(status: db.SubscriptionStatus) {
   return status.plan !== "none" && status.expiresAt !== null && status.expiresAt.getTime() > Date.now();
 }
 
-/** Subscription access is DB-only; RevenueCat/webhook/syncFromStore update the DB. */
+/** Subscription access is DB-only; RevenueCat/webhook/syncFromStore update the DB.
+ *  Admin（萬用管理帳號）視為永久有效訂閱，方便測試與內容管理。 */
 export async function resolveSubscriptionStatus(user: {
   id: number;
   openId: string;
   email?: string | null;
+  role?: string;
 }): Promise<ResolvedSubscription> {
+  if (user.role === "admin") {
+    return {
+      plan: "yearly",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10),
+      active: true,
+      stripeCustomerId: null,
+    };
+  }
+
   const status = await db.getSubscriptionStatus(user.id);
 
   return {

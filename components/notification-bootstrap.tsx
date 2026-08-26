@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 import {
   getJobAlertsEnabledLocal,
+  getMessageAlertsEnabledLocal,
   getNotificationPlatform,
   getStoredPushToken,
   isNativePushSupported,
@@ -29,7 +30,10 @@ export function NotificationBootstrap() {
     if (!isNativePushSupported() || syncingRef.current) return;
     syncingRef.current = true;
     try {
-      const jobAlertsEnabled = await getJobAlertsEnabledLocal();
+      const [jobAlertsEnabled, messageAlertsEnabled] = await Promise.all([
+        getJobAlertsEnabledLocal(),
+        getMessageAlertsEnabledLocal(),
+      ]);
       const token = (await getStoredPushToken()) ?? (await obtainExpoPushToken());
       if (!token) return;
 
@@ -38,6 +42,7 @@ export function NotificationBootstrap() {
         expoPushToken: token,
         platform: getNotificationPlatform(),
         jobAlertsEnabled,
+        messageAlertsEnabled,
       });
     } catch (error) {
       console.warn("[Notifications] sync failed:", error);
@@ -51,21 +56,30 @@ export function NotificationBootstrap() {
 
     const openSub = Notifications.addNotificationResponseReceivedListener((response) => {
       refreshJobs();
-      const data = response.notification.request.content.data as { jobId?: string; type?: string };
+      const data = response.notification.request.content.data as {
+        jobId?: string;
+        threadId?: string;
+        type?: string;
+      };
       if (data?.type === "new_job" && typeof data.jobId === "string") {
         router.push(`/job/${data.jobId}`);
+        return;
+      }
+      if (data?.type === "new_message" && typeof data.threadId === "string") {
+        router.push(`/messages/${data.threadId}` as never);
       }
     });
 
     const receiveSub = Notifications.addNotificationReceivedListener(() => {
       refreshJobs();
+      void utils.serviceMessages.listThreads.invalidate();
     });
 
     return () => {
       openSub.remove();
       receiveSub.remove();
     };
-  }, [refreshJobs, router]);
+  }, [refreshJobs, router, utils.serviceMessages.listThreads]);
 
   useEffect(() => {
     if (!isNativePushSupported()) return;

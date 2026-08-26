@@ -123,6 +123,18 @@ In no event shall the App, its affiliates, its licensors, or any agents, employe
 18. Indemnification
 You hereby agree to indemnify, defend, and hold harmless the App, its directors, officers, employees, agents, licensors, attorneys, independent contractors, providers, subsidiaries, and affiliates from any and all claims, losses, expenses, or liability demands arising from your use or inability to use this platform, relating to this platform, regarding any dispute between any Users, or your violation of these Terms and Conditions, or your violation of any rights of any third party, including resulting attorney fees, investigator fees, and expert fees (or similar fees), disbursements, and costs. The App reserves the right, at its own expense, to assume exclusive defence and control of any matter otherwise subject to indemnification by you. In no event may you settle any claim or matter without the App's written consent.
 
+18A. Professional Service Pages and Hyphen In-App Messaging
+The platform provides a "Find talent" directory and professional service pages that subscribed users may create. Subscribed users may create, edit, and publish a service page (including personal/company name, introduction, service details, tags, avatar, and portfolio images). Once published, other users may browse the page and start an in-app conversation via "Contact via Hyphen".
+
+Any signed-in user may send and receive in-app messages related to service enquiries. Message history is stored by the platform until a user removes the conversation or the account is deleted (or longer if required by law). You agree that:
+(a) messages may be used only for legitimate service enquiries or replies, and not for spam, harassment, fraud, or unlawful content;
+(b) in-app message content is unrestricted by the platform in this regard; users may voluntarily exchange contact details in messages. Public service pages may still omit private email or phone by default; job-post public descriptions remain subject to any separate platform rules;
+(c) you own or have the rights needed for content you upload, and grant the App the licences described in the user-generated content provisions of this Agreement to operate the platform; and
+(d) the App remains a neutral facilitator, is not a party to any service contract between users, and does not guarantee that any engagement or transaction will occur.
+
+The App may remove violating service-page content or messages, suspend related features, or take other measures permitted by this Agreement. This section on professional service pages and in-app messaging was added/updated on 26 August 2026.
+
+
 19. Arbitration
 Any dispute, controversy, or claim arising out of or relating to this contract, or its breach, termination, or invalidity, shall be settled by arbitration in accordance with the UNCITRAL Arbitration Rules in force (as amended by the remainder of these Terms). The appointing authority shall be the Hong Kong International Arbitration Centre (HKIAC). The place of arbitration shall be Hong Kong at HKIAC. There shall be a sole arbitrator. The language of the arbitration proceedings shall be English and/or Chinese.
 

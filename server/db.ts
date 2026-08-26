@@ -36,7 +36,14 @@ let _memoryJobs: Array<{
 }> = [];
 const _memoryPushDevices = new Map<
   string,
-  { expoPushToken: string; userId: number | null; platform: string | null; jobAlertsEnabled: boolean; updatedAt: Date }
+  {
+    expoPushToken: string;
+    userId: number | null;
+    platform: string | null;
+    jobAlertsEnabled: boolean;
+    messageAlertsEnabled: boolean;
+    updatedAt: Date;
+  }
 >();
 
 const isDbConnectionError = (error: unknown) => {
@@ -98,7 +105,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     const existing = _memoryUsers.get(user.openId);
 
     const nextRole =
-      user.role !== undefined ? user.role : user.openId === ENV.ownerOpenId ? "admin" : "user";
+      user.role !== undefined
+        ? user.role
+        : user.openId === ENV.ownerOpenId ||
+            (ENV.ownerEmail && (user.email ?? "").trim().toLowerCase() === ENV.ownerEmail)
+          ? "admin"
+          : "user";
 
     if (!existing) {
       _memoryUsers.set(user.openId, {
@@ -155,7 +167,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (
+      user.openId === ENV.ownerOpenId ||
+      (ENV.ownerEmail && (user.email ?? "").trim().toLowerCase() === ENV.ownerEmail)
+    ) {
       values.role = "admin";
       updateSet.role = "admin";
     }
@@ -194,6 +209,68 @@ export async function getUserByOpenId(openId: string) {
     if (isDbConnectionError(error)) {
       resetDb();
       return _memoryUsers.get(openId);
+    }
+    throw error;
+  }
+}
+
+/** Owner / 萬用帳號：以 openId 或 OWNER_EMAIL 比對。 */
+export function isOwnerIdentity(user: { openId: string; email?: string | null }): boolean {
+  if (ENV.ownerOpenId && user.openId === ENV.ownerOpenId) return true;
+  const email = user.email?.trim().toLowerCase() ?? "";
+  if (ENV.ownerEmail && email && email === ENV.ownerEmail) return true;
+  return false;
+}
+
+/** Ensure owner identity always has admin role (local + production). */
+export async function ensureOwnerAdminRole(
+  user: typeof users.$inferSelect,
+): Promise<typeof users.$inferSelect> {
+  if (!isOwnerIdentity(user)) return user;
+  if (user.role === "admin") return user;
+  await upsertUser({ openId: user.openId, role: "admin", email: user.email, name: user.name });
+  return (await getUserByOpenId(user.openId)) ?? { ...user, role: "admin" as const };
+}
+
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    for (const user of _memoryUsers.values()) {
+      if (user.id === userId) return user;
+    }
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      for (const user of _memoryUsers.values()) {
+        if (user.id === userId) return user;
+      }
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+export async function getUsersByIds(userIds: number[]) {
+  if (userIds.length === 0) return [];
+  const db = await getDb();
+  if (!db) {
+    return userIds
+      .map((id) => [..._memoryUsers.values()].find((u) => u.id === id))
+      .filter(Boolean) as Array<typeof users.$inferSelect>;
+  }
+
+  try {
+    return db.select().from(users).where(inArray(users.id, userIds));
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      return getUsersByIds(userIds);
     }
     throw error;
   }
@@ -654,6 +731,7 @@ export type PushDeviceRecord = {
   userId: number | null;
   platform: string | null;
   jobAlertsEnabled: boolean;
+  messageAlertsEnabled: boolean;
   updatedAt: Date;
 };
 
@@ -672,6 +750,7 @@ export async function getPushDevice(expoPushToken: string): Promise<PushDeviceRe
       userId: row.userId ?? null,
       platform: row.platform ?? null,
       jobAlertsEnabled: row.jobAlertsEnabled === 1,
+      messageAlertsEnabled: row.messageAlertsEnabled === 1,
       updatedAt: row.updatedAt,
     };
   } catch (error) {
@@ -688,10 +767,12 @@ export async function upsertPushDevice(input: {
   userId?: number | null;
   platform?: string | null;
   jobAlertsEnabled?: boolean;
+  messageAlertsEnabled?: boolean;
 }): Promise<void> {
   const db = await getDb();
   const now = new Date();
-  const enabled = input.jobAlertsEnabled ?? true;
+  const jobEnabled = input.jobAlertsEnabled ?? true;
+  const messageEnabled = input.messageAlertsEnabled ?? true;
 
   const upsertInMemory = () => {
     const existing = _memoryPushDevices.get(input.expoPushToken);
@@ -700,6 +781,7 @@ export async function upsertPushDevice(input: {
       userId: input.userId !== undefined ? input.userId : (existing?.userId ?? null),
       platform: input.platform ?? existing?.platform ?? null,
       jobAlertsEnabled: input.jobAlertsEnabled ?? existing?.jobAlertsEnabled ?? true,
+      messageAlertsEnabled: input.messageAlertsEnabled ?? existing?.messageAlertsEnabled ?? true,
       updatedAt: now,
     });
   };
@@ -718,6 +800,7 @@ export async function upsertPushDevice(input: {
           userId: input.userId !== undefined ? input.userId : existing.userId,
           platform: input.platform ?? existing.platform,
           jobAlertsEnabled: (input.jobAlertsEnabled ?? existing.jobAlertsEnabled) ? 1 : 0,
+          messageAlertsEnabled: (input.messageAlertsEnabled ?? existing.messageAlertsEnabled) ? 1 : 0,
           updatedAt: now,
         })
         .where(eq(pushDevices.expoPushToken, input.expoPushToken));
@@ -728,7 +811,8 @@ export async function upsertPushDevice(input: {
       expoPushToken: input.expoPushToken,
       userId: input.userId ?? null,
       platform: input.platform ?? null,
-      jobAlertsEnabled: enabled ? 1 : 0,
+      jobAlertsEnabled: jobEnabled ? 1 : 0,
+      messageAlertsEnabled: messageEnabled ? 1 : 0,
       updatedAt: now,
     });
   } catch (error) {
@@ -751,6 +835,7 @@ export async function setPushDeviceJobAlerts(expoPushToken: string, enabled: boo
         userId: null,
         platform: null,
         jobAlertsEnabled: enabled,
+        messageAlertsEnabled: true,
         updatedAt: new Date(),
       });
       return;
@@ -787,6 +872,53 @@ export async function setPushDeviceJobAlerts(expoPushToken: string, enabled: boo
   }
 }
 
+export async function setPushDeviceMessageAlerts(expoPushToken: string, enabled: boolean): Promise<void> {
+  const db = await getDb();
+  const upsertInMemory = () => {
+    const existing = _memoryPushDevices.get(expoPushToken);
+    if (!existing) {
+      _memoryPushDevices.set(expoPushToken, {
+        expoPushToken,
+        userId: null,
+        platform: null,
+        jobAlertsEnabled: true,
+        messageAlertsEnabled: enabled,
+        updatedAt: new Date(),
+      });
+      return;
+    }
+    existing.messageAlertsEnabled = enabled;
+    existing.updatedAt = new Date();
+  };
+
+  if (!db) {
+    upsertInMemory();
+    return;
+  }
+
+  try {
+    const existing = await getPushDevice(expoPushToken);
+    if (!existing) {
+      await db.insert(pushDevices).values({
+        expoPushToken,
+        messageAlertsEnabled: enabled ? 1 : 0,
+      });
+      return;
+    }
+    await db
+      .update(pushDevices)
+      .set({ messageAlertsEnabled: enabled ? 1 : 0 })
+      .where(eq(pushDevices.expoPushToken, expoPushToken));
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      upsertInMemory();
+      return;
+    }
+    throw error;
+  }
+}
+
 export async function listPushTokensForJobAlerts(excludeUserId: number): Promise<string[]> {
   const db = await getDb();
   if (!db) {
@@ -804,6 +936,29 @@ export async function listPushTokensForJobAlerts(excludeUserId: number): Promise
     if (isDbConnectionError(error)) {
       resetDb();
       return listPushTokensForJobAlerts(excludeUserId);
+    }
+    throw error;
+  }
+}
+
+export async function listPushTokensForMessageAlerts(userId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) {
+    return [..._memoryPushDevices.values()]
+      .filter((d) => d.messageAlertsEnabled && d.userId === userId)
+      .map((d) => d.expoPushToken);
+  }
+
+  try {
+    const rows = await db
+      .select()
+      .from(pushDevices)
+      .where(eq(pushDevices.userId, userId));
+    return rows.filter((row) => row.messageAlertsEnabled === 1).map((row) => row.expoPushToken);
+  } catch (error) {
+    if (isDbConnectionError(error)) {
+      resetDb();
+      return listPushTokensForMessageAlerts(userId);
     }
     throw error;
   }

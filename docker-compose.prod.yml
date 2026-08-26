@@ -25,6 +25,9 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: mysql://${MYSQL_USER:-hyphen}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-hyphen_app}
+      STORAGE_DIR: /var/lib/hyphen/uploads
+    volumes:
+      - hyphen_uploads:/var/lib/hyphen/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -80,6 +83,7 @@ services:
 
 volumes:
   hyphen_mysql_data:
+  hyphen_uploads:
   caddy_data:
   caddy_config:
 

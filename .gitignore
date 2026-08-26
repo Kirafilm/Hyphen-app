@@ -66,5 +66,9 @@ Thumbs.db
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 
+# Local / VPS uploaded media (portfolio images)
+data/uploads/**
+!data/uploads/.gitkeep
+
 # Server-specific Caddy config (copy from deploy/Caddyfile.example)
 deploy/Caddyfile
