@@ -543,7 +543,7 @@ export const messages = {
     slugLabel: "页面网址",
     slugHint: "例如 hyphenjob.com/pro/your-name（仅限小写英文、数字及连字符）",
     headlineLabel: "个人／公司名称",
-    headlinePlaceholder: "例如：Kirafilm、某某设计工作室",
+    headlinePlaceholder: "例如：某某设计工作室、陈先生",
     headlineRequired: "请填写个人／公司名称（公开页会显示此名称，不会显示登录名称）",
     avatarLabel: "头像",
     avatarHint: "圆形头像会显示在公开服务页；建议使用清晰人像或品牌图。",

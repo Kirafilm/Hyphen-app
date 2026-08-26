@@ -561,7 +561,7 @@ export const messages = {
     slugLabel: "Page URL",
     slugHint: "e.g. hyphenjob.com/pro/your-name (lowercase letters, numbers, hyphens only)",
     headlineLabel: "Name / company",
-    headlinePlaceholder: "e.g. Kirafilm, Studio Example",
+    headlinePlaceholder: "e.g. Studio Example, Alex Chen",
     headlineRequired: "Please enter a personal or company name (shown on your public page instead of your login name)",
     avatarLabel: "Profile photo",
     avatarHint: "Your circular avatar appears on the public service page. Use a clear portrait or brand image.",
