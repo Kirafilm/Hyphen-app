@@ -120,6 +120,7 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (!settingsQuery.data || hasHydratedFromServer.current || saving) return;
     hasHydratedFromServer.current = true;
+    if (!settingsQuery.data.registered) return;
     setJobAlertsEnabled(settingsQuery.data.jobAlertsEnabled);
     setMessageAlertsEnabled(settingsQuery.data.messageAlertsEnabled);
     void setJobAlertsEnabledLocal(settingsQuery.data.jobAlertsEnabled);
@@ -150,7 +151,7 @@ export default function SettingsScreen() {
     [pushToken],
   );
 
-  const handleToggleJobAlerts = useCallback(
+  const persistJobAlerts = useCallback(
     async (enabled: boolean) => {
       if (!isNativePushSupported() || saving) return;
 
@@ -158,19 +159,21 @@ export default function SettingsScreen() {
       setJobAlertsEnabled(enabled);
       setSaving(true);
       try {
+        await setJobAlertsEnabledLocal(enabled);
+
         let token = pushToken ?? (await getStoredPushToken());
 
         if (enabled) {
           token = await ensurePushTokenForEnable(previous, messageAlertsEnabled);
-          if (!token) return;
+          if (!token) {
+            await setJobAlertsEnabledLocal(previous);
+            setJobAlertsEnabled(previous);
+            return;
+          }
         }
 
-        if (!token) {
-          setJobAlertsEnabled(previous);
-          return;
-        }
+        if (!token) return;
 
-        await setJobAlertsEnabledLocal(enabled);
         await registerMutation.mutateAsync({
           expoPushToken: token,
           platform: getNotificationPlatform(),
@@ -202,7 +205,7 @@ export default function SettingsScreen() {
     ],
   );
 
-  const handleToggleMessageAlerts = useCallback(
+  const persistMessageAlerts = useCallback(
     async (enabled: boolean) => {
       if (!isNativePushSupported() || saving) return;
 
@@ -210,19 +213,21 @@ export default function SettingsScreen() {
       setMessageAlertsEnabled(enabled);
       setSaving(true);
       try {
+        await setMessageAlertsEnabledLocal(enabled);
+
         let token = pushToken ?? (await getStoredPushToken());
 
         if (enabled) {
           token = await ensurePushTokenForEnable(jobAlertsEnabled, previous);
-          if (!token) return;
+          if (!token) {
+            await setMessageAlertsEnabledLocal(previous);
+            setMessageAlertsEnabled(previous);
+            return;
+          }
         }
 
-        if (!token) {
-          setMessageAlertsEnabled(previous);
-          return;
-        }
+        if (!token) return;
 
-        await setMessageAlertsEnabledLocal(enabled);
         await registerMutation.mutateAsync({
           expoPushToken: token,
           platform: getNotificationPlatform(),
@@ -401,7 +406,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={jobAlertsEnabled}
                   disabled={saving || !isNativePushSupported()}
-                  onValueChange={handleToggleJobAlerts}
+                  onValueChange={persistJobAlerts}
                   trackColor={{ false: colors.border, true: colors.primary }}
                 />
               </View>
@@ -427,7 +432,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={messageAlertsEnabled}
                   disabled={saving || !isNativePushSupported()}
-                  onValueChange={handleToggleMessageAlerts}
+                  onValueChange={persistMessageAlerts}
                   trackColor={{ false: colors.border, true: colors.primary }}
                 />
               </View>

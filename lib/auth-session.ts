@@ -8,17 +8,17 @@ export async function persistAuthSession(session: Session | null | undefined): P
   await Auth.setSessionToken(session.access_token);
 }
 
-/** Restore or refresh Supabase session, then sync access token for API calls. */
-export async function syncSessionFromSupabase(): Promise<string | null> {
+/** Ask Supabase to refresh the access token using the stored refresh token. */
+export async function refreshSupabaseSession(): Promise<string | null> {
   if (!isSupabaseConfigured) {
     return Auth.getSessionToken();
   }
 
   const supabase = getSupabase();
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.refreshSession();
   if (error) {
-    console.warn("[AuthSession] getSession failed:", error.message);
-    return Auth.getSessionToken();
+    console.warn("[AuthSession] refreshSession failed:", error.message);
+    return null;
   }
 
   if (data.session?.access_token) {
@@ -26,7 +26,39 @@ export async function syncSessionFromSupabase(): Promise<string | null> {
     return data.session.access_token;
   }
 
-  return Auth.getSessionToken();
+  return null;
+}
+
+/** Restore or refresh Supabase session, then sync access token for API calls. */
+export async function syncSessionFromSupabase(options?: { forceRefresh?: boolean }): Promise<string | null> {
+  if (!isSupabaseConfigured) {
+    return Auth.getSessionToken();
+  }
+
+  if (options?.forceRefresh) {
+    const refreshed = await refreshSupabaseSession();
+    if (refreshed) return refreshed;
+  }
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.warn("[AuthSession] getSession failed:", error.message);
+    return refreshSupabaseSession();
+  }
+
+  if (data.session?.access_token) {
+    const expiresAt = data.session.expires_at ?? 0;
+    const expiresSoon = expiresAt > 0 && expiresAt * 1000 < Date.now() + 5 * 60 * 1000;
+    if (expiresSoon) {
+      const refreshed = await refreshSupabaseSession();
+      if (refreshed) return refreshed;
+    }
+    await persistAuthSession(data.session);
+    return data.session.access_token;
+  }
+
+  return refreshSupabaseSession();
 }
 
 export async function clearSupabaseSession(): Promise<void> {

@@ -1,4 +1,5 @@
 import Head from "expo-router/head";
+import { Platform } from "react-native";
 
 import {
   SEO,
@@ -34,6 +35,8 @@ export function SeoHead({
   jsonLd,
   includeSiteGraph = false,
 }: SeoHeadProps) {
+  if (Platform.OS !== "web") return null;
+
   const canonical = absoluteUrl(path === "" ? "/" : path);
   const fullTitle = title.includes("Hyphen") ? title : `${title} | ${SEO.siteName}`;
   const alts = resolveHreflang(path, twPath);

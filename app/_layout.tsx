@@ -25,8 +25,8 @@ import {
 import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
+import { AuthProvider } from "@/hooks/use-auth";
 import { NotificationBootstrap } from "@/components/notification-bootstrap";
-import { AuthSessionBootstrap } from "@/components/auth-session-bootstrap";
 import { SubscriptionSyncBootstrap } from "@/components/subscription-sync-bootstrap";
 import { ThemeStatusBar } from "@/components/theme-status-bar";
 
@@ -80,7 +80,6 @@ export default function RootLayout() {
             <Stack.Screen name="settings" />
           </Stack>
           <NotificationBootstrap />
-          <AuthSessionBootstrap />
           <SubscriptionSyncBootstrap />
           <ThemeStatusBar />
         </QueryClientProvider>
@@ -95,7 +94,7 @@ export default function RootLayout() {
           <SafeAreaProvider initialMetrics={providerInitialMetrics}>
             <SafeAreaFrameContext.Provider value={providerInitialMetrics.frame}>
               <SafeAreaInsetsContext.Provider value={providerInitialMetrics.insets}>
-                {content}
+                <AuthProvider>{content}</AuthProvider>
               </SafeAreaInsetsContext.Provider>
             </SafeAreaFrameContext.Provider>
           </SafeAreaProvider>
@@ -107,7 +106,9 @@ export default function RootLayout() {
   return (
     <LocaleProvider>
       <ThemeProvider>
-        <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
+        <SafeAreaProvider initialMetrics={providerInitialMetrics}>
+          <AuthProvider>{content}</AuthProvider>
+        </SafeAreaProvider>
       </ThemeProvider>
     </LocaleProvider>
   );

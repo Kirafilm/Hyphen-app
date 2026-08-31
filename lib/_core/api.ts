@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { getApiBaseUrl } from "@/constants/oauth";
-import { syncSessionFromSupabase } from "@/lib/auth-session";
+import { syncSessionFromSupabase, refreshSupabaseSession } from "@/lib/auth-session";
 import * as Auth from "./auth";
 
 type ApiResponse<T> = {
@@ -161,7 +161,7 @@ export async function getMe(): Promise<{
       message.includes("Invalid token") ||
       message.includes("Invalid session");
     if (looksLikeAuthError) {
-      const refreshedToken = await syncSessionFromSupabase();
+      const refreshedToken = await refreshSupabaseSession();
       if (refreshedToken) {
         try {
           return await fetchMe();
@@ -171,8 +171,6 @@ export async function getMe(): Promise<{
           }
         }
       }
-      await Auth.removeSessionToken();
-      await Auth.clearUserInfo();
     }
     return null;
   }

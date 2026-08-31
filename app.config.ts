@@ -29,6 +29,7 @@ const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? "";
 const allowsInsecureApi = apiBaseUrl.startsWith("http://");
 // Only embed expo-dev-client for EAS "development" profile builds.
 const isDevClientBuild = process.env.APP_VARIANT === "development";
+const hostedOrigin = (process.env.EXPO_PUBLIC_WEB_URL ?? "https://hyphenjob.com").replace(/\/$/, "");
 
 const env = {
   // App branding - update these values directly (do not use env vars)
@@ -44,7 +45,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "0.1.3",
+  version: "0.1.4",
   orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -93,7 +94,12 @@ const config: ExpoConfig = {
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
-    "expo-router",
+    [
+      "expo-router",
+      {
+        origin: hostedOrigin,
+      },
+    ],
     ...(isDevClientBuild
       ? [
           [
