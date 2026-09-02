@@ -1,7 +1,11 @@
 import type { Request } from "express";
 
 import * as db from "../db";
-import { fetchActiveSubscriptionFromRevenueCat } from "./revenuecat";
+import {
+  fetchActiveSubscriptionFromRevenueCat,
+  fetchActiveSubscriptionFromRevenueCatForUser,
+  isRevenueCatApiConfigured,
+} from "./revenuecat";
 
 export type ResolvedSubscription = {
   plan: db.SubscriptionPlan;
@@ -61,6 +65,21 @@ export async function resolveStoreSubscriptionActiveFromRequest(req: Request): P
   return sub !== null && sub.expiresAt.getTime() > Date.now();
 }
 
+async function mirrorRevenueCatSubscriptionToDb(
+  userId: number,
+  subscription: { plan: Exclude<db.SubscriptionPlan, "none">; expiresAt: Date },
+) {
+  try {
+    await db.setSubscriptionStatus(userId, {
+      plan: subscription.plan,
+      expiresAt: subscription.expiresAt,
+    });
+  } catch (err) {
+    console.warn("[subscription] failed to mirror RevenueCat status to DB:", err);
+  }
+}
+
+/** Logged-in viewers: DB first, then RevenueCat by openId, then request header (store account). */
 export async function resolveViewerSubscriptionActive(
   viewer: { id: number; openId: string; email?: string | null } | null,
   req: Request,
@@ -68,6 +87,17 @@ export async function resolveViewerSubscriptionActive(
   if (viewer) {
     const sub = await resolveSubscriptionStatus(viewer);
     if (isResolvedSubscriptionActive(sub)) return true;
+
+    if (isRevenueCatApiConfigured()) {
+      const rcSub = await fetchActiveSubscriptionFromRevenueCatForUser({
+        openId: viewer.openId,
+        email: viewer.email,
+      });
+      if (rcSub && rcSub.expiresAt.getTime() > Date.now()) {
+        void mirrorRevenueCatSubscriptionToDb(viewer.id, rcSub);
+        return true;
+      }
+    }
   }
   return resolveStoreSubscriptionActiveFromRequest(req);
 }
