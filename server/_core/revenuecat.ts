@@ -313,8 +313,26 @@ export async function fetchActiveSubscriptionFromRevenueCatForUser(user: {
   email?: string | null;
 }): Promise<RevenueCatActiveSubscription | null> {
   const openId = user.openId?.trim();
-  if (!openId) return null;
-  return fetchActiveSubscriptionFromRevenueCat(openId);
+  if (openId) {
+    const byOpenId = await fetchActiveSubscriptionFromRevenueCat(openId);
+    if (byOpenId) return byOpenId;
+  }
+
+  // Purchases may live under a store/anonymous RevenueCat id while Hyphen uses Supabase openId.
+  // RevenueCat Customer list often matches by email even when app_user_id ≠ openId.
+  const email = user.email?.trim().toLowerCase();
+  if (!email) return null;
+
+  const customerIds = await findRevenueCatCustomerIdsByEmail(email);
+  let best: RevenueCatActiveSubscription | null = null;
+  for (const customerId of customerIds) {
+    if (!customerId || customerId === openId) continue;
+    const candidate = await fetchActiveSubscriptionFromRevenueCat(customerId);
+    if (candidate && isBetterSubscription(candidate, best)) {
+      best = candidate;
+    }
+  }
+  return best;
 }
 
 export type RevenueCatWebhookBody = {
